@@ -12,8 +12,7 @@
 /* NotFound.module.css */
 .flexContainer {
     content-visibility: auto; /* Ensures the element is rendered only when visible */
-    background: url('/src/assets/images/home/home_wallpaper.webp') no-repeat
-        center center fixed;
+
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;

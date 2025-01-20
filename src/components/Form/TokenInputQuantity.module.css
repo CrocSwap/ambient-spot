@@ -109,7 +109,7 @@
 
 .futaLayout {
     display: grid;
-    grid-template-columns: 70% 27%;
+    grid-template-columns: auto 120px;
     gap: 8px;
     width: 100%;
     font-family: 'Fira Mono';
@@ -156,7 +156,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 8px;
-    height: 60%;
+    height: 39px;
     color: var(--text1);
     font-size: 18px;
 }
@@ -169,5 +169,5 @@
     font-size: 18px;
     color: var(--text2);
     cursor: pointer;
-    height: 39%;
+    height: 22px;
 }

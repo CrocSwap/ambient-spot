@@ -61,7 +61,7 @@
     background: var(--accent1, #0ccdff);
     color: var(--dark1);
     border: none;
-    text-transform: uppercase;
+    text-transform: uppercase !important;
     border-radius: 0;
 }
 

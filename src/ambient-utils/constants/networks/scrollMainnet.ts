@@ -4,10 +4,10 @@ import { Provider } from 'ethers';
 import { NetworkIF } from '../../types/NetworkIF';
 import {
     scrollETH,
-    scrollPufETH,
     scrollSCR,
     scrollUSDC,
     scrollUSDT,
+    scrollWBTC,
 } from '../defaultTokens';
 import { GCGO_SCROLL_URL } from '../gcgo';
 import { TopPool } from './TopPool';
@@ -57,10 +57,10 @@ export const scrollMainnet: NetworkIF = {
     tempestApiNetworkName: 'scroll',
     topPools: [
         new TopPool(scrollETH, scrollUSDC, chainSpecFromSDK.poolIndex),
-        new TopPool(scrollETH, scrollUSDT, chainSpecFromSDK.poolIndex),
-        new TopPool(scrollSCR, scrollETH, chainSpecFromSDK.poolIndex),
         new TopPool(scrollUSDT, scrollUSDC, chainSpecFromSDK.poolIndex),
-        new TopPool(scrollPufETH, scrollETH, chainSpecFromSDK.poolIndex),
+        new TopPool(scrollSCR, scrollETH, chainSpecFromSDK.poolIndex),
+        new TopPool(scrollETH, scrollUSDT, chainSpecFromSDK.poolIndex),
+        new TopPool(scrollETH, scrollWBTC, chainSpecFromSDK.poolIndex),
     ],
     getGasPriceInGwei: async (provider?: Provider) => {
         if (!provider) return 0;

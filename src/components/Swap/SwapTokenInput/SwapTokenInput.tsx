@@ -494,7 +494,7 @@ function SwapTokenInput(props: propsIF) {
                 handleToggleDexSelection={() => toggleDexSelection('B')}
                 showWallet={isUserConnected}
                 hideWalletMaxButton
-                handleRefresh={refreshTokenData}
+                handleRefresh={primaryQuantity ? refreshTokenData : undefined}
                 parseTokenInput={(val: string, isMax?: boolean) => {
                     setBuyQtyString(formatTokenInput(val, tokenB, isMax));
                 }}

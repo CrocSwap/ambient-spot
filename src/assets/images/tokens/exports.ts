@@ -7,6 +7,7 @@ import BIG from './BIG.jpg';
 import BLAST from './BLAST.png';
 import BLUR from './BLUR.png';
 import DAI from './DAI.svg';
+import ENA from './ENA.svg';
 import ESE from './ESE.jpg';
 import ETH from './ETH.png';
 import ETHX from './ETHX.svg';
@@ -76,6 +77,7 @@ export {
     BLAST,
     BLUR,
     DAI,
+    ENA,
     ESE,
     ETH,
     ETHX,

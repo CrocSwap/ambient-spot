@@ -24,6 +24,7 @@ import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
 import { UserDataContext } from '../../../contexts/UserDataContext';
 import { useMediaQuery } from '../../../utils/hooks/useMediaQuery';
 import styles from './Create.module.css';
+import CreateInput from './CreateInput';
 
 export default function Create() {
     const desktopScreen = useMediaQuery('(min-width: 1080px)');
@@ -75,17 +76,6 @@ export default function Create() {
         setTickerCreationResponse(undefined);
         setIsTxPending(false);
     }, [tickerInput]);
-
-    // name for the ticker input field, keeps `<input/>` and `<label/>` sync'd
-    const TICKER_INPUT_ID = 'ticker_input';
-    const TICKER_MAX_LENGTH = 10;
-
-    useEffect(() => {
-        const input = document.getElementById(
-            TICKER_INPUT_ID,
-        ) as HTMLInputElement;
-        if (input) input.focus();
-    }, []);
 
     const liquidity = '0.25 ETH';
 
@@ -151,30 +141,6 @@ export default function Create() {
                     </p>
                 </div>
             ))}
-        </div>
-    );
-
-    const tokenTicker = (
-        <div className={styles.create_token_middle}>
-            <div className={styles.ticker_input_fields}>
-                <label htmlFor={TICKER_INPUT_ID}>
-                    <h4>Token Ticker</h4>
-                </label>
-                <div className={styles.inputContainer}>
-                    <input
-                        name={TICKER_INPUT_ID}
-                        id={TICKER_INPUT_ID}
-                        value={tickerInput}
-                        type='text'
-                        maxLength={TICKER_MAX_LENGTH}
-                        onChange={(e) => handleChange(e.target.value)}
-                        autoCorrect='off'
-                        spellCheck='false'
-                        autoComplete='off'
-                    />
-                    <p>{TICKER_MAX_LENGTH - tickerInput.length}</p>
-                </div>
-            </div>
         </div>
     );
 
@@ -254,7 +220,10 @@ export default function Create() {
             <div className={styles.create_token}>
                 {createHeader}
 
-                {tokenTicker}
+                <CreateInput
+                    tickerInput={tickerInput}
+                    handleChange={handleChange}
+                />
                 {footerDisplay}
             </div>
 

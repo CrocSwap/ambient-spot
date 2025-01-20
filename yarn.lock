@@ -996,10 +996,10 @@
     preact "^10.16.0"
     sha.js "^2.4.11"
 
-"@crocswap-libs/sdk@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@crocswap-libs/sdk/-/sdk-2.0.0.tgz#87e2c3785ed5c344cbf0b289e8d7e3d5905ab315"
-  integrity sha512-qAx/CoPJXSAhE+n++XIzRJbhOGyCFKSbCOiLo9Os/pxp/FAGqXnTzAOhtf6z6olfMlpSRysUWqKzVYQT1g+OLA==
+"@crocswap-libs/sdk@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@crocswap-libs/sdk/-/sdk-2.0.1.tgz#437e61fa5c71107fce2e06ac13bd46a1e271cbc1"
+  integrity sha512-F8eB5N1ZQrTtvDyXmDH1eYYGVwzdnTTJmOeryClor99Jf1y937yviquzyvT+KODl1aGtyI17guD48t/SKbGlLA==
   dependencies:
     ethers "^6.13.4"
 
@@ -6469,10 +6469,10 @@ mlly@^1.7.1, mlly@^1.7.2:
     pkg-types "^1.2.0"
     ufo "^1.5.4"
 
-modern-screenshot@^4.4.25:
-  version "4.4.39"
-  resolved "https://registry.yarnpkg.com/modern-screenshot/-/modern-screenshot-4.4.39.tgz#4c8b7a9ecb899e68b6d4111abfa71043f326847a"
-  integrity sha512-p+I4yLZUDnoJMa5zoi+71nLQmoLQ6WRU4W8vZu1BZk2PlIYOz5mGnj9/7t2lGWKYeOr4zo6pajhY0/9TS5Zcdw==
+modern-screenshot@^4.5.5:
+  version "4.5.5"
+  resolved "https://registry.yarnpkg.com/modern-screenshot/-/modern-screenshot-4.5.5.tgz#76346f1b1685aaf537f2d9d44d07de3c9aa6a5eb"
+  integrity sha512-k5AC0UjY8YccnKn53upeQMzgDdPYkDN/706ma3yPHCwOZi+AoL0NeMlLS3nQwA/s0xrM7s8WO+UWnx5YJNpQeA==
 
 moment@^2.30.1:
   version "2.30.1"
@@ -6952,10 +6952,10 @@ prettier-linter-helpers@^1.0.0:
   dependencies:
     fast-diff "^1.1.2"
 
-prettier@^3.3.3:
-  version "3.3.3"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.3.3.tgz#30c54fe0be0d8d12e6ae61dbb10109ea00d53105"
-  integrity sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==
+prettier@^3.4.2:
+  version "3.4.2"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.4.2.tgz#a5ce1fb522a588bf2b78ca44c6e6fe5aa5a2b13f"
+  integrity sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ==
 
 pretty-format@^27.0.2:
   version "27.5.1"

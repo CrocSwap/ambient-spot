@@ -17,6 +17,9 @@ interface AcitivtyIndicatorProps {
 
     showNotificationTable: boolean;
     setShowNotificationTable: Dispatch<SetStateAction<boolean>>;
+
+    showRedDot: boolean;
+    setShowRedDot: Dispatch<SetStateAction<boolean>>;
 }
 const animStates = {
     hidden: { scale: 0, opacity: 0 },
@@ -28,6 +31,8 @@ const animStates = {
 const ActivityIndicator = (props: AcitivtyIndicatorProps) => {
     const { appHeaderDropdown } = useContext(AppStateContext);
     const { platformName } = useContext(BrandContext);
+
+    const { showRedDot, setShowRedDot } = props;
 
     const controls = useAnimation();
     const isFirstRun = useRef(true);
@@ -51,6 +56,8 @@ const ActivityIndicator = (props: AcitivtyIndicatorProps) => {
         if (!showNotificationTable) {
             appHeaderDropdown.setIsActive(true);
         } else appHeaderDropdown.setIsActive(false);
+
+        setShowRedDot(false);
     };
 
     const isFuta = ['futa'].includes(platformName);
@@ -97,6 +104,7 @@ const ActivityIndicator = (props: AcitivtyIndicatorProps) => {
                             {value}
                         </span>
                     </motion.div>
+                    {showRedDot && <span className={styles.redDot} />}
                 </motion.button>
             )}
         </AnimatePresence>

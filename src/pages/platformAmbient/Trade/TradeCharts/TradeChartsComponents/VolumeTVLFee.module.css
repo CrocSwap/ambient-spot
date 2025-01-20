@@ -51,7 +51,7 @@
     color: var(--text2);
     text-align: center;
     position: relative;
-
+text-transform: uppercase;
     outline: none;
     border: none;
 

@@ -44,7 +44,7 @@ export interface AppStateContextIF {
         close: () => void;
     };
     isUserIdle: boolean;
-    isUserIdle40min: boolean;
+    isUserIdle60min: boolean;
     activeNetwork: NetworkIF;
     chooseNetwork: (network: NetworkIF) => void;
     layout: {
@@ -65,7 +65,7 @@ export const AppStateContextProvider = (props: {
     const [isChatEnabled, setIsChatEnabled] = useState(CHAT_ENABLED);
     const [isUserOnline, setIsUserOnline] = useState(navigator.onLine);
     const [isUserIdle, setIsUserIdle] = useState(false);
-    const [isUserIdle40min, setIsUserIdle40min] = useState(false);
+    const [isUserIdle60min, setIsUserIdle60min] = useState(false);
 
     // layout---------------
 
@@ -141,13 +141,13 @@ export const AppStateContextProvider = (props: {
         setIsUserIdle(true);
     };
 
-    const onIdle40 = () => {
-        setIsUserIdle40min(true);
+    const onIdle60min = () => {
+        setIsUserIdle60min(true);
     };
 
     const onActive = () => {
         setIsUserIdle(false);
-        setIsUserIdle40min(false);
+        setIsUserIdle60min(false);
     };
 
     // Custom visibility change handler to trigger onActive when the tab becomes visible
@@ -203,9 +203,9 @@ export const AppStateContextProvider = (props: {
     });
 
     useIdleTimer({
-        onIdle: onIdle40,
+        onIdle: onIdle60min,
         onActive,
-        timeout: 1000 * 60 * 40, // set user to idle after 40 minutes
+        timeout: 1000 * 60 * 60, // set user to idle after 60 minutes
         promptTimeout: 0,
         events: [
             'mousemove',
@@ -278,7 +278,7 @@ export const AppStateContextProvider = (props: {
             server: { isEnabled: isServerEnabled },
             isUserOnline,
             isUserIdle,
-            isUserIdle40min,
+            isUserIdle60min,
             subscriptions: { isEnabled: areSubscriptionsEnabled },
             walletModal: {
                 isOpen: isGateWalletModalOpen,

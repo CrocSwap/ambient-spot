@@ -156,7 +156,7 @@ export default function TabComponent(props: TabPropsIF) {
                 setActiveTradeTab(currentTabData.label.toLowerCase());
             }
         }
-    }, [data, outsideControl]);
+    }, [data, selectedTab.label]);
 
     function handleOutside2() {
         if (!outsideControl) {

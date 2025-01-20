@@ -7,6 +7,7 @@ import Swap from '../../platformAmbient/Trade/Swap/Swap';
 import Trade from '../../platformAmbient/Trade/Trade';
 import styles from './SwapFuta.module.css';
 import FutaDivider2 from '../../../components/Futa/Divider/FutaDivider2';
+import HexReveal from '../Home/Animations/HexReveal';
 
 function SwapFuta() {
     const tradeWrapperID = 'swapFutaTradeWrapper';
@@ -116,11 +117,15 @@ function SwapFuta() {
             {!isFullScreen && (
                 <div>
                     <span id={tradeWrapperID}>
-                        <p className={styles.label}>order</p>
+                        <HexReveal>
+                            <p className={styles.label}>order</p>
+                        </HexReveal>
                         <FutaDivider2 />
                         <Swap isOnTradeRoute />
                     </span>
-                    <p className={styles.label}>comments</p>
+                    <HexReveal>
+                        <p className={styles.label}>comments</p>
+                    </HexReveal>
                     <FutaDivider2 />
                     <Comments
                         isForTrade={true}

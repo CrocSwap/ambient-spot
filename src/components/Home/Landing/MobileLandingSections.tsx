@@ -26,7 +26,8 @@ import TradeNowButton from './TradeNowButton/TradeNowButton';
 
 export default function MobileLandingSections() {
     const { isActiveNetworkL2 } = useContext(ChainDataContext);
-    const { showPoints, cobrandingLogo } = useContext(BrandContext);
+    const { showPoints, cobrandingLogo, showDexStats } =
+        useContext(BrandContext);
 
     const [isIPhone, setIsIPhone] = useState(false);
     useEffect(() => {
@@ -135,7 +136,7 @@ export default function MobileLandingSections() {
         </FlexContainer>
     );
 
-    const statsSection = (
+    const statsSection = showDexStats ? (
         <MobileCard
             flexDirection='column'
             fullWidth
@@ -145,7 +146,7 @@ export default function MobileLandingSections() {
             <MobileBg4 className={styles.home4} />
             <Stats />
         </MobileCard>
-    );
+    ) : null;
 
     const secondRow = (
         <MobileCard

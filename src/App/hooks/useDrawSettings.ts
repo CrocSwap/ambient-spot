@@ -16,7 +16,7 @@ export const useDrawSettings = (chartThemeColors: ChartThemeIF | undefined) => {
             : '#7371fc';
 
     const d3BackgroundColor = chartThemeColors
-        ? chartThemeColors.drawngShapeDefaultColor?.copy()
+        ? chartThemeColors.drawngShapeDefaultColor
         : undefined;
 
     if (d3BackgroundColor) d3BackgroundColor.opacity = 0.15;

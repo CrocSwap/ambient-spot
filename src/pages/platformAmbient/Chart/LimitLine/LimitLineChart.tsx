@@ -12,6 +12,7 @@ import {
     setCanvasResolution,
 } from '../ChartUtils/chartUtils';
 import { createTriangle } from '../ChartUtils/triangle';
+import { ChartContext } from '../../../../contexts';
 
 interface propsIF {
     scaleData: scaleData | undefined;
@@ -20,8 +21,6 @@ interface propsIF {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     setLimit: any;
     limit: number;
-    lineSellColor: string;
-    lineBuyColor: string;
     isUserConnected: boolean | undefined;
     poolPriceDisplay: number;
     sellOrderStyle: string;
@@ -39,8 +38,6 @@ export default function LimitLineChart(props: propsIF) {
         scaleData,
         isDenomBase,
         period,
-        lineSellColor,
-        lineBuyColor,
         isUserConnected,
         setLimit,
         poolPriceDisplay,
@@ -53,6 +50,8 @@ export default function LimitLineChart(props: propsIF) {
     const d3CanvasLimitLine = useRef<HTMLCanvasElement | null>(null);
 
     const location = useLocation();
+
+    const { chartThemeColors } = useContext(ChartContext);
 
     const { pool } = useContext(PoolContext);
     const { limitTick } = useContext(TradeDataContext);
@@ -92,7 +91,7 @@ export default function LimitLineChart(props: propsIF) {
                 return limitLine;
             });
         }
-    }, [scaleData, lineSellColor, lineBuyColor, isUserConnected]);
+    }, [scaleData, isUserConnected]);
 
     /**
      * This useEffect block handles the drawing  of limit lines and triangle markers on the canvas
@@ -156,17 +155,9 @@ export default function LimitLineChart(props: propsIF) {
      */
     useEffect(() => {
         if (triangleLimit !== undefined) {
-            let color = 'rgba(235, 235, 255)';
+            const color = chartThemeColors?.triangleColor;
 
             triangleLimit.decorate((context: any) => {
-                if (location.pathname.includes('/limit')) {
-                    if (checkLimitOrder) {
-                        color =
-                            sellOrderStyle === 'order_sell'
-                                ? lineSellColor
-                                : lineBuyColor;
-                    }
-                }
                 const rotateDegree = 90;
                 context.rotate((rotateDegree * Math.PI) / 180);
                 context.strokeStyle = color;
@@ -175,12 +166,10 @@ export default function LimitLineChart(props: propsIF) {
         }
 
         if (limitLine !== undefined && location.pathname.includes('/limit')) {
+            const color = chartThemeColors?.limitLineColor;
+
             limitLine.decorate((context: any) => {
-                context.strokeStyle = checkLimitOrder
-                    ? sellOrderStyle === 'order_sell'
-                        ? lineSellColor
-                        : lineBuyColor
-                    : 'rgba(235, 235, 255)';
+                context.strokeStyle = color;
                 context.pointerEvents = 'none';
                 context.lineWidth = 1.5;
                 context.fillStyle = 'transparent';

@@ -248,7 +248,7 @@ export default function TransactionDetailsLiquidityGraph(props: propsIF) {
     }, [poolPriceDisplay]);
 
     useEffect(() => {
-        if (yScale) {
+        if (yScale && chartThemeColors) {
             const unparsedLiquidityData = liquidityData.liquidityDataAsk.concat(
                 liquidityData.liquidityDataBid,
             );

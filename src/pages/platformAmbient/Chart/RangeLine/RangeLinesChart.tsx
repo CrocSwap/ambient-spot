@@ -14,6 +14,7 @@ import {
     setCanvasResolution,
 } from '../ChartUtils/chartUtils';
 import { createTriangle } from '../ChartUtils/triangle';
+import { ChartContext } from '../../../../contexts';
 
 interface propsIF {
     scaleData: scaleData | undefined;
@@ -34,8 +35,6 @@ interface propsIF {
     liqMode: string;
     liqTransitionPointforCurve: number;
     liqTransitionPointforDepth: number;
-    lineSellColor: string;
-    lineBuyColor: string;
 }
 
 export default function RangeLinesChart(props: propsIF) {
@@ -57,8 +56,6 @@ export default function RangeLinesChart(props: propsIF) {
         liqMode,
         liqTransitionPointforCurve,
         liqTransitionPointforDepth,
-        lineSellColor,
-        lineBuyColor,
     } = props;
 
     const d3CanvasRangeLine = useRef<HTMLCanvasElement | null>(null);
@@ -73,6 +70,8 @@ export default function RangeLinesChart(props: propsIF) {
         advancedMode,
         simpleRangeWidth,
     } = useContext(RangeContext);
+
+    const { chartThemeColors } = useContext(ChartContext);
 
     const tokenADecimals = tokenA.decimals;
     const tokenBDecimals = tokenB.decimals;
@@ -95,15 +94,17 @@ export default function RangeLinesChart(props: propsIF) {
                 .yScale(scaleData?.yScale);
 
             horizontalLine.decorate((context: any) => {
-                context.visibility =
-                    location.pathname.includes('pool') ||
-                    location.pathname.includes('reposition')
-                        ? 'visible'
-                        : 'hidden';
-                context.strokeStyle = 'var(--accent2)';
-                context.fillStyle = 'transparent';
-                context.pointerEvents = 'none';
-                context.lineWidth = 1.5;
+                if (chartThemeColors) {
+                    context.visibility =
+                        location.pathname.includes('pool') ||
+                        location.pathname.includes('reposition')
+                            ? 'visible'
+                            : 'hidden';
+                    context.strokeStyle = 'var(--accent2)';
+                    context.fillStyle = 'transparent';
+                    context.pointerEvents = 'none';
+                    context.lineWidth = 1.5;
+                }
             });
 
             const horizontalBand = d3fc
@@ -113,15 +114,14 @@ export default function RangeLinesChart(props: propsIF) {
                 .fromValue((d: any) => d[0])
                 .toValue((d: any) => d[1])
                 .decorate((context: any) => {
-                    const fillColor = '#6A6A6D';
+                    if (chartThemeColors) {
+                        const fillColor =
+                            chartThemeColors.rangeLinesColor.copy();
 
-                    const d3AreaFillColor = d3.color(fillColor);
+                        fillColor.opacity = 0.075;
 
-                    if (d3AreaFillColor) d3AreaFillColor.opacity = 0.075;
-
-                    context.fillStyle = d3AreaFillColor
-                        ? d3AreaFillColor
-                        : '#7371FC1A';
+                        context.fillStyle = fillColor;
+                    }
                 });
 
             const triangleRange = createTriangle(
@@ -230,16 +230,10 @@ export default function RangeLinesChart(props: propsIF) {
     }, [ranges, horizontalLine, horizontalBand, triangle, location.pathname]);
 
     useEffect(() => {
-        const passValue =
-            liqMode === 'curve'
-                ? liqTransitionPointforCurve
-                : liqTransitionPointforDepth;
+        if (triangle !== undefined && chartThemeColors) {
+            const color = chartThemeColors.triangleColor;
 
-        if (triangle !== undefined) {
-            let color = 'rgba(235, 235, 255)';
-
-            triangle.decorate((context: any, datum: any) => {
-                color = datum > passValue ? lineSellColor : lineBuyColor;
+            triangle.decorate((context: any) => {
                 const rotateDegree = 90;
                 context.rotate((rotateDegree * Math.PI) / 180);
                 context.strokeStyle = color;
@@ -250,24 +244,26 @@ export default function RangeLinesChart(props: propsIF) {
         if (
             horizontalLine !== undefined &&
             (location.pathname.includes('pool') ||
-                location.pathname.includes('reposition'))
+                location.pathname.includes('reposition')) &&
+            chartThemeColors
         ) {
-            horizontalLine.decorate((context: any, datum: any) => {
+            const color = chartThemeColors.rangeLinesColor.copy();
+
+            horizontalLine.decorate((context: any) => {
                 context.visibility =
                     location.pathname.includes('pool') ||
                     location.pathname.includes('reposition')
                         ? 'visible'
                         : 'hidden';
-                context.strokeStyle =
-                    datum.value > passValue ? lineSellColor : lineBuyColor;
+
+                color.opacity = 1;
+                context.strokeStyle = color;
                 context.pointerEvents = 'none';
                 context.lineWidth = 1.5;
                 context.fillStyle = 'transparent';
             });
         }
     }, [
-        lineSellColor,
-        lineBuyColor,
         horizontalLine,
         ranges,
         triangle,

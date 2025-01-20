@@ -566,11 +566,20 @@ export const getCssVariable = (activeSkin: skins, variableName: string) => {
         '[data-theme="' + activeSkin + '"]',
     ) as Element;
 
+    if (!themeElement) {
+        console.error(
+            `theme element not found while accessing CSS variable: ${variableName}`,
+        );
+        return d3.rgb(128, 128, 128); // Neutral gray as fallback
+    }
+
     const value = getComputedStyle(themeElement)
         .getPropertyValue(variableName)
         .trim();
 
-    return d3.color(value);
+    const res = d3.color(value);
+
+    return res as d3.RGBColor | d3.HSLColor;
 };
 
 export const getLast15Minutes = (period: number) => {

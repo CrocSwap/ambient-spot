@@ -71,7 +71,7 @@ const HexReveal: React.FC<HexRevealProps> = ({
         }, interval);
 
         return () => clearInterval(intervalId);
-    }, [children, interval]);
+    }, []);
 
     return (
         <>

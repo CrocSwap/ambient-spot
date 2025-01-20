@@ -42,8 +42,8 @@ import { linkGenMethodsIF, useLinkGen } from '../../../utils/hooks/useLinkGen';
 import { useMediaQuery } from '../../../utils/hooks/useMediaQuery';
 import BreadCrumb from '../Breadcrumb/Breadcrumb';
 import Comments from '../Comments/Comments';
-import { tickerDisplayElements } from './tickerDisplayElements';
 import FutaDivider2 from '../Divider/FutaDivider2';
+import { tickerDisplayElements } from './tickerDisplayElements';
 interface PropsIF {
     isAuctionPage?: boolean;
     placeholderTicker?: boolean;

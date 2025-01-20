@@ -13,6 +13,7 @@ import { CachedDataContext } from '../../../../contexts/CachedDataContext';
 import { ChartContext } from '../../../../contexts/ChartContext';
 import { CrocEnvContext } from '../../../../contexts/CrocEnvContext';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
+import { updateZeroPriceCandles } from '../../../../pages/platformAmbient/Chart/ChartUtils/candleDataUtils';
 import {
     lineValue,
     renderCanvasArray,
@@ -25,7 +26,6 @@ import {
 } from '../../../../utils/numbers';
 import Spinner from '../../Spinner/Spinner';
 import './TransactionDetailsGraph.css';
-import TransactionDetailsLiquidityGraph from './TransactionDetailsLiquidityGraph';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface TransactionDetailsGraphIF {
@@ -34,6 +34,8 @@ interface TransactionDetailsGraphIF {
     transactionType: string;
     isBaseTokenMoneynessGreaterOrEqual: boolean;
     isAccountView: boolean;
+    middlePriceDisplay?: string | undefined;
+    middlePriceDisplayDenomByMoneyness?: string | undefined;
 }
 
 export default function TransactionDetailsGraph(
@@ -45,6 +47,8 @@ export default function TransactionDetailsGraph(
         transactionType,
         isBaseTokenMoneynessGreaterOrEqual,
         isAccountView,
+        middlePriceDisplay,
+        middlePriceDisplayDenomByMoneyness,
     } = props;
     const {
         activeNetwork: { GCGO_URL, chainId, poolIndex },
@@ -63,17 +67,8 @@ export default function TransactionDetailsGraph(
     const baseTokenAddress = tx.base;
     const quoteTokenAddress = tx.quote;
 
-    const {
-        isDenomBase,
-        currentPoolPriceTick,
-        baseToken: baseOnTrade,
-        quoteToken: quoteOnTrade,
-    } = useContext(TradeDataContext);
+    const { isDenomBase } = useContext(TradeDataContext);
     const { chartThemeColors } = useContext(ChartContext);
-
-    const txPoolMatchesTrade =
-        baseTokenAddress.toLowerCase() === baseOnTrade.address.toLowerCase() &&
-        quoteTokenAddress.toLowerCase() === quoteOnTrade.address.toLowerCase();
 
     const [graphData, setGraphData] = useState<any>();
 
@@ -94,8 +89,6 @@ export default function TransactionDetailsGraph(
     const [period, setPeriod] = useState<number | undefined>();
     const [yAxis, setYaxis] = useState<any>();
     const [xAxis, setXaxis] = useState<any>();
-    const [poolPricePixel, setPoolPricePixel] = useState(0);
-    const [poolPrice, setPoolPrice] = useState(0);
     const takeSmallerPeriodForRemoveRange = (diff: number) => {
         if (diff <= 600) {
             return 300;
@@ -256,16 +249,6 @@ export default function TransactionDetailsGraph(
                         quoteDecimals,
                     );
 
-                    const poolPriceDisplay = (
-                        !isAccountView
-                            ? isDenomBase
-                            : !isBaseTokenMoneynessGreaterOrEqual
-                    )
-                        ? 1 / poolPrice
-                        : poolPrice;
-
-                    setPoolPrice(poolPriceDisplay);
-
                     const graphData = await fetchCandleSeriesCroc(
                         fetchEnabled,
                         chainId,
@@ -279,13 +262,16 @@ export default function TransactionDetailsGraph(
                         crocEnv,
                         cachedFetchTokenPrice,
                         cachedQuerySpotPrice,
-                        poolPriceDisplay,
                     );
 
                     if (graphData) {
                         setIsDataEmpty(false);
+                        const updatedZeroCandles = updateZeroPriceCandles(
+                            graphData.candles,
+                            poolPrice,
+                        );
                         setGraphData(() => {
-                            return graphData.candles;
+                            return updatedZeroCandles;
                         });
                     } else {
                         setGraphData(() => {
@@ -302,13 +288,6 @@ export default function TransactionDetailsGraph(
 
     useEffect(() => {
         if (scaleData !== undefined && chartThemeColors) {
-            const d3LineColor = chartThemeColors.text2?.copy();
-            const d3RangeTriangleColor = chartThemeColors.text2?.copy();
-            const d3BandColor = chartThemeColors.text2?.copy();
-
-            if (d3RangeTriangleColor) d3RangeTriangleColor.opacity = 0.8;
-            if (d3BandColor) d3BandColor.opacity = 0.075;
-
             const lineSeries = d3fc
                 .seriesSvgLine()
                 .xScale(scaleData?.xScale)
@@ -326,10 +305,7 @@ export default function TransactionDetailsGraph(
                 .decorate((selection: any) => {
                     selection
                         .enter()
-                        .style(
-                            'stroke',
-                            d3LineColor ? d3LineColor.toString() : '#7371FC',
-                        );
+                        .style('stroke', chartThemeColors.shareableLineColor);
                 });
 
             setLineSeries(() => {
@@ -347,12 +323,7 @@ export default function TransactionDetailsGraph(
                 selection.enter().attr('class', 'priceLine');
                 selection
                     .enter()
-                    .attr(
-                        'stroke',
-                        d3RangeTriangleColor
-                            ? d3RangeTriangleColor.toString()
-                            : 'rgba(97, 71, 247, 0.8)',
-                    );
+                    .attr('stroke', chartThemeColors.triangleColor);
             });
 
             setPriceLine(() => {
@@ -459,15 +430,11 @@ export default function TransactionDetailsGraph(
                             )
                             .style(
                                 'stroke',
-                                d3RangeTriangleColor
-                                    ? d3RangeTriangleColor.toString()
-                                    : 'rgba(97, 71, 247, 0.8)',
+                                chartThemeColors.triangleColor.toString(),
                             )
                             .style(
                                 'fill',
-                                d3RangeTriangleColor
-                                    ? d3RangeTriangleColor.toString()
-                                    : 'rgba(97, 71, 247, 0.8)',
+                                chartThemeColors.triangleColor.toString(),
                             );
                     });
                 });
@@ -512,14 +479,30 @@ export default function TransactionDetailsGraph(
                 .crossValue((d: any) => d.x)
                 .mainValue((d: any) => d.y)
                 .size(400)
-                .decorate((sel: any) => {
-                    sel.enter().attr('fill', 'rgba(255, 255, 255, 0.2)');
-                    sel.enter().attr('stroke', 'rgba(255, 255, 255, 0.6)');
+                .decorate((sel: any, d: any) => {
+                    if (d.length > 0 && d[0].isBuy !== undefined) {
+                        const strokeColor = d[0].isBuy
+                            ? chartThemeColors.upCandleBorderColor.copy()
+                            : chartThemeColors.downCandleBorderColor.copy();
+
+                        const circleFillColor = d[0].isBuy
+                            ? chartThemeColors.upCandleBodyColor.copy()
+                            : chartThemeColors.downCandleBodyColor.copy();
+
+                        circleFillColor.opacity = 0.3;
+
+                        sel.enter().attr('fill', circleFillColor);
+                        sel.enter().attr('stroke', strokeColor);
+                    }
                 });
 
             setCrossPoint(() => {
                 return crossPoint;
             });
+
+            const fillColor = chartThemeColors.rangeLinesColor.copy();
+
+            fillColor.opacity = 0.075;
 
             const horizontalBand = d3fc
                 .annotationSvgBand()
@@ -540,12 +523,7 @@ export default function TransactionDetailsGraph(
                             'transform',
                             'translateX(' + scaleData.xScale(time) + 'px )',
                         );
-                    selection
-                        .select('path')
-                        .attr(
-                            'fill',
-                            d3BandColor ? d3BandColor.toString() : '#7371FC1A',
-                        );
+                    selection.select('path').attr('fill', fillColor);
                 });
 
             setHorizontalBand(() => {
@@ -582,28 +560,30 @@ export default function TransactionDetailsGraph(
     }
 
     useEffect(() => {
-        if (d3PlotGraph) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const svgDiv = d3.select(d3PlotGraph.current) as any;
-
-            if (svgDiv) {
+        try {
+            if (d3PlotGraph) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const resizeObserver = new ResizeObserver((result: any) => {
-                    const width = result[0].contentRect.width;
+                const svgDiv = d3.select(d3PlotGraph.current) as any;
 
-                    if (svgWidth !== width) {
-                        setSvgWidth(width);
-                    } else {
-                        graphData &&
-                            transactionType !== 'liqchange' &&
-                            setIsDataLoading(false);
-                    }
-                });
+                if (svgDiv) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const resizeObserver = new ResizeObserver((result: any) => {
+                        const width = result[0].contentRect.width;
 
-                resizeObserver.observe(svgDiv.node());
+                        if (svgWidth !== width) {
+                            setSvgWidth(width);
+                        } else {
+                            graphData && setIsDataLoading(false);
+                        }
+                    });
 
-                return () => resizeObserver.unobserve(svgDiv.node());
+                    resizeObserver.observe(svgDiv.node());
+
+                    return () => resizeObserver.unobserve(svgDiv.node());
+                }
             }
+        } catch (error) {
+            console.warn();
         }
     }, [graphData, svgWidth]);
 
@@ -926,31 +906,6 @@ export default function TransactionDetailsGraph(
     }, [scaleData]);
 
     useEffect(() => {
-        if (
-            poolPricePixel &&
-            scaleData &&
-            graphData.length > 0 &&
-            transactionType === 'liqchange'
-        ) {
-            const lastDataPixel = scaleData.xScale(graphData[0].time * 1000);
-            const diff = lastDataPixel - poolPricePixel * 10 + 10;
-
-            if (lastDataPixel > poolPricePixel * 10) {
-                const newMaxDomain = scaleData?.xScale
-                    .invert(svgWidth + diff)
-                    .getTime();
-
-                const oldMaxDomain = scaleData?.xScale.domain()[1];
-                scaleData?.xScale.domain([
-                    scaleData?.xScale.domain()[0],
-                    Math.max(newMaxDomain, oldMaxDomain),
-                ]);
-            }
-            render();
-        }
-    }, [scaleData, poolPricePixel, graphData]);
-
-    useEffect(() => {
         if (scaleData) {
             const d3XaxisCanvas = d3
                 .select(d3Xaxis.current)
@@ -1223,6 +1178,17 @@ export default function TransactionDetailsGraph(
         });
     };
 
+    const middlePriceDisplayNum = parseFloat(
+        middlePriceDisplay?.replace(',', '') || '0',
+    );
+    const middlePriceDisplayDenomByMoneynessNum = parseFloat(
+        middlePriceDisplayDenomByMoneyness?.replace(',', '') || '0',
+    );
+
+    const middlePriceNum = isAccountView
+        ? middlePriceDisplayDenomByMoneynessNum
+        : middlePriceDisplayNum;
+
     const drawChart = useCallback(
         (
             graphData: any,
@@ -1272,20 +1238,23 @@ export default function TransactionDetailsGraph(
                             if (tx.claimableLiq > 0) {
                                 addExtraCandle(
                                     time / 1000,
-                                    tx.askTickInvPriceDecimalCorrected,
-                                    tx.askTickPriceDecimalCorrected,
+                                    middlePriceNum,
+                                    middlePriceNum,
                                 );
+
+                                const isDenomBaseLocal = isAccountView
+                                    ? !isBaseTokenMoneynessGreaterOrEqual
+                                    : isDenomBase;
+
                                 crossPointJoin(svg, [
                                     [
                                         {
                                             x: time,
-                                            y: (
-                                                !isAccountView
-                                                    ? isDenomBase
-                                                    : !isBaseTokenMoneynessGreaterOrEqual
-                                            )
-                                                ? tx.askTickInvPriceDecimalCorrected
-                                                : tx.askTickPriceDecimalCorrected,
+                                            y: middlePriceNum,
+                                            isBuy:
+                                                (isDenomBaseLocal &&
+                                                    !tx.isBid) ||
+                                                (!isDenomBaseLocal && tx.isBid),
                                         },
                                     ],
                                 ]).call(crossPoint);
@@ -1298,7 +1267,7 @@ export default function TransactionDetailsGraph(
                                                 : !isBaseTokenMoneynessGreaterOrEqual
                                         )
                                             ? tx.askTickInvPriceDecimalCorrected
-                                            : tx.askTickPriceDecimalCorrected,
+                                            : tx.bidTickPriceDecimalCorrected,
 
                                         x: time,
                                     },
@@ -1491,17 +1460,21 @@ export default function TransactionDetailsGraph(
                         }
 
                         if (transactionType === 'swap' && tx !== undefined) {
+                            const isDenomBaseLocal = isAccountView
+                                ? !isBaseTokenMoneynessGreaterOrEqual
+                                : isDenomBase;
+
                             crossPointJoin(svg, [
                                 [
                                     {
                                         x: tx.txTime * 1000,
-                                        y: (
-                                            !isAccountView
-                                                ? isDenomBase
-                                                : !isBaseTokenMoneynessGreaterOrEqual
-                                        )
+                                        y: isDenomBaseLocal
                                             ? tx.swapInvPriceDecimalCorrected
                                             : tx.swapPriceDecimalCorrected,
+
+                                        isBuy: isDenomBaseLocal
+                                            ? !tx.isBuy
+                                            : tx.isBuy,
                                     },
                                 ],
                             ]).call(crossPoint);
@@ -1579,32 +1552,6 @@ export default function TransactionDetailsGraph(
                                 'minmax(0em, max-content) auto 1fr auto',
                         }}
                     >
-                        {transactionType === 'liqchange' && (
-                            <TransactionDetailsLiquidityGraph
-                                tx={tx}
-                                isDenomBase={
-                                    !(!isAccountView
-                                        ? isDenomBase
-                                        : !isBaseTokenMoneynessGreaterOrEqual)
-                                }
-                                yScale={scaleData?.yScale}
-                                transactionType={transactionType}
-                                poolPriceDisplay={poolPrice}
-                                setPoolPricePixel={setPoolPricePixel}
-                                poolPricePixel={poolPricePixel}
-                                svgWidth={svgWidth}
-                                lastCandleData={
-                                    graphData ? graphData[0] : undefined
-                                }
-                                setIsDataLoading={setIsDataLoading}
-                                chartThemeColors={chartThemeColors}
-                                currentPoolPriceTick={
-                                    isAccountView && !txPoolMatchesTrade
-                                        ? undefined
-                                        : currentPoolPriceTick
-                                }
-                            />
-                        )}
                         <d3fc-svg
                             id='d3PlotGraph'
                             ref={d3PlotGraph}

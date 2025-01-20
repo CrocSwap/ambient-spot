@@ -55,6 +55,18 @@
     --chart-positive: #26a69a;
     --chart-negative: #ef5350;
 
+    --chart-positive-body: #26a69a;
+    --chart-positive-border: #26a69a;
+    --chart-negative-body: #ef5350;
+    --chart-negative-border: #ef5350;
+    --chart-selected-color: #e480ff;
+    --chart-range-lines-color: #6a6a6d;
+    --chart-limit-line-color: #6a6a6d;
+    --shareable-line-color: #8b98a5;
+    --triangle-color: #8b98a5;
+    --liq-ask-color: #26a69a;
+    --liq-bid-color: #ef5350;
+
     --other-green: #41d18e;
     --other-red: #e75670;
 
@@ -223,6 +235,17 @@
 
     --positive: #62f1b0;
     --negative: #f16962;
+    --chart-positive-body: #29585d;
+    --chart-positive-border: #29585d;
+    --chart-negative-body: #5c6f72;
+    --chart-negative-border: #5c6f72;
+    --chart-selected-color: #e480ff;
+    --liq-ask-color: #29585d;
+    --liq-bid-color: #5c6f72;
+    --chart-range-lines-color: #5c6f72;
+    --chart-limit-line-color: #5c6f72;
+    --shareable-line-color: #5c6f72;
+    --triangle-color: #5c6f72;
 
     --other-green: #6bae52;
     --other-red: #e75670;

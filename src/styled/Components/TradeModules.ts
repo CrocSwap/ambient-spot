@@ -314,7 +314,43 @@ export const RefreshButton = styled(IconButton)`
     }
 `;
 
-export const ExtraInfoContainer = styled(FlexContainer)<{ active: boolean }>`
+export const RefreshButtonFuta = styled.button`
+    display: flex;
+    width: 82px;
+    margin-left: auto;
+    padding: 0px 12px;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background: var(--dark2, #14161a);
+    color: var(--text2, #939c9e);
+    text-align: center;
+
+    font-family: 'Fira Mono';
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    letter-spacing: -0.36px;
+
+    border: none;
+    cursor: pointer;
+    transition: color 0.3s ease;
+
+    &:hover {
+        color: var(--text1);
+    }
+
+    &:focus-visible {
+        color: var(--text1);
+        cursor: pointer;
+    }
+`;
+
+export const ExtraInfoContainer = styled(FlexContainer)<{
+    active: boolean;
+    isFuta?: boolean;
+}>`
     border-radius: var(--border-radius);
 
     ${({ active }) =>
@@ -349,6 +385,15 @@ export const ExtraInfoContainer = styled(FlexContainer)<{ active: boolean }>`
             background: transparent;
         }
     `}
+
+    ${({ isFuta }) =>
+        isFuta
+            ? `
+        & {
+          text-transform: uppercase !important;
+        }
+    `
+            : ''}
 `;
 
 export const ExtraDetailsContainer = styled.div`
@@ -554,8 +599,10 @@ export const LPButton = styled.button`
     letter-spacing: -0.36px;
     text-decoration-line: underline;
     transition: color 0.3s ease;
-    cursor: pointer;
+    cursor: pointer !important;
     text-transform: uppercase;
+    width: 150px;
+    margin: 0 auto;
 
     &:hover {
         color: var(--accent2);

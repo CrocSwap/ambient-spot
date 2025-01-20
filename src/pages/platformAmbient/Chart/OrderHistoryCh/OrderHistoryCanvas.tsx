@@ -1,8 +1,7 @@
 import * as d3 from 'd3';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { diffHashSig } from '../../../../ambient-utils/dataLayer';
 import { TransactionIF } from '../../../../ambient-utils/types';
-import { BrandContext } from '../../../../contexts/BrandContext';
 import {
     lineData,
     renderCanvasArray,
@@ -12,6 +11,7 @@ import {
 import { createCircle } from '../ChartUtils/circle';
 import { createBandArea } from '../Draw/DrawCanvas/BandArea';
 import { createLinearLineSeries } from '../Draw/DrawCanvas/LinearLineSeries';
+import { ChartThemeIF } from '../../../../contexts/ChartContext';
 
 interface OrderHistoryCanvasProps {
     scaleData: scaleData;
@@ -27,6 +27,7 @@ interface OrderHistoryCanvasProps {
     drawSettings: any;
     userTransactionData: TransactionIF[] | undefined;
     circleScale: d3.ScaleLinear<number, number>;
+    chartThemeColors: ChartThemeIF | undefined;
 }
 
 export default function OrderHistoryCanvas(props: OrderHistoryCanvasProps) {
@@ -43,6 +44,7 @@ export default function OrderHistoryCanvas(props: OrderHistoryCanvasProps) {
         drawSettings,
         userTransactionData,
         circleScale,
+        chartThemeColors,
     } = props;
 
     const d3OrderCanvas = useRef<HTMLDivElement | null>(null);
@@ -50,8 +52,6 @@ export default function OrderHistoryCanvas(props: OrderHistoryCanvasProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [bandArea, setBandArea] = useState<any>();
     // const [bandAreaHighlighted, setBandAreaHighlighted] = useState<any>();
-
-    const { platformName } = useContext(BrandContext);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [circleSeries, setCircleSeries] = useState<any>();
@@ -82,7 +82,7 @@ export default function OrderHistoryCanvas(props: OrderHistoryCanvasProps) {
     }
 
     useEffect(() => {
-        if (userTransactionData && circleScale) {
+        if (userTransactionData && circleScale && chartThemeColors) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const circleSerieArray: any[] = [];
 
@@ -93,14 +93,9 @@ export default function OrderHistoryCanvas(props: OrderHistoryCanvasProps) {
                     circleScale(order.totalValueUSD),
                     1,
                     denomInBase,
-                    false,
-                    false,
                     (denomInBase && !order.isBuy) ||
                         (!denomInBase && order.isBuy),
-                    '--chart-negative',
-                    ['futa'].includes(platformName)
-                        ? '--negative'
-                        : '--chart-positive',
+                    chartThemeColors,
                 );
 
                 circleSerieArray.push(circleSerie);
@@ -114,7 +109,7 @@ export default function OrderHistoryCanvas(props: OrderHistoryCanvasProps) {
                 return circleSerieArray;
             });
         }
-    }, [userTransactionData, circleScale]);
+    }, [userTransactionData, circleScale, diffHashSig(chartThemeColors)]);
 
     useEffect(() => {
         if (userTransactionData && scaleData) {

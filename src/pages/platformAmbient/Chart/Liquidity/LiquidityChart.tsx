@@ -435,7 +435,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         lineLiqDepthAskSeries,
         lineLiqDepthBidSeries,
         colorChangeTrigger,
-        chartThemeColors,
+        diffHashSig(chartThemeColors),
     ]);
 
     const clipCanvas = (

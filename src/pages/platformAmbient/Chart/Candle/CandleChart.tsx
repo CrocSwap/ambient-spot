@@ -56,11 +56,6 @@ export default function CandleChart(props: candlePropsIF) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [candlestick, setCandlestick] = useState<any>();
-    const selectedCandleColor = '#E480FF';
-    const crocCandleLightColor = '#26A69A';
-    const crocCandleBorderLightColor = '#26A69A';
-    const crocCandleDarkColor = '#EF5350';
-    const crocCandleBorderDarkColor = '#EF5350';
 
     const bandwidth = useMemo(() => {
         if (candlestick) {
@@ -150,36 +145,23 @@ export default function CandleChart(props: candlePropsIF) {
 
                     const crocColor =
                         close > open
-                            ? chartThemeColors.upCandleBodyColor
-                                ? chartThemeColors.upCandleBodyColor.toString()
-                                : crocCandleLightColor
-                            : chartThemeColors.downCandleBodyColor
-                              ? chartThemeColors.downCandleBodyColor.toString()
-                              : crocCandleDarkColor;
-
+                            ? chartThemeColors.upCandleBodyColor.toString()
+                            : chartThemeColors.downCandleBodyColor.toString();
                     const crocBorderColor =
                         close > open
-                            ? chartThemeColors.upCandleBorderColor
-                                ? chartThemeColors.upCandleBorderColor.toString()
-                                : crocCandleBorderLightColor
-                            : chartThemeColors.downCandleBorderColor
-                              ? chartThemeColors.downCandleBorderColor.toString()
-                              : crocCandleBorderDarkColor;
+                            ? chartThemeColors.upCandleBorderColor.toString()
+                            : chartThemeColors.downCandleBorderColor.toString();
 
                     context.fillStyle =
                         selectedDate !== undefined &&
                         selectedDate === d.time * 1000
-                            ? chartThemeColors.selectedDateFillColor
-                                ? chartThemeColors.selectedDateFillColor.toString()
-                                : selectedCandleColor
+                            ? chartThemeColors.selectedDateFillColor.toString()
                             : crocColor;
 
                     context.strokeStyle =
                         selectedDate !== undefined &&
                         selectedDate === d.time * 1000
-                            ? chartThemeColors.selectedDateFillColor
-                                ? chartThemeColors.selectedDateFillColor.toString()
-                                : selectedCandleColor
+                            ? chartThemeColors.selectedDateFillColor.toString()
                             : crocBorderColor;
 
                     if (d.time * 1000 > visibleDateForCandle) {

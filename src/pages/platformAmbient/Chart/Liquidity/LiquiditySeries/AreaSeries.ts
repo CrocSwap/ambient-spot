@@ -41,9 +41,6 @@ export const getBidPriceValue = (
     }
 };
 
-const liqAskColor = 'rgba(38,166,154, 0.3)';
-const liqBidColor = 'rgba(239, 83, 80, 0.3)';
-
 export function createAreaSeries(
     xScale: d3.ScaleLinear<number, number>,
     yScale: d3.ScaleLinear<number, number>,
@@ -69,21 +66,17 @@ export function decorateForLiquidityArea(
     chartThemeColors: ChartThemeIF,
     isBid: boolean,
 ) {
-    const d3BidColor = chartThemeColors.liqBidColor?.copy();
-    const d3AskColor = chartThemeColors.liqAskColor?.copy();
+    const d3BidColor = chartThemeColors.liqBidColor.copy();
+    const d3AskColor = chartThemeColors.liqAskColor.copy();
 
     if (d3BidColor) d3BidColor.opacity = 0.3;
     if (d3AskColor) d3AskColor.opacity = 0.3;
 
     series.decorate((context: CanvasRenderingContext2D) => {
         if (isBid) {
-            context.fillStyle = d3BidColor
-                ? d3BidColor.toString()
-                : liqBidColor;
+            context.fillStyle = d3BidColor.toString();
         } else {
-            context.fillStyle = d3AskColor
-                ? d3AskColor.toString()
-                : liqAskColor;
+            context.fillStyle = d3AskColor.toString();
         }
     });
 }
@@ -97,36 +90,26 @@ export function createAreaSeriesLiquidity(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     curve: any,
     curveType: 'curve' | 'depth',
-    chartThemeColors?: ChartThemeIF | undefined,
+    chartThemeColors: ChartThemeIF,
 ) {
     return d3fc
         .seriesCanvasArea()
         .orient('horizontal')
         .curve(curve)
         .decorate((context: CanvasRenderingContext2D) => {
-            const d3LiqBidColor =
-                chartThemeColors && chartThemeColors.liqBidColor
-                    ? chartThemeColors.liqBidColor.copy()
-                    : undefined;
+            const d3LiqBidColor = chartThemeColors.liqBidColor.copy();
 
             if (d3LiqBidColor) d3LiqBidColor.opacity = 0.3;
 
-            const d3LiqAskColor =
-                chartThemeColors && chartThemeColors.liqAskColor
-                    ? chartThemeColors.liqAskColor.copy()
-                    : undefined;
+            const d3LiqAskColor = chartThemeColors.liqAskColor.copy();
 
             if (d3LiqAskColor) d3LiqAskColor.opacity = 0.3;
 
             if (liqType === 'bid') {
-                context.fillStyle = d3LiqBidColor
-                    ? d3LiqBidColor.toString()
-                    : liqBidColor;
+                context.fillStyle = d3LiqBidColor.toString();
             }
             if (liqType === 'ask') {
-                context.fillStyle = d3LiqAskColor
-                    ? d3LiqAskColor.toString()
-                    : liqAskColor;
+                context.fillStyle = d3LiqAskColor.toString();
             }
         })
         .mainValue((d: LiquidityRangeIF) => {

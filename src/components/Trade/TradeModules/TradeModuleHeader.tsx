@@ -17,6 +17,8 @@ import { useMediaQuery } from '../../../utils/hooks/useMediaQuery';
 import { useModal } from '../../Global/Modal/useModal';
 import TradeLinks from './TradeLinks';
 import styles from './TradeModuleHeader.module.css';
+import { IoSettingsOutline } from 'react-icons/io5';
+import { brand } from '../../../ambient-utils/constants';
 interface propsIF {
     slippage: SlippageMethodsIF;
     dexBalSwap?: dexBalanceMethodsIF;
@@ -35,6 +37,8 @@ function TradeModuleHeader(props: propsIF) {
     const [isShareModalOpen, openShareModal, closeShareModal] = useModal();
 
     const smallScreen = useMediaQuery('(max-width: 768px)');
+
+    const isFuta = brand === 'futa';
 
     const {
         baseToken,
@@ -97,13 +101,17 @@ function TradeModuleHeader(props: propsIF) {
         <>
             <div style={{ paddingBottom: isSwapPage ? '16px' : '' }}>
                 <header className={styles.main_container}>
-                    <AiOutlineShareAlt
-                        onClick={openShareModal}
-                        id='share_button'
-                        role='button'
-                        tabIndex={0}
-                        aria-label='Share button'
-                    />
+                    {isFuta ? (
+                        <span />
+                    ) : (
+                        <AiOutlineShareAlt
+                            onClick={openShareModal}
+                            id='share_button'
+                            role='button'
+                            tabIndex={0}
+                            aria-label='Share button'
+                        />
+                    )}
 
                     {isSwapPage ? (
                         <h4
@@ -123,6 +131,7 @@ function TradeModuleHeader(props: propsIF) {
                             {isDenomBase ? quoteTokenSymbol : baseTokenSymbol}
                         </h4>
                     )}
+
                     <IconWithTooltip title='Settings' placement='left'>
                         <div
                             onClick={openSettingsModal}
@@ -130,8 +139,19 @@ function TradeModuleHeader(props: propsIF) {
                             role='button'
                             tabIndex={0}
                             aria-label='Settings button'
+                            className={
+                                isFuta ? styles.settings_button_futa : ''
+                            }
                         >
-                            {<SettingsSvg />}
+                            {isFuta ? (
+                                <IoSettingsOutline
+                                    size={18}
+                                    id='swap_settings_symbol'
+                                    aria-label='Chart settings button'
+                                />
+                            ) : (
+                                <SettingsSvg />
+                            )}
                         </div>
                     </IconWithTooltip>
                 </header>

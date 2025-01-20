@@ -169,6 +169,39 @@ export default function LimitRate(props: propsIF) {
                     updateURL({ update: [['limitTick', newTopOfBookLimit]] });
                     setPriceInputFieldBlurred(true);
                 }
+                setOnePercentTickValue(
+                    isSellTokenBase
+                        ? pinTickToTickLower(
+                              currentPoolPriceTick - 1 * 100,
+                              gridSize,
+                          )
+                        : pinTickToTickUpper(
+                              currentPoolPriceTick + 1 * 100,
+                              gridSize,
+                          ),
+                );
+                setFivePercentTickValue(
+                    isSellTokenBase
+                        ? pinTickToTickLower(
+                              currentPoolPriceTick - 5 * 100,
+                              gridSize,
+                          )
+                        : pinTickToTickUpper(
+                              currentPoolPriceTick + 5 * 100,
+                              gridSize,
+                          ),
+                );
+                setTenPercentTickValue(
+                    isSellTokenBase
+                        ? pinTickToTickLower(
+                              currentPoolPriceTick - 10 * 100,
+                              gridSize,
+                          )
+                        : pinTickToTickUpper(
+                              currentPoolPriceTick + 10 * 100,
+                              gridSize,
+                          ),
+                );
             }
         })();
     }, [currentPoolPriceTick, isSellTokenBase, gridSize, selectedPreset]);
@@ -180,20 +213,6 @@ export default function LimitRate(props: propsIF) {
         const pinnedTick: number = isSellTokenBase
             ? pinTickToTickLower(lowTick, gridSize)
             : pinTickToTickUpper(highTick, gridSize);
-
-        switch (percent) {
-            case 1:
-                setOnePercentTickValue(pinnedTick);
-                break;
-            case 5:
-                setFivePercentTickValue(pinnedTick);
-                break;
-            case 10:
-                setTenPercentTickValue(pinnedTick);
-                break;
-            default:
-                break;
-        }
 
         setLimitTick(pinnedTick);
         updateURL({ update: [['limitTick', pinnedTick]] });

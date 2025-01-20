@@ -21,6 +21,7 @@ import {
     useSortedAuctions,
 } from '../Auctions/useSortedAuctions';
 import FutaDivider2 from '../../../components/Futa/Divider/FutaDivider2';
+import HexReveal from '../Home/Animations/HexReveal';
 
 export type auctionDataSets = 'bids' | 'created';
 
@@ -261,10 +262,10 @@ export default function Account() {
             </div>
 
             <div className={styles.rightLayout}>
-                <div>
+                <HexReveal>
                     <p className={styles.label}>CLAIM</p>
                     <FutaDivider2 />
-                </div>
+                </HexReveal>
                 {claimAllContainer}
             </div>
         </div>

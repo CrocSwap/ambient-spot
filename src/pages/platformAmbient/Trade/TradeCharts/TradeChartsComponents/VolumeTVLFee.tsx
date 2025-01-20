@@ -1,6 +1,7 @@
-import { Dispatch, SetStateAction, memo } from 'react';
+import { Dispatch, SetStateAction, memo, useContext } from 'react';
 import { LS_KEY_SUBCHART_SETTINGS } from '../../../../../ambient-utils/constants';
 import styles from './VolumeTVLFee.module.css';
+import { BrandContext } from '../../../../../contexts';
 
 interface VolumeTVLFeePropsIF {
     setShowVolume: Dispatch<SetStateAction<boolean>>;
@@ -11,6 +12,8 @@ interface VolumeTVLFeePropsIF {
     showFeeRate: boolean;
 }
 function VolumeTVLFee(props: VolumeTVLFeePropsIF) {
+    const { platformName } = useContext(BrandContext);
+
     const {
         setShowVolume,
         setShowTvl,
@@ -80,9 +83,13 @@ function VolumeTVLFee(props: VolumeTVLFeePropsIF) {
                     <button
                         onClick={button.action}
                         className={
-                            button.selected
-                                ? styles.active_selected_button
-                                : styles.non_active_selected_button
+                            ['futa'].includes(platformName)
+                                ? button.selected
+                                    ? styles.futa_active_selected_button
+                                    : styles.futa_non_active_selected_button
+                                : button.selected
+                                  ? styles.active_selected_button
+                                  : styles.non_active_selected_button
                         }
                         aria-label={`${button.selected ? 'hide' : 'show'} ${
                             button.name

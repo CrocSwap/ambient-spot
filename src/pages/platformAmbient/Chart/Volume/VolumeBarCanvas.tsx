@@ -55,9 +55,9 @@ export default function VolumeBarCanvas(props: propsIF) {
             barSeries.decorate(
                 (context: CanvasRenderingContext2D, d: CandleDataIF) => {
                     const d3DarkStrokeColor =
-                        chartThemeColors.downCandleBorderColor?.copy();
+                        chartThemeColors.downCandleBorderColor.copy();
                     const d3LightStrokeColor =
-                        chartThemeColors.upCandleBorderColor?.copy();
+                        chartThemeColors.upCandleBorderColor.copy();
 
                     if (d3DarkStrokeColor) d3DarkStrokeColor.opacity = 0.5;
                     if (d3LightStrokeColor)
@@ -80,28 +80,20 @@ export default function VolumeBarCanvas(props: propsIF) {
                             ? 'transparent'
                             : selectedDate !== undefined &&
                                 selectedDate === d.time * 1000
-                              ? '#E480FF'
+                              ? chartThemeColors.selectedDateFillColor.toString()
                               : close > open
-                                ? d3LightStrokeColor
-                                    ? d3LightStrokeColor.toString()
-                                    : '#26a69a'
-                                : d3DarkStrokeColor
-                                  ? d3DarkStrokeColor.toString()
-                                  : '#ef5350';
+                                ? d3LightStrokeColor.toString()
+                                : d3DarkStrokeColor.toString();
 
                     context.strokeStyle =
                         d.volumeUSD === null || d.volumeUSD === 0
                             ? 'transparent'
                             : selectedDate !== undefined &&
                                 selectedDate === d.time * 1000
-                              ? '#E480FF'
+                              ? chartThemeColors.selectedDateFillColor.toString()
                               : close > open
-                                ? d3LightStrokeColor
-                                    ? d3LightStrokeColor.toString()
-                                    : '#26a69a'
-                                : d3DarkStrokeColor
-                                  ? d3DarkStrokeColor.toString()
-                                  : '#ef5350';
+                                ? d3LightStrokeColor.toString()
+                                : d3DarkStrokeColor.toString();
 
                     if (d.time * 1000 > visibleDateForCandle) {
                         context.fillStyle = 'transparent';

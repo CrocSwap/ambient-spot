@@ -58,6 +58,7 @@ svg:hover {
     cursor: pointer;
 }
 
+
 button:hover > svg {
     color: var(--accent1);
     cursor: pointer;

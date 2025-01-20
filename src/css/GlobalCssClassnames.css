@@ -59,6 +59,21 @@
     border-color: var(--accent1) !important;
 }
 
+.customLink{
+    color: var(--accent1);
+    transition: all var(--animation-speed) ease-in-out;
+    cursor: pointer;
+}
+.customLink:hover{
+    color: var(--text1)
+}
+
+.flexColumn{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
 /* apy */
 
 .apy_positive {

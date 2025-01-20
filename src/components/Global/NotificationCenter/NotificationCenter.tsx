@@ -17,9 +17,11 @@ import NotificationTable from './NotificationTable/NotificationTable';
 const NotificationCenter = () => {
     const [showNotificationTable, setShowNotificationTable] =
         useState<boolean>(false);
+
     const smallScreen = useMediaQuery('(max-width: 768px)');
 
-    const { pendingTransactions, sessionReceipts } = useContext(ReceiptContext);
+    const { pendingTransactions, sessionReceipts, showRedDot, setShowRedDot } =
+        useContext(ReceiptContext);
 
     const txCount = pendingTransactions.length + sessionReceipts.length;
 
@@ -53,6 +55,14 @@ const NotificationCenter = () => {
             setShowNotificationTable(false);
         }
     };
+    const prevTxCountRef = useRef(txCount);
+
+    useEffect(() => {
+        if (txCount > prevTxCountRef.current) {
+            setShowRedDot(true);
+        }
+        prevTxCountRef.current = txCount;
+    }, [txCount]);
 
     const escFunction = useCallback(
         (event: KeyboardEvent) => {
@@ -81,6 +91,8 @@ const NotificationCenter = () => {
                         pending={currentPendingTransactionsArray.length > 0}
                         showNotificationTable={showNotificationTable}
                         setShowNotificationTable={setShowNotificationTable}
+                        showRedDot={showRedDot}
+                        setShowRedDot={setShowRedDot}
                     />
                 </span>
 

@@ -37,6 +37,7 @@ export interface PoolContextIF {
     usdPrice: number | undefined;
     usdPriceInverse: number | undefined;
     isTradeDollarizationEnabled: boolean;
+    isDefaultTradeDollarization: boolean;
     setIsTradeDollarizationEnabled: Dispatch<SetStateAction<boolean>>;
     fdvOfDenomTokenDisplay: string | undefined;
     baseTokenFdvDisplay: string | undefined;
@@ -121,6 +122,9 @@ export const PoolContextProvider = (props: { children: ReactNode }) => {
               : undefined
         : undefined;
 
+    const [isDefaultTradeDollarization, setDefaultTradeDollarization] =
+        useState(usdPrice !== undefined);
+
     const [isTradeDollarizationEnabled, setIsTradeDollarizationEnabled] =
         useState(usdPrice !== undefined);
 
@@ -152,8 +156,10 @@ export const PoolContextProvider = (props: { children: ReactNode }) => {
                 excludeFromUsdConversion
             )
         ) {
+            setDefaultTradeDollarization(true);
             setIsTradeDollarizationEnabled(true);
         } else {
+            setDefaultTradeDollarization(false);
             setIsTradeDollarizationEnabled(false);
         }
     }, [baseToken.address, quoteToken.address, usdPrice !== undefined]);
@@ -173,6 +179,7 @@ export const PoolContextProvider = (props: { children: ReactNode }) => {
         usdPrice,
         usdPriceInverse,
         isTradeDollarizationEnabled,
+        isDefaultTradeDollarization,
         setIsTradeDollarizationEnabled,
     };
 

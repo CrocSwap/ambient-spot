@@ -85,6 +85,8 @@ export default function OrderDetailsModal(props: propsIF) {
         originalPositionLiqQuote,
         expectedPositionLiqBase,
         expectedPositionLiqQuote,
+        middlePriceDisplay,
+        middlePriceDisplayDenomByMoneyness,
     } = useProcessOrder(limitOrder, crocEnv, userAddress);
 
     const [isClaimable, setIsClaimable] = useState<boolean>(isOrderFilled);
@@ -308,6 +310,8 @@ export default function OrderDetailsModal(props: propsIF) {
         transactionType: 'limitOrder',
         isBaseTokenMoneynessGreaterOrEqual: isBaseTokenMoneynessGreaterOrEqual,
         isAccountView: isAccountView,
+        middlePriceDisplay: middlePriceDisplay,
+        middlePriceDisplayDenomByMoneyness: middlePriceDisplayDenomByMoneyness,
     };
 
     const shareComponent = (

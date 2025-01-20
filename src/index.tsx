@@ -28,6 +28,8 @@ import scrollLogo from './assets/images/networks/scroll_logo.webp';
 import scrollSepoliaLogo from './assets/images/networks/scroll_sepolia.webp';
 import swellLogo from './assets/images/networks/swell_logo.webp';
 import swellSepoliaLogo from './assets/images/networks/swell_sepolia.webp';
+import ErrorBoundary from './components/Error/ErrorBoundary';
+import GlobalErrorFallback from './components/Error/GlobalErrorFallback';
 import { GlobalContexts } from './contexts/GlobalContexts';
 
 const metadata = {
@@ -82,7 +84,7 @@ const modal = createWeb3Modal({
         '--w3m-color-mix': 'var(--dark2)',
         '--w3m-color-mix-strength': 10,
         '--w3m-font-family': 'var(--font-family)',
-        '--w3m-accent': brand === 'futa' ? '#0CCDFF' : 'var(--accent1)',
+        '--w3m-accent': brand === 'futa' ? '#aacfd1' : 'var(--accent1)',
     },
     featuredWalletIds: [
         'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
@@ -209,7 +211,9 @@ root.render(
                 <StyleSheetManager
                     shouldForwardProp={(propName) => isValidProp(propName)}
                 >
-                    <App />
+                    <ErrorBoundary fallback={GlobalErrorFallback}>
+                        <App />
+                    </ErrorBoundary>
                 </StyleSheetManager>
 
                 <div id={GLOBAL_MODAL_PORTAL_ID} />

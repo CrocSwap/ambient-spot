@@ -9,13 +9,16 @@ import {
 
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import TooltipComponent from '../../../Global/TooltipComponent/TooltipComponent';
+import { brand } from '../../../../ambient-utils/constants';
 
 interface PropsIF {
-    extraInfo: {
-        title: string;
-        tooltipTitle: string;
-        data: React.ReactNode;
-    }[];
+    extraInfo:
+        | null
+        | {
+              title: string;
+              tooltipTitle: string;
+              data: React.ReactNode;
+          }[];
     conversionRate: string;
     gasPrice: string | undefined;
     showDropdown: boolean;
@@ -32,6 +35,8 @@ export const ExtraInfo = (props: PropsIF) => {
         showWarning,
         priceImpactExceedsThreshold,
     } = props;
+
+    const isFuta = brand === 'futa';
 
     const { toggleDidUserFlipDenom } = useContext(TradeDataContext);
 
@@ -51,9 +56,12 @@ export const ExtraInfo = (props: PropsIF) => {
         )
     ) : null;
 
+    const staticDropdown = isFuta ? true : showExtraInfo && showDropdown;
+
     return (
         <>
             <ExtraInfoContainer
+                style={{ display: isFuta ? 'none' : 'flex' }}
                 role='button'
                 justifyContent='space-between'
                 alignItems='center'
@@ -62,6 +70,7 @@ export const ExtraInfo = (props: PropsIF) => {
                 fontSize='body'
                 padding='4px'
                 active={showDropdown}
+                isFuta={isFuta}
                 onClick={
                     showDropdown
                         ? () => setShowExtraInfo(!showExtraInfo)
@@ -92,9 +101,11 @@ export const ExtraInfo = (props: PropsIF) => {
                 </FlexContainer>
                 <div style={{ height: '22px' }}>{arrowToRender}</div>
             </ExtraInfoContainer>
-            {showExtraInfo && showDropdown && (
-                <ExtraDetailsContainer>
-                    {extraInfo.map((item, idx) => (
+            {staticDropdown && (
+                <ExtraDetailsContainer
+                    style={{ textTransform: isFuta ? 'uppercase' : 'none' }}
+                >
+                    {extraInfo?.map((item, idx) => (
                         <FlexContainer
                             key={idx}
                             justifyContent='space-between'
@@ -112,10 +123,19 @@ export const ExtraInfo = (props: PropsIF) => {
                             }
                         >
                             <FlexContainer gap={4}>
-                                <div>{item.title}</div>
-                                <TooltipComponent title={item.tooltipTitle} />
+                                <div
+                                    style={{
+                                        color: isFuta ? 'var(--text3)' : '',
+                                    }}
+                                >
+                                    {item.title}
+                                </div>
+                                <TooltipComponent
+                                    title={item.tooltipTitle}
+                                    svgColor='#4D5255'
+                                />
                             </FlexContainer>
-                            <div>{item.data}</div>
+                            <div style={{ textAlign: 'end' }}>{item.data}</div>
                         </FlexContainer>
                     ))}
                 </ExtraDetailsContainer>

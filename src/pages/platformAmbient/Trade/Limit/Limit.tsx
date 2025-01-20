@@ -1,7 +1,5 @@
 import {
     fromDisplayQty,
-    pinTickLower,
-    pinTickUpper,
     priceHalfAboveTick,
     priceHalfBelowTick,
     tickToPrice,
@@ -37,6 +35,10 @@ import {
     ZERO_ADDRESS,
 } from '../../../../ambient-utils/constants';
 import { getPositionHash } from '../../../../ambient-utils/dataLayer/functions/getPositionHash';
+import {
+    pinTickToTickLower,
+    pinTickToTickUpper,
+} from '../../../../ambient-utils/dataLayer/functions/pinTick';
 import { useApprove } from '../../../../App/functions/approve';
 import { AppStateContext } from '../../../../contexts';
 import { ChainDataContext } from '../../../../contexts/ChainDataContext';
@@ -115,6 +117,7 @@ export default function Limit() {
         primaryQuantity,
         setPrimaryQuantity,
         isTokenABase,
+        currentPoolPriceTick,
     } = useContext(TradeDataContext);
     const { liquidityFee } = useContext(GraphDataContext);
     const { urlParamMap, updateURL } = useTradeData();
@@ -263,14 +266,17 @@ export default function Limit() {
         } else if (limitTick === undefined && crocEnv) {
             if (!pool) return;
 
-            const initialLimitRateNonDisplay =
-                poolPriceNonDisplay * (isSellTokenBase ? 0.985 : 1.015);
+            const defaultLimitOffsetPercentage = 1;
 
             const pinnedTick: number = isSellTokenBase
-                ? pinTickLower(initialLimitRateNonDisplay, gridSize)
-                : pinTickUpper(initialLimitRateNonDisplay, gridSize);
-
-            IS_LOCAL_ENV && console.debug({ pinnedTick });
+                ? pinTickToTickLower(
+                      currentPoolPriceTick - defaultLimitOffsetPercentage * 100,
+                      gridSize,
+                  )
+                : pinTickToTickUpper(
+                      currentPoolPriceTick + defaultLimitOffsetPercentage * 100,
+                      gridSize,
+                  );
 
             setLimitTick(pinnedTick);
 

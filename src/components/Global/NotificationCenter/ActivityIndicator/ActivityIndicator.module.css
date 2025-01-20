@@ -30,6 +30,17 @@
     padding: none;
     border: none;
     background: transparent;
+
+    position: relative;
+}
+
+.redDot{
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--negative);
+    position: absolute;
+    bottom: -5px;
 }
 .ring {
     border: 3px solid var(--accent4);

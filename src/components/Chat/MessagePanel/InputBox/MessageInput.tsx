@@ -582,9 +582,7 @@ export default function MessageInput(props: MessageInputProps) {
     useEffect(() => {
         if (message.includes(':')) {
             setTokenForEmojiSearch(
-                message
-                    .split(':')
-                    [message.split(':').length - 1].toLocaleLowerCase('en-US'),
+                message.split(':')[message.split(':').length - 1].toLowerCase(),
             );
         } else {
             setTokenForEmojiSearch('');

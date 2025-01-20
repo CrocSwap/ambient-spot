@@ -132,7 +132,8 @@ line-height: normal;
         padding-left: 192px;
         padding-right: 192px;
 
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto 0.6fr;
+        gap: 10rem;
       
       
     }
@@ -143,4 +144,18 @@ line-height: normal;
     }
     
     
+    }
+
+    @media only screen and (min-width: 1600px) {
+        .container{
+    
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+           width: 1570px;
+           gap: 256px;
+            
+           margin: 0 auto;
+        }
     }

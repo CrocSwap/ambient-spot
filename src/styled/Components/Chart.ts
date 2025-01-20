@@ -4,6 +4,7 @@ import { FlexContainer, Text } from '../Common';
 export const HeaderButtons = styled.button<{
     mobileHide?: boolean;
     isFuta?: boolean;
+    isActive?: boolean;
 }>`
     display: flex;
     flex-direction: row;
@@ -11,11 +12,27 @@ export const HeaderButtons = styled.button<{
     align-items: center;
     outline: none;
     border: none;
-    border-radius: 5px;
     background: transparent;
     cursor: pointer;
     gap: 8px;
     padding: 4px;
+
+    ${({ isFuta }) =>
+        isFuta &&
+        `
+            border: 1px solid var(--dark2, #14161A);
+            background: var(--dark2, #14161A);
+            height: var(--buttonHeightSmall, 25px);
+            padding: 0px 12px;
+            gap: 10px;
+        `}
+
+    ${({ isFuta, isActive }) =>
+        isFuta &&
+        isActive &&
+        `
+            border: 1px solid var(--accent1);
+        `}
 
     &:hover {
         ${({ isFuta }) =>
@@ -25,6 +42,7 @@ export const HeaderButtons = styled.button<{
     &:focus-visible {
         box-shadow: var(--glow-light-box-shadow);
     }
+
     @media (max-width: 680px) {
         ${({ mobileHide }) => mobileHide && 'display: none'};
     }

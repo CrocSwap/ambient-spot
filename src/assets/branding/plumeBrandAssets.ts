@@ -13,7 +13,7 @@ export const plumeBrandAssets: brandIF = {
     platformName: 'plume',
     fontSet: 'ambient',
     showPoints: false,
-    showDexStats: false,
+    showDexStats: true,
     headerImage: large as string,
     includeCanto: false,
 };

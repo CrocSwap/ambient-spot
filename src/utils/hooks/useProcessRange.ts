@@ -89,7 +89,7 @@ export const useProcessRange = (
     // const ownerId = position.user ? getAddress(position.user) : position.user;
 
     const isOwnerActiveAccount =
-        position.user.toLowerCase() === account?.toLowerCase();
+        position.user?.toLowerCase() === account?.toLowerCase();
 
     const [basePrice, setBasePrice] = useState<number | undefined>();
     const [quotePrice, setQuotePrice] = useState<number | undefined>();

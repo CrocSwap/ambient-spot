@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import styles from './FutaLanding.module.css';
 import HexReveal from '../../Animations/HexReveal';
+import styles from './FutaLanding.module.css';
 export default function FutaLanding() {
     return (
         <div className={styles.container}>
