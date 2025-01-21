@@ -29,9 +29,10 @@
     padding: 1rem;
     border-radius: 5px;
     max-width: 90%;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: break-word;
+    overflow-wrap: break-word; /* Handles wrapping long words */
+    word-wrap: break-word; /* Older spec for compatibility */
+    word-break: break-all; /* Ensures breaking on long words */
+    white-space: pre-wrap; /* Preserves whitespace and wraps text */
     margin-bottom: 1.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -43,14 +44,10 @@
     justify-content: center;
 }
 
-
-
 @media (max-width: 768px) {
     .errorTitle {
         font-size: 2rem;
     }
-
-
 
     .errorDetails {
         font-size: 0.9rem;
@@ -62,7 +59,6 @@
         font-size: 1.8rem;
     }
 
-  
     .errorDetails {
         font-size: 0.8rem;
     }

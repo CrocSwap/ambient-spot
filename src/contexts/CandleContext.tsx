@@ -26,9 +26,8 @@ import { AppStateContext } from './AppStateContext';
 import { CachedDataContext } from './CachedDataContext';
 import { ChartContext } from './ChartContext';
 import { CrocEnvContext } from './CrocEnvContext';
-import { TradeDataContext } from './TradeDataContext';
 import { TradeTokenContext } from './TradeTokenContext';
-import { updateZeroPriceCandles } from '../pages/platformAmbient/Chart/ChartUtils/candleDataUtils';
+import { TokenContext } from './TokenContext';
 export interface CandleContextIF {
     candleData: CandlesByPoolAndDurationIF | undefined;
     setCandleData: Dispatch<
@@ -74,10 +73,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     } = useContext(AppStateContext);
     const { crocEnv } = useContext(CrocEnvContext);
 
-    const { poolPriceNonDisplay: poolPriceDisplay } =
-        useContext(TradeDataContext);
-
-    const poolPriceRef = useRef(poolPriceDisplay);
+    const { tokens } = useContext(TokenContext);
     const {
         baseToken: { address: baseTokenAddress },
         quoteToken: { address: quoteTokenAddress },
@@ -124,10 +120,6 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     const poolTokenAddress = (
         baseTokenAddress + quoteTokenAddress
     ).toLowerCase();
-
-    useEffect(() => {
-        poolPriceRef.current = poolPriceDisplay;
-    }, [poolPriceDisplay]);
 
     useEffect(() => {
         if (isFinishRequest) {
@@ -203,7 +195,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
 
         baseTokenAddressRef.current = baseTokenAddress.toLowerCase();
         quoteTokenAddressRef.current = quoteTokenAddress.toLowerCase();
-    }, [poolTokenAddress, chainId]);
+    }, [poolTokenAddress, chainId, tokens.tokenUniv.length]);
 
     // only works when the period changes
     useEffect(() => {
@@ -356,15 +348,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                             quoteTokenAddress.toLowerCase()
                     ) {
                         if (candles) {
-                            const updatedZeroCandles = updateZeroPriceCandles(
-                                candles.candles,
-                                poolPriceRef.current,
-                            );
-
-                            setCandleData({
-                                ...candles,
-                                candles: updatedZeroCandles,
-                            });
+                            setCandleData(candles);
 
                             const candleSeries = candles?.candles;
                             if (candleSeries && candleSeries.length > 0) {
@@ -455,62 +439,42 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
         )
             .then((incrCandles) => {
                 if (incrCandles && candleData) {
-                    if (candleDomains.isResetRequest) {
-                        const updatedZeroCandles = updateZeroPriceCandles(
-                            incrCandles.candles,
-                            poolPriceRef.current,
+                    const newCandles: CandleDataIF[] = [];
+                    if (
+                        incrCandles.candles.length === 0 ||
+                        incrCandles.candles.length < numDurations - 1
+                    ) {
+                        const minDate = Math.min(
+                            ...incrCandles.candles.map((i) => i.time),
                         );
-
-                        setCandleData({
-                            ...incrCandles,
-                            candles: updatedZeroCandles,
-                        });
-                    } else {
-                        const newCandles: CandleDataIF[] = [];
-                        if (
-                            incrCandles.candles.length === 0 ||
-                            incrCandles.candles.length < numDurations - 1
-                        ) {
-                            const minDate = Math.min(
-                                ...incrCandles.candles.map((i) => i.time),
-                            );
-                            minDate && setTimeOfEndCandle(minDate * 1000);
-                        }
-
-                        for (
-                            let index = 0;
-                            index < incrCandles.candles.length;
-                            index++
-                        ) {
-                            const messageCandle = incrCandles.candles[index];
-                            const indexOfExistingCandle =
-                                candleData.candles.findIndex(
-                                    (savedCandle) =>
-                                        savedCandle.time === messageCandle.time,
-                                );
-
-                            if (indexOfExistingCandle === -1) {
-                                newCandles.push(messageCandle);
-                            } else {
-                                candleData.candles[indexOfExistingCandle] =
-                                    messageCandle;
-                            }
-                        }
-
-                        const newSeries = Object.assign({}, candleData, {
-                            candles: candleData.candles.concat(newCandles),
-                        });
-
-                        const updatedZeroCandles = updateZeroPriceCandles(
-                            newSeries.candles,
-                            poolPriceRef.current,
-                        );
-
-                        setCandleData({
-                            ...newSeries,
-                            candles: updatedZeroCandles,
-                        });
+                        minDate && setTimeOfEndCandle(minDate * 1000);
                     }
+
+                    for (
+                        let index = 0;
+                        index < incrCandles.candles.length;
+                        index++
+                    ) {
+                        const messageCandle = incrCandles.candles[index];
+                        const indexOfExistingCandle =
+                            candleData.candles.findIndex(
+                                (savedCandle) =>
+                                    savedCandle.time === messageCandle.time,
+                            );
+
+                        if (indexOfExistingCandle === -1) {
+                            newCandles.push(messageCandle);
+                        } else {
+                            candleData.candles[indexOfExistingCandle] =
+                                messageCandle;
+                        }
+                    }
+
+                    const newSeries = Object.assign({}, candleData, {
+                        candles: candleData.candles.concat(newCandles),
+                    });
+
+                    setCandleData(newSeries);
                 }
             })
             .catch((e) => {

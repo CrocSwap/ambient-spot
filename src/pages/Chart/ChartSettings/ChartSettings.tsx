@@ -61,9 +61,7 @@ export default function ChartSettings(props: ContextMenuIF) {
 
     const [isSettingsClosing, setIsSettingsClosing] = useState(false);
 
-    const tabletView = useMediaQuery(
-        '(min-width: 768px) and (max-width: 1200px)',
-    );
+    const mobileView = useMediaQuery('(max-width: 500px)');
 
     useEffect(() => {
         d3.select(contextMenuRef.current).on(
@@ -145,7 +143,7 @@ export default function ChartSettings(props: ContextMenuIF) {
                     applyDefault={applyDefault}
                     isSaving={isSaving}
                     setIsSaving={setIsSaving}
-                    isMobile={tabletView}
+                    isMobile={mobileView}
                     isSettingsClosing={isSettingsClosing}
                 />
             </ContextMenu>

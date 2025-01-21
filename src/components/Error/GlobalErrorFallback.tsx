@@ -1,9 +1,9 @@
 import React from 'react';
-import styles from './GlobalErrorFallback.module.css';
-import Button from '../Form/Button';
-import ambiBg from '../../assets/images/home/home_wallpaper.webp';
-import futaBg from '../../assets/futa/home/hexBg.png';
 import { brand } from '../../ambient-utils/constants';
+import futaBg from '../../assets/futa/home/hexBg.png';
+import ambiBg from '../../assets/images/home/home_wallpaper.webp';
+import Button from '../Form/Button';
+import styles from './GlobalErrorFallback.module.css';
 interface GlobalErrorFallbackProps {
     error?: Error | null;
 }
@@ -13,14 +13,24 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error }) => {
 
     const handleCopyError = () => {
         if (error) {
-            navigator.clipboard.writeText(error.stack || error.message).then(
-                () => {
-                    alert('Error details copied to clipboard!');
-                },
-                () => {
-                    alert('Failed to copy error details.');
-                },
-            );
+            navigator.clipboard
+                .writeText(
+                    error.stack?.includes(error.message)
+                        ? error.stack + ' | ' + window.location
+                        : error.message +
+                              ' | ' +
+                              error.stack +
+                              ' | ' +
+                              window.location,
+                )
+                .then(
+                    () => {
+                        alert('Error details copied to clipboard!');
+                    },
+                    () => {
+                        alert('Failed to copy error details.');
+                    },
+                );
         }
     };
 

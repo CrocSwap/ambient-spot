@@ -3,8 +3,9 @@ import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 import { Provider } from 'ethers';
 import { NetworkIF } from '../../types/NetworkIF';
 import {
+    swellENA,
     swellETH,
-    swellRSETH,
+    swellEZETH,
     swellRSWETH,
     swellSWELL,
     swellUSDE,
@@ -59,10 +60,10 @@ export const swellMainnet: NetworkIF = {
     tempestApiNetworkName: 'swell',
     topPools: [
         new TopPool(swellETH, swellUSDE, chainSpecFromSDK.poolIndex),
+        new TopPool(swellENA, swellUSDE, chainSpecFromSDK.poolIndex),
         new TopPool(swellWEETH, swellRSWETH, chainSpecFromSDK.poolIndex),
-        new TopPool(swellRSETH, swellWEETH, chainSpecFromSDK.poolIndex),
         new TopPool(swellETH, swellSWELL, chainSpecFromSDK.poolIndex),
-        new TopPool(swellRSWETH, swellETH, chainSpecFromSDK.poolIndex),
+        new TopPool(swellEZETH, swellETH, chainSpecFromSDK.poolIndex),
     ],
     getGasPriceInGwei: async (provider?: Provider) => {
         if (!provider) return 0;

@@ -86,9 +86,17 @@ const useFetchPoolStats = (
         string | undefined
     >();
 
-    const [shouldInvertDisplay, setShouldInvertDisplay] = useState<
-        boolean | undefined
-    >(!pool.isBaseTokenMoneynessGreaterOrEqual);
+    const isBaseTokenMoneynessGreaterOrEqual = useMemo(
+        () =>
+            pool.base.symbol && pool.quote.symbol
+                ? getMoneynessRank(pool.base.symbol) -
+                      getMoneynessRank(pool.quote.symbol) >=
+                  0
+                : false,
+        [pool.base.symbol, pool.quote.symbol],
+    );
+
+    const shouldInvertDisplay = !isBaseTokenMoneynessGreaterOrEqual;
 
     const [isPoolInitialized, setIsPoolInitialized] = useState<
         boolean | undefined
@@ -158,18 +166,6 @@ const useFetchPoolStats = (
                     );
 
                     setPoolPriceDisplayNum(displayPrice);
-
-                    const isBaseTokenMoneynessGreaterOrEqual =
-                        pool.base.address && pool.quote.address
-                            ? getMoneynessRank(pool.base.symbol) -
-                                  getMoneynessRank(pool.quote.symbol) >=
-                              0
-                            : false;
-
-                    const shouldInvertDisplay =
-                        !isBaseTokenMoneynessGreaterOrEqual;
-
-                    setShouldInvertDisplay(shouldInvertDisplay);
 
                     const displayPriceWithInversion = shouldInvertDisplay
                         ? 1 / displayPrice

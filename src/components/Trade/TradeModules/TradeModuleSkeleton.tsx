@@ -131,7 +131,7 @@ export const TradeModuleSkeleton = (props: PropsIF) => {
     ]);
 
     const formattedAckTokenMessage = ackTokenMessage.replace(
-        /\b(not|(?<!many\s)fraudulent)\b/gi,
+        /\b(not|fraudulent)\b/i,
         '<span style="color: var(--negative); text-transform: uppercase;">$1</span>',
     );
 

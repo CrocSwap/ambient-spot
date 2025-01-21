@@ -1,6 +1,6 @@
 {
     "name": "ambient-ts-app",
-    "version": "3.1.16",
+    "version": "3.1.18",
     "private": true,
     "type": "module",
     "dependencies": {
@@ -99,6 +99,6 @@
         "vite": "^6.0.3",
         "vite-plugin-babel-macros": "^1.0.6",
         "vite-plugin-checker": "^0.8.0",
-        "vitest": "^2.1.8"
+        "vitest": "^3.0.2"
     }
 }
