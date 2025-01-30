@@ -132,14 +132,19 @@ export default function TopPoolsHome(props: TopPoolsPropsIF) {
             </HomeTitle>
             <HomeContent minHeight='120px'>
                 {poolData.map((pool, idx) => (
-                    // <PoolCard
-                    //     key={idx}
-                    //     pool={pool}
-                    //     spotPrice={spotPrices[idx]}
-                    // /> // Pass the corresponding spot price
-                    <TopPoolsSkeleton />
+                    <PoolCard
+                        key={idx}
+                        pool={pool}
+                        spotPrice={spotPrices[idx]}
+                    /> // Pass the corresponding spot price
                 ))}
             </HomeContent>
+            <HomeContent minHeight='120px'>
+                <TopPoolsSkeleton />
+                <TopPoolsSkeleton />
+                <TopPoolsSkeleton />
+            </HomeContent>
+
             <HomeContent
                 justifyContent='center'
                 alignItems='center'

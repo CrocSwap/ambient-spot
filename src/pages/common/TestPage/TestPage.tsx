@@ -1,4 +1,3 @@
-import FutaNewLanding from '../../platformFuta/Home/FutaLandings/NewLandings/FutaNewLanding';
 import styles from './TestPage.module.css';
 export default function TestPage() {
     // const [activeTab, setActiveTab] = useState(0);
