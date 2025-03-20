@@ -269,7 +269,7 @@ export const SoloTokenSelect = (props: propsIF) => {
     }, []);
 
     return (
-        <section className={styles.container}>
+        <section style={{ overflowY: 'hidden' }} className={styles.container}>
             <header className={styles.header}>
                 <IoIosArrowBack
                     onClick={() => {
@@ -355,7 +355,10 @@ export const SoloTokenSelect = (props: propsIF) => {
                     ),
                 )}
             {showSoloSelectTokenButtons ? (
-                <div className={styles.scrollable_container}>
+                <div
+                    style={{ overflowY: 'scroll' }}
+                    className={styles.scrollable_container}
+                >
                     {removeWrappedNative(chainId, outputTokens)
                         .slice(0, MAX_TOKEN_COUNT)
                         .map((token: TokenIF) => (
