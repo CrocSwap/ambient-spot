@@ -8,7 +8,6 @@ import {
 import { Message } from './Model/MessageModel';
 import { User } from './Model/UserModel';
 
-import { Emoji } from 'emoji-picker-react';
 import Blockies from 'react-blockies';
 import { FiEdit3 } from 'react-icons/fi';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
@@ -264,27 +263,31 @@ export const getAvatarComponent = (
     );
 };
 
+interface EmojiData {
+    native: string;
+    unified: string;
+    [key: string]: any; // For any additional properties that might be needed
+}
+
 export const getSingleEmoji = (
     unified: string,
     clickHandler?: (emoji: string) => void,
-    size?: number,
+    size: number = 25,
 ) => {
-    return (
+    // Get the emoji character from the unified code
+    const emojiCharacter = getEmojiFromUnifiedCode(unified);
+
+    // Create a span with the emoji character
+    const emojiElement = (
         <span
-            onClick={() => {
-                if (clickHandler) {
-                    const emojiCharacter = getEmojiFromUnifiedCode(unified);
-                    clickHandler(emojiCharacter);
-                }
-            }}
+            style={size ? { fontSize: `${size}px` } : {}}
+            onClick={() => clickHandler?.(emojiCharacter)}
         >
-            {size && size == -1 ? (
-                <Emoji unified={unified} />
-            ) : (
-                <Emoji unified={unified} size={size ? size : 25} />
-            )}
+            {emojiCharacter}
         </span>
     );
+
+    return emojiElement;
 };
 
 export const getEmojiPack = (

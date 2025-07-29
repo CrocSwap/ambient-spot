@@ -1,15 +1,15 @@
-import { BsEmojiSmile } from 'react-icons/bs';
-import { Message } from '../../Model/MessageModel';
-
-import Picker, { EmojiClickData, Theme } from 'emoji-picker-react';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 import {
     Dispatch,
     SetStateAction,
     useContext,
-    useEffect,
     useRef,
     useState,
+    useEffect,
 } from 'react';
+import { BsEmojiSmile } from 'react-icons/bs';
+import { Message } from '../../Model/MessageModel';
 import PositionBox from '../PositionBox/PositionBox';
 import styles from './MessageInput.module.css';
 
@@ -145,15 +145,15 @@ export default function MessageInput(props: MessageInputProps) {
     // };
 
     const handleEmojiClick = (
-        emojiObject: EmojiClickData | string,
+        emojiObject: { native: string } | string,
         clearCustomEmojiSearch?: boolean,
     ) => {
         if (inputRef.current) {
             let emoji;
-            if (typeof emojiObject == 'string') {
+            if (typeof emojiObject === 'string') {
                 emoji = emojiObject;
             } else {
-                emoji = emojiObject.emoji;
+                emoji = emojiObject.native;
             }
 
             let currentMessage = messageRef.current ? messageRef.current : '';
@@ -900,16 +900,18 @@ export default function MessageInput(props: MessageInputProps) {
                                     </ul>
                                 </div>
                             ) : (
-                                <Picker
-                                    theme={Theme.DARK}
-                                    style={{
-                                        width: '100%',
-                                    }}
-                                    onEmojiClick={(emoji) => {
-                                        return handleEmojiClick(emoji);
-                                    }}
-                                    skinTonesDisabled={true}
-                                />
+                                <div className={styles.emojiMartContainer}>
+                                    <Picker
+                                        data={data}
+                                        onEmojiSelect={handleEmojiClick}
+                                        theme='dark'
+                                        previewPosition='none'
+                                        skinTonePosition='none'
+                                        perLine={8}
+                                        emojiButtonSize={32}
+                                        emojiSize={20}
+                                    />
+                                </div>
                             )}
                         </div>
                     )}

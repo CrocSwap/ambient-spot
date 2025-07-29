@@ -1,4 +1,7 @@
-import { EmojiClickData } from 'emoji-picker-react';
+interface EmojiData {
+    native: string;
+    [key: string]: any; // For any additional properties that might be needed
+}
 import React, {
     memo,
     useCallback,
@@ -275,6 +278,12 @@ function ChatPanel(props: propsIF) {
     const [lastScrollListenerActive, setLastScrollListenerActive] =
         useState(false);
     const [pickerReady, setPickerReady] = useState(false);
+
+    // Lazy loading states for emoji picker
+    const [emojiData, setEmojiData] = useState<any>(null);
+    const [Picker, setPicker] = useState<React.ComponentType<any> | null>(null);
+    const [isEmojiLoading, setIsEmojiLoading] = useState(false);
+
     const lastScrollListenerRef = useRef<boolean>();
     lastScrollListenerRef.current = lastScrollListenerActive;
 
@@ -289,6 +298,26 @@ function ChatPanel(props: propsIF) {
     useOnClickOutside(reactionsRef, () => {
         if (pickerReady) setShowReactionPicker(false);
     });
+
+    // Lazy load emoji picker when needed
+    useEffect(() => {
+        if (showReactionPicker && !Picker && !isEmojiLoading) {
+            setIsEmojiLoading(true);
+            Promise.all([
+                import('@emoji-mart/react'),
+                import('@emoji-mart/data'),
+            ])
+                .then(([emojiMart, emojiDataModule]) => {
+                    setPicker(() => emojiMart.default);
+                    setEmojiData(emojiDataModule.default);
+                    setIsEmojiLoading(false);
+                })
+                .catch((error) => {
+                    console.error('Failed to load emoji picker:', error);
+                    setIsEmojiLoading(false);
+                });
+        }
+    }, [showReactionPicker, Picker, isEmojiLoading]);
 
     const closeOnEscapeKeyDown = useCallback(
         (e: KeyboardEvent) => {
@@ -407,13 +436,14 @@ function ChatPanel(props: propsIF) {
         setFocusedMessage(focusedMessage);
         setShowReactionPicker(true);
     };
-    const addReactionEmojiPickListener = (data: EmojiClickData | string) => {
+    const addReactionEmojiPickListener = (data: EmojiData | string) => {
         if (focusedMessageRef.current && currentUser) {
             let reaction;
-            if (typeof data == 'string') {
+            if (typeof data === 'string') {
                 reaction = data;
             } else {
-                reaction = data.emoji;
+                // Handle both emoji-mart data structure and direct string
+                reaction = data.native || data.emoji || data;
             }
             addReaction(focusedMessageRef.current._id, currentUser, reaction);
             setShowReactionPicker(false);
@@ -946,7 +976,22 @@ function ChatPanel(props: propsIF) {
             style={{ bottom: pickerBottomPos }}
             onClick={(e) => e.stopPropagation()}
         >
-            {getEmojiPack(reactionCodes, addReactionEmojiPickListener, 30)}
+            {isEmojiLoading ? (
+                <div className={styles.emojiLoading}>Loading emojis...</div>
+            ) : Picker && emojiData ? (
+                <Picker
+                    data={emojiData}
+                    onEmojiSelect={addReactionEmojiPickListener}
+                    theme='dark'
+                    previewPosition='none'
+                    skinTonePosition='none'
+                    perLine={8}
+                    emojiButtonSize={32}
+                    emojiSize={20}
+                />
+            ) : (
+                getEmojiPack(reactionCodes, addReactionEmojiPickListener, 30)
+            )}
             <RiCloseCircleFill
                 onClick={() => setShowReactionPicker(false)}
                 className={styles.reaction_picker_close_button}

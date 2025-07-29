@@ -183,11 +183,6 @@
     backdrop-filter: blur(10px);
     /* opacity: .5 !important; */
 }
-.ment_skip_button:hover,
-.ment_skip_button_down:hover,
-.ment_skip_button_last:hover {
-    /* opacity: 1 !important; */
-}
 
 .ment_skip_button_last {
     bottom: 30%;
@@ -319,18 +314,6 @@
     margin-top: 0.1rem;
 }
 
-/* 
-#chatReactionWrapper aside.emoji-picker-react{
-    background-color: transparent !important;
-    background: transparent !important;
-    backdrop-filter: blur(20px);
-
-}
-
-#chatReactionWrapper  aside.emoji-picker-react .emoji-group:before{
-    background: transparent !important;
-} */
-
 @keyframes scaleAnim {
     from {
         transform: scale(0);
@@ -372,6 +355,18 @@
     opacity: 1;
 }
 
+.emojiLoading {
+    padding: 10px;
+    text-align: center;
+    color: var(--text2);
+    min-width: 200px;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
 .reaction_picker_close {
     display: block;
     font-size: 1rem;
@@ -391,7 +386,7 @@
     opacity: 1;
 }
 
-.reaction_picker_close_button{
+.reaction_picker_close_button {
     position: absolute;
     top: 16px;
     right: 5px;
@@ -478,10 +473,9 @@
     display: flex !important;
     justify-content: center;
     align-items: center;
-  }
-  
- 
-  .chat_closed .modal_body {
+}
+
+.chat_closed .modal_body {
     height: 40px !important;
     width: 40px !important;
     border-radius: 50% !important;
@@ -490,15 +484,13 @@
     box-shadow: none !important;
     overflow: visible !important;
     aspect-ratio: unset !important;
-  }
-  
-  .chat_open {
+}
+
+.chat_open {
     display: flex !important;
 }
- 
-  
- 
-  .closedChatHeader {
+
+.closedChatHeader {
     display: flex !important;
     justify-content: center;
     align-items: center;
@@ -507,15 +499,10 @@
     right: 20px;
     width: 40px;
     height: 40px;
-    background: #7371FC;
+    background: #7371fc;
     border-radius: 50%;
     cursor: pointer;
     z-index: 9999 !important;
     opacity: 1 !important;
     visibility: visible !important;
 }
-
-  
-  
-  
-  

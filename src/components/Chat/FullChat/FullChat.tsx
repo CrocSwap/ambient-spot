@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { EmojiClickData } from 'emoji-picker-react';
+interface EmojiData {
+    native: string;
+    [key: string]: any; // For any additional properties that might be needed
+}
 import {
     Dispatch,
     SetStateAction,
@@ -73,7 +76,7 @@ interface FullChatPropsIF {
     verifyOldMessagesStartDate: Date;
     setShowVerifyOldMessagesPanel: Dispatch<SetStateAction<boolean>>;
     showPicker: boolean;
-    addReactionEmojiPickListener: (data: EmojiClickData) => void;
+    addReactionEmojiPickListener: (data: EmojiData) => void;
     setShowPicker: Dispatch<SetStateAction<boolean>>;
     showDeleteConfirmation: boolean;
     handleConfirmDelete: () => void;
