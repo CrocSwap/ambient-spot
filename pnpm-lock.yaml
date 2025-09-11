@@ -81,9 +81,6 @@ importers:
       react-jazzicon:
         specifier: ^1.0.4
         version: 1.0.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      react-reveal:
-        specifier: ^1.2.2
-        version: 1.2.2(react@19.1.1)
       react-router-dom:
         specifier: ^7.8.2
         version: 7.8.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -3071,11 +3068,6 @@ packages:
   react-refresh@0.17.0:
     resolution: {integrity: sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ==}
     engines: {node: '>=0.10.0'}
-
-  react-reveal@1.2.2:
-    resolution: {integrity: sha512-JCv3fAoU6Z+Lcd8U48bwzm4pMZ79qsedSXYwpwt6lJNtj/v5nKJYZZbw3yhaQPPgYePo3Y0NOCoYOq/jcsisuw==}
-    peerDependencies:
-      react: ^15.3.0 || ^16.0.0
 
   react-router-dom@7.8.2:
     resolution: {integrity: sha512-Z4VM5mKDipal2jQ385H6UBhiiEDlnJPx6jyWsTYoZQdl5TrjxEV2a9yl3Fi60NBJxYzOTGTTHXPi0pdizvTwow==}
@@ -7450,11 +7442,6 @@ snapshots:
       react-dom: 19.1.1(react@19.1.1)
 
   react-refresh@0.17.0: {}
-
-  react-reveal@1.2.2(react@19.1.1):
-    dependencies:
-      prop-types: 15.8.1
-      react: 19.1.1
 
   react-router-dom@7.8.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
     dependencies:

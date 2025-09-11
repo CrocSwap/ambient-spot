@@ -1,6 +1,6 @@
 import styles from './BackgroundImages.module.css';
 
-import { Fade } from 'react-reveal';
+import { motion, AnimatePresence } from 'framer-motion';
 import liquidityImage from '../../../assets/images/home/liquidity.png';
 import orderImage from '../../../assets/images/home/orders.png';
 import Footer from '../../Footer/Footer';
@@ -61,12 +61,18 @@ export default function MobileLandingSections() {
                             alignItems='center'
                             gap={4}
                         >
-                            <p
-                                className={styles.ambient_blast_logo}
-                                style={{ fontSize: '30px' }}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.5 }}
                             >
-                                ambient
-                            </p>
+                                <p
+                                    className={styles.ambient_blast_logo}
+                                    style={{ fontSize: '30px' }}
+                                >
+                                    ambient
+                                </p>
+                            </motion.div>
                             <Text
                                 fontWeight='100'
                                 color='text1'
@@ -97,12 +103,18 @@ export default function MobileLandingSections() {
                             alignItems='center'
                             gap={4}
                         >
-                            <p
-                                className={styles.ambient_blast_logo}
-                                style={{ fontSize: '50px' }}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.5 }}
                             >
-                                ambient
-                            </p>
+                                <p
+                                    className={styles.ambient_blast_logo}
+                                    style={{ fontSize: '50px' }}
+                                >
+                                    ambient
+                                </p>
+                            </motion.div>
                         </FlexContainer>
                     </MobileMainLogo>
                 )}
@@ -132,6 +144,13 @@ export default function MobileLandingSections() {
                     <TopPools noTitle gap='8px' />
                 </div>
             </>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 0.9 }}
+            >
+                <TradeNowButton fieldId='trade_now_btn_in_mobile_hero' />
+            </motion.div>
             <TradeNowButton fieldId='trade_now_btn_in_mobile_hero' />
         </FlexContainer>
     );
@@ -155,7 +174,12 @@ export default function MobileLandingSections() {
             scrollSnapAlign='center'
         >
             <MobileBg1 className={styles.home2} />
-            <Fade up>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+            >
                 <h1 tabIndex={0}>Zero-to-One Decentralized Trading Protocol</h1>
                 <Text
                     tabIndex={0}
@@ -169,7 +193,7 @@ export default function MobileLandingSections() {
                     allowing for low-fee transactions, greater liquidity
                     rewards, and a fairer trading experience.
                 </Text>
-            </Fade>
+            </motion.div>
         </MobileCard>
     );
 
@@ -181,7 +205,12 @@ export default function MobileLandingSections() {
             scrollSnapAlign='center'
         >
             <MobileBg2 className={styles.home2} />
-            <Fade up>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+            >
                 <img
                     src={liquidityImage}
                     alt='concentrated and ambient liquidity'
@@ -199,7 +228,7 @@ export default function MobileLandingSections() {
                     DEX to support concentrated (‘V3’), ambient (‘V2’) and
                     knock-out liquidity in the same liquidity pool.
                 </Text>
-            </Fade>
+            </motion.div>
         </MobileCard>
     );
 
@@ -211,7 +240,12 @@ export default function MobileLandingSections() {
             scrollSnapAlign='center'
         >
             <MobileBg3 className={styles.home3} />
-            <Fade up>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+            >
                 <img
                     src={orderImage}
                     alt='range and limit orders'
@@ -222,7 +256,7 @@ export default function MobileLandingSections() {
                     style={{ fontSize: '20px', lineHeight: '30px' }}
                     tabIndex={0}
                 >
-                    Bridge the Gap Between Trading and LP’ing
+                    Bridge the Gap Between Trading and LP'ing
                 </Text>
                 <Text tabIndex={0} color='text2' fontWeight='100'>
                     Make your LP position a trading position – and vice versa –
@@ -233,7 +267,7 @@ export default function MobileLandingSections() {
                     greater rewards for liquidity providers, and less impact for
                     traders.
                 </Text>
-            </Fade>
+            </motion.div>
         </MobileCard>
     );
 
@@ -245,7 +279,12 @@ export default function MobileLandingSections() {
             scrollSnapAlign='center'
         >
             <MobileBg4 className={styles.home4} />
-            <Fade up>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+            >
                 <Text
                     style={{ fontSize: '20px', lineHeight: '30px' }}
                     tabIndex={0}
@@ -258,7 +297,7 @@ export default function MobileLandingSections() {
                     quality-of-life improvements allowing for a best-in-class
                     user experience.
                 </Text>
-            </Fade>
+            </motion.div>
         </MobileCard>
     );
 
@@ -270,17 +309,22 @@ export default function MobileLandingSections() {
             scrollSnapAlign='center'
             style={{ paddingTop: '56px' }}
         >
-            <Fade up>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+            >
                 <Text
                     color='text1'
                     fontWeight='400'
-                    fontSize='header1'
-                    align='center'
+                    style={{ fontSize: '20px', lineHeight: '30px' }}
+                    tabIndex={0}
                 >
                     Investors
                 </Text>
                 <Investors />
-            </Fade>
+            </motion.div>
         </MobileCard>
     );
 
@@ -294,9 +338,14 @@ export default function MobileLandingSections() {
             id='footer'
         >
             <div className={styles.bg_footer} />
-            <Fade up>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+            >
                 <Footer />
-            </Fade>
+            </motion.div>
         </MobileCard>
     );
 
