@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ReactNode, useCallback, useEffect, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { BiArrowBack } from 'react-icons/bi';
 import { RiCloseFill } from 'react-icons/ri';
 import {
@@ -48,6 +48,8 @@ export default function Modal(props: ModalPropsIF) {
 
     // Track initialization to avoid rendering until states are fully resolved
     const [isInitialized, setIsInitialized] = useState(false);
+    const modalRef = useRef<HTMLDivElement>(null);
+    const previousActiveElement = useRef<HTMLElement | null>(null);
 
     // Handle closing both modal and bottom sheet
     const handleClose = () => {
@@ -70,6 +72,45 @@ export default function Modal(props: ModalPropsIF) {
             document.removeEventListener('keydown', escFunction, false);
         };
     }, [escFunction]);
+
+    // Focus trap and restore focus on close
+    useEffect(() => {
+        previousActiveElement.current = document.activeElement as HTMLElement;
+
+        // Focus the modal when it opens
+        if (modalRef.current) {
+            modalRef.current.focus();
+        }
+
+        return () => {
+            // Restore focus when modal closes
+            if (previousActiveElement.current) {
+                previousActiveElement.current.focus();
+            }
+        };
+    }, []);
+
+    // Focus trap handler
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key !== 'Tab') return;
+
+        const modal = modalRef.current;
+        if (!modal) return;
+
+        const focusableElements = modal.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement?.focus();
+        }
+    }, []);
 
     // Open bottom sheet on mobile, close on desktop transition
     useEffect(() => {
@@ -94,16 +135,22 @@ export default function Modal(props: ModalPropsIF) {
                 {headerRightItems}
                 <span />
                 {!isMobile && (
-                    <RiCloseFill
+                    <button
                         id='close_modal_button'
-                        size={27}
                         className={styles.close_button}
                         onClick={handleClose}
-                        role='button'
-                        tabIndex={-1}
-                        aria-label='Close modal button'
-                        style={{ cursor: 'pointer' }}
-                    />
+                        tabIndex={0}
+                        aria-label='Close modal'
+                        type='button'
+                        style={{
+                            cursor: 'pointer',
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                        }}
+                    >
+                        <RiCloseFill size={27} />
+                    </button>
                 )}
             </div>
         </header>
@@ -175,6 +222,7 @@ export default function Modal(props: ModalPropsIF) {
                 aria-modal='true'
             >
                 <motion.div
+                    ref={modalRef}
                     // initial={{ opacity: 0, scale: 0.5 }}
                     // animate={{ opacity: 1, scale: 1 }}
                     // transition={{ duration: 0.4 }}
@@ -183,8 +231,10 @@ export default function Modal(props: ModalPropsIF) {
                         ${noBackground ? styles.no_background_modal : null}
                     `}
                     onMouseDown={(e) => e.stopPropagation()}
-                    tabIndex={0}
+                    onKeyDown={handleKeyDown}
+                    tabIndex={-1}
                     aria-label={`${title} modal`}
+                    aria-labelledby={title ? 'modal-title' : undefined}
                 >
                     <Container boxShadow={isFuta ? 'none' : 'gradient'}>
                         {headerJSX}

@@ -1,4 +1,4 @@
-import { KeyboardEventHandler, MouseEventHandler, useEffect } from 'react';
+import { KeyboardEventHandler, MouseEventHandler, useCallback } from 'react';
 import { ToggleComponent } from './Form.styles';
 interface TogglePropsIF {
     isOn: boolean;
@@ -13,32 +13,33 @@ interface TogglePropsIF {
         | any;
     buttonColor?: string;
     disabled?: boolean;
+    ariaLabel?: string;
 }
 
 export default function Toggle(props: TogglePropsIF) {
-    const { isOn, handleToggle, id, disabled } = props;
+    const { isOn, handleToggle, id, disabled, ariaLabel } = props;
 
-    const enterFunction = (event: KeyboardEvent) => {
-        if (event.key === 'Enter') {
-            handleToggle;
-        }
-    };
-
-    useEffect(() => {
-        document.addEventListener('keydown', enterFunction, false);
-        return () => {
-            document.removeEventListener('keydown', enterFunction, false);
-        };
-    }, []);
+    const handleKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLDivElement>) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleToggle?.(event);
+            }
+        },
+        [handleToggle],
+    );
 
     return (
         <ToggleComponent
             data-ison={isOn}
             aria-checked={isOn}
+            aria-label={ariaLabel}
             onClick={handleToggle}
+            onKeyDown={handleKeyDown}
             id={`${id}switch`}
-            tabIndex={0}
-            role='checkbox'
+            tabIndex={disabled ? -1 : 0}
+            role='switch'
+            aria-disabled={disabled}
             disabled={!!disabled}
         >
             <div

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import styles from './Tooltip.module.css';
 
 const isTouchDevice = () => {
@@ -30,6 +30,7 @@ const Tooltip = ({
     const triggerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const isTouch = isTouchDevice();
+    const tooltipId = useId();
 
     const calculatePosition = () => {
         if (!tooltipRef.current || !triggerRef.current) return {};
@@ -140,19 +141,31 @@ const Tooltip = ({
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Escape' && isVisible) {
+            setIsVisible(false);
+        }
+    };
+
     return (
         <div
             className={styles.tooltipWrapper}
             ref={triggerRef}
             onMouseEnter={() => handleTrigger(true)}
             onMouseLeave={() => handleTrigger(false)}
+            onFocus={() => handleTrigger(true)}
+            onBlur={() => handleTrigger(false)}
             onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            aria-describedby={isVisible && content ? tooltipId : undefined}
         >
             {children}
 
             {isVisible && content && (
                 <div
                     ref={tooltipRef}
+                    id={tooltipId}
+                    role='tooltip'
                     style={{ maxWidth }}
                     className={`
             ${styles.tooltip}

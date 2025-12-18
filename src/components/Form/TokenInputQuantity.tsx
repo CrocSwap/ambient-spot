@@ -36,6 +36,7 @@ interface propsIF {
     fieldId?: string;
     isLoading?: boolean;
     label?: string;
+    inputAriaLabel?: string;
     includeWallet?: React.ReactNode;
     showPulseAnimation?: boolean;
     disable?: boolean;
@@ -71,6 +72,7 @@ function TokenInputQuantity(props: propsIF) {
         noModals,
         walletBalance,
         percentDiffUsdValue,
+        inputAriaLabel,
     } = props;
 
     const { platformName } = useContext(BrandContext);
@@ -188,7 +190,7 @@ function TokenInputQuantity(props: propsIF) {
             placeholder={isLoading ? '' : '0.0'}
             onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event)}
             value={displayValue}
-            type='string'
+            type='text'
             step='any'
             inputMode='decimal'
             autoComplete='off'
@@ -196,6 +198,10 @@ function TokenInputQuantity(props: propsIF) {
             min='0'
             minLength={1}
             disabled={disable}
+            aria-label={
+                inputAriaLabel || `Enter ${token?.symbol || 'token'} amount`
+            }
+            aria-disabled={disable}
         />
     );
 

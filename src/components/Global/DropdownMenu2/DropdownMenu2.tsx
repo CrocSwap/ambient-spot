@@ -1,5 +1,12 @@
 import { motion } from 'framer-motion';
-import { ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import {
+    ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import { FaAngleDown } from 'react-icons/fa';
 import useKeyPress from '../../../App/hooks/useKeyPress';
 import { brand } from '../../../ambient-utils/constants';
@@ -98,6 +105,21 @@ export default function DropdownMenu2(props: propsIF) {
         </Modal>
     );
 
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (!expandable) return;
+
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleMenu();
+            } else if (e.key === 'ArrowDown' && !isMenuOpen) {
+                e.preventDefault();
+                setIsMenuOpen(true);
+            }
+        },
+        [expandable, isMenuOpen],
+    );
+
     return (
         <div
             ref={dropdownRefItem}
@@ -108,6 +130,12 @@ export default function DropdownMenu2(props: propsIF) {
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 onClick={() => expandable && toggleMenu()}
+                onKeyDown={handleKeyDown}
+                role='button'
+                tabIndex={expandable && !disabled ? 0 : -1}
+                aria-haspopup='menu'
+                aria-expanded={isMenuOpen}
+                aria-disabled={disabled}
                 style={{
                     minWidth: !showFullMenu
                         ? ''
