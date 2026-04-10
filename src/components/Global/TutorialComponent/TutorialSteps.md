@@ -31,39 +31,9 @@ This is the interface for tutorial steps. (which derived from intro.js Step inte
 
 Step files are located in; <br>
 `src/utils/tutorial` folder. <br>
-**Futa** steps can be found in `src/utils/tutorial/futa` folder.
 
 ## Assigning a tutorial for a page
 
 The page-step relationship is established in the component named `<TutorialOverlayUrlBased>`
 
-Inside that component `getTutorialObjectForPage()` method, switch case block is used to associate step file with page name
-
-Here is an example; <br>
-case refers page name, <br>
-return statement refers tutorial object (`TutorialIF`).
-
-```
-...
-            case 'account':
-                return {
-                    lsKey: 'tuto_futa_account',
-                    steps: futaAccountSteps,
-                };
-            case 'auctionCreate':
-                  return {
-                        lsKey: 'tuto_futa_create',
-                        steps: futaCreateSteps,
-                        externalComponents: new Map<
-                        string,
-                        TutorialStepExternalComponent
-                        >([
-                        [
-                              '#auctions_create_connect_button',
-                              { component: connectButton, placement: 'nav-end' },
-                        ],
-                        ]),
-                  };
-...
-
-```
+Inside that component `getTutorialObjectForPage()` method, switch case block is used to associate step file with page name.

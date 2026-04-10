@@ -753,7 +753,6 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                         hoverTextColor='var(--text1)'
                         width={'auto'}
                         onClick={() => setApplyDefault(true)}
-                        isFuta={false}
                     >
                         {applyDefault ? (
                             <Spinner size={14} bg='transparent' centered />
@@ -778,7 +777,6 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                                 hoverTextColor='var(--text1)'
                                 width={'55px'}
                                 onClick={() => handleCancelChanges()}
-                                isFuta={false}
                             >
                                 <FooterContextText>
                                     {'Cancel'}
@@ -802,7 +800,6 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                                 hoverTextColor={'var(--accent1)'}
                                 width={'45px'}
                                 onClick={() => handleSaveChanges()}
-                                isFuta={false}
                             >
                                 {isSaving ? (
                                     <Spinner

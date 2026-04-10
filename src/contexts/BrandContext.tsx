@@ -117,17 +117,11 @@ export const BrandContextProvider = (props: { children: ReactNode }) => {
     function getAvailableSkins(): skins[] {
         const networkSettings = brandAssets.networks[chainId as chainHexIds];
         const available: skins[] = networkSettings?.color ?? ['purple_dark'];
-        const isFutaBrand = brandAssets.platformName.toLowerCase() === 'futa';
-        const brandScopedAvailable = isFutaBrand
-            ? available
-            : available.filter((skinName) => skinName !== 'futa_dark');
         const premium: skins[] = networkSettings?.premiumColor ?? [];
         const hasPremium = !!(
             userAddress && premiumTheme1.includes(userAddress.toLowerCase())
         );
-        return hasPremium
-            ? brandScopedAvailable
-            : brandScopedAvailable.concat(premium);
+        return hasPremium ? available : available.concat(premium);
     }
 
     function getDefaultSkin(): skins {

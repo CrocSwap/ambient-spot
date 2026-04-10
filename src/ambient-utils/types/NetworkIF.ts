@@ -24,7 +24,6 @@ export interface NetworkIF {
     gridSize: number;
     isTestnet: boolean;
     defaultPair: TokenIF[];
-    defaultPairFuta?: [TokenIF, TokenIF];
     topPools: TopPool[];
     priorityPool?: [TokenIF, TokenIF];
     blockExplorer: string;

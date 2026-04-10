@@ -72,8 +72,6 @@ export default function CSSDebug(props: propsIF) {
                                     return 'Purple Dark';
                                 case 'purple_light':
                                     return 'Purple Light';
-                                case 'futa_dark':
-                                    return 'FUTA Dark';
                                 default:
                                     return str;
                             }

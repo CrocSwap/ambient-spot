@@ -53,8 +53,6 @@ export interface CandleContextIF {
     timeOfEndCandle: number | undefined;
     isCondensedModeEnabled: boolean;
     setIsCondensedModeEnabled: Dispatch<SetStateAction<boolean>>;
-    showFutaCandles: boolean;
-    setShowFutaCandles: Dispatch<SetStateAction<boolean>>;
     setIsChartOpen: Dispatch<SetStateAction<boolean>>;
 }
 
@@ -109,7 +107,6 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     >();
 
     const [isCondensedModeEnabled, setIsCondensedModeEnabled] = useState(true);
-    const [showFutaCandles, setShowFutaCandles] = useState(false);
 
     const [isFetchingCandle, setIsFetchingCandle] = useState(false);
     const [isFinishRequest, setIsFinishRequest] = useState(false);
@@ -188,8 +185,6 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
         timeOfEndCandle,
         isCondensedModeEnabled,
         setIsCondensedModeEnabled,
-        showFutaCandles,
-        setShowFutaCandles,
         setIsChartOpen,
     };
 

@@ -52,7 +52,7 @@ export const defaultBrandAssets: brandIF = {
         },
         // '0x279f': {
         //     // monad testnet
-        //     color: ['purple_dark', 'purple_light', 'futa_dark'],
+        //     color: ['purple_dark', 'purple_light'],
         //     premiumColor: [],
         //     cobrandingLogo: monadLogo,
         // },

@@ -11,39 +11,39 @@ export const ambientProductionBrandAssets: brandIF = {
         // ethereum mainnet
         '0x1': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
         },
         // swell mainnet
         '0x783': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: swellLogo,
         },
         // plume mainnet
         '0x18232': {
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: plumeLogo,
         },
         // scroll mainnet
         '0x82750': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: scrollLogo,
         },
         // blast mainnet
         '0x13e31': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: blastLogo,
         },
         // monad testnet
         // '0x279f': {
-        //     color: ['purple_dark', 'purple_light', 'futa_dark'],
+        //     color: ['purple_dark', 'purple_light'],
         //     premiumColor: [],
         //     cobrandingLogo: monadLogo,
         // },

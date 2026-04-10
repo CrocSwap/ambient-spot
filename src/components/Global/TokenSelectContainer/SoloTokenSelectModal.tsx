@@ -37,8 +37,6 @@ interface propsIF {
     reverseTokens?: () => void;
     onClose: () => void;
     noModal?: boolean;
-    platform?: 'ambient' | 'futa';
-    isFuta?: boolean;
 }
 
 export const SoloTokenSelectModal = (props: propsIF) => {
@@ -49,7 +47,6 @@ export const SoloTokenSelectModal = (props: propsIF) => {
         isSingleToken,
         tokenAorB,
         reverseTokens,
-        platform = 'ambient',
     } = props;
 
     const { userAddress } = useContext(UserDataContext);
@@ -319,44 +316,43 @@ export const SoloTokenSelectModal = (props: propsIF) => {
                 </div>
                 <div className={styles.scrollContainer}>
                     <div style={{ padding: '1rem' }}>
-                        {platform !== 'futa' &&
-                            isWrappedNativeToken(validatedInput) && (
-                                <WarningBox
-                                    title=''
-                                    details={WETH_WARNING}
-                                    noBackground
-                                    button={
-                                        <button
-                                            onClick={() => {
-                                                try {
-                                                    const wethToken =
-                                                        tokens.getTokenByAddress(
-                                                            validatedInput,
-                                                        );
-                                                    if (wethToken) {
-                                                        chooseToken(
-                                                            wethToken,
-                                                            false,
-                                                        );
-                                                    }
-                                                } catch (err) {
-                                                    IS_LOCAL_ENV &&
-                                                        console.warn(err);
-                                                    onClose();
+                        {isWrappedNativeToken(validatedInput) && (
+                            <WarningBox
+                                title=''
+                                details={WETH_WARNING}
+                                noBackground
+                                button={
+                                    <button
+                                        onClick={() => {
+                                            try {
+                                                const wethToken =
+                                                    tokens.getTokenByAddress(
+                                                        validatedInput,
+                                                    );
+                                                if (wethToken) {
+                                                    chooseToken(
+                                                        wethToken,
+                                                        false,
+                                                    );
                                                 }
-                                            }}
-                                        >
-                                            {`I understand, use ${
-                                                tokens.getTokenByAddress(
-                                                    validatedInput,
-                                                )?.symbol
-                                            }`}
-                                        </button>
-                                    }
-                                />
-                            )}
+                                            } catch (err) {
+                                                IS_LOCAL_ENV &&
+                                                    console.warn(err);
+                                                onClose();
+                                            }
+                                        }}
+                                    >
+                                        {`I understand, use ${
+                                            tokens.getTokenByAddress(
+                                                validatedInput,
+                                            )?.symbol
+                                        }`}
+                                    </button>
+                                }
+                            />
+                        )}
                     </div>
-                    {platform === 'ambient' && (
+                    {
                         <>
                             {isWrappedNativeToken(validatedInput) &&
                                 [
@@ -394,7 +390,7 @@ export const SoloTokenSelectModal = (props: propsIF) => {
                                 />
                             )}
                         </>
-                    )}
+                    }
                 </div>
             </section>
         </Modal>

@@ -90,7 +90,7 @@ export default function DropdownMenu2(props: propsIF) {
         </motion.div>
     );
 
-    const showFullMenu = desktopScreen && brand !== 'futa';
+    const showFullMenu = desktopScreen;
 
     const modalVersion = (
         <Modal usingCustomHeader onClose={() => setIsMenuOpen(false)}>

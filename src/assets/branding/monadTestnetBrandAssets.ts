@@ -7,7 +7,7 @@ export const monadTestnetBrandAssets: brandIF = {
         // monad testnet
         '0x279f': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: monadLogo,
         },

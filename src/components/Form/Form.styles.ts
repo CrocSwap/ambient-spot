@@ -6,7 +6,6 @@ export const ButtonBase = styled.button<{
     width?: string;
     height?: string;
     style?: React.CSSProperties;
-    isFuta?: boolean;
 }>`
     width: ${({ width }) => width || '100%'};
     height: ${({ height }) => height || 'auto'};
@@ -68,20 +67,6 @@ export const ButtonBase = styled.button<{
         css`
             background: var(--dark2);
             color: var(--accent1);
-        `}
-    ${({ isFuta }) =>
-        isFuta &&
-        css`
-            background: var(--accent1, #0ccdff);
-            color: var(--dark1);
-            border: none;
-            text-transform: uppercase;
-
-            &:hover,
-            &:focus-visible {
-                background: var(--accent2);
-                color: var(--dark1);
-            }
         `}
 `;
 

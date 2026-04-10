@@ -50,7 +50,6 @@ export default function SlippageTolerance(props: propsIF) {
                                 id={`slippage-preset-button-${humanReadable}`}
                                 onClick={() => takeNewSlippage(preset)}
                                 ariaLabel={`set slippage to ${humanReadable}`}
-                                isFuta={false}
                                 selected={Number(slip) === preset}
                             >
                                 {humanReadable}

@@ -24,7 +24,7 @@ const ChartSettingsContainer = styled.div<{
     font: var(--font-family);
 `;
 
-const ContextMenu = styled.div<{ isFuta?: boolean }>`
+const ContextMenu = styled.div`
     width: 284px;
 
     padding: 8px 16px 8px 16px;
@@ -35,14 +35,9 @@ const ContextMenu = styled.div<{ isFuta?: boolean }>`
 
     border: 1px solid var(--accent1);
 
-    ${({ isFuta }) =>
-        isFuta
-            ? `
-                box-shadow: none;
-            `
-            : `
-                box-shadow: 0px 0px 20px 0px #7371fc66 inset, 0px 0px 20px 0px #7371fc33;
-            `}
+    box-shadow:
+        0px 0px 20px 0px #7371fc66 inset,
+        0px 0px 20px 0px #7371fc33;
 `;
 
 const ContextMenuHeader = styled.div`
@@ -178,18 +173,16 @@ const FooterButtons = styled.div<{
     textColor: string;
     hoverTextColor: string;
     width: string;
-    isFuta: boolean;
 }>`
     padding: 5px 8px 5px 8px;
     gap: 10px;
-    border-radius: ${({ isFuta }) => (isFuta ? '0px' : '50px')};
+    border-radius: 50px;
 
     max-width: 110px;
     width: ${({ width }) => width};
     height: 27px;
 
-    border: 1px solid
-        ${({ isFuta }) => (isFuta ? 'transparent' : 'var(--accent1)')};
+    border: 1px solid var(--accent1);
 
     background: ${({ backgroundColor }) => backgroundColor};
 
@@ -200,13 +193,6 @@ const FooterButtons = styled.div<{
     &:hover {
         background: ${({ hoverColor }) => hoverColor};
         color: ${({ hoverTextColor }) => hoverTextColor};
-        ${({ isFuta }) => {
-            if (isFuta) {
-                return `
-            border: 1px solid var(--accent1);
-            `;
-            }
-        }}
     }
 `;
 

@@ -37,10 +37,9 @@ export default function ChartTooltip(props: propsIF) {
         <ChartTooltipDiv
             isToolbarOpen={isToolbarOpen}
             isFullScreen={isFullScreen}
-            isFuta={false}
         >
             {showTooltip && currentData ? (
-                <CurrentDataDiv isFuta={false}>
+                <CurrentDataDiv>
                     <p>
                         {smallScreen && mobileView
                             ? ''

@@ -7,7 +7,6 @@ import {
 } from '../../../ambient-utils/dataLayer';
 import { PoolIF } from '../../../ambient-utils/types';
 import { AppStateContext } from '../../../contexts';
-import { BrandContext } from '../../../contexts/BrandContext';
 import { SidebarContext } from '../../../contexts/SidebarContext';
 import { TradeDataContext } from '../../../contexts/TradeDataContext';
 import { UserPreferenceContext } from '../../../contexts/UserPreferenceContext';
@@ -38,8 +37,6 @@ export default function PoolsListItem(props: propsIF) {
         activeNetwork: { chainId, poolIndex },
     } = useContext(AppStateContext);
     const { favePools } = useContext(UserPreferenceContext);
-    const { platformName } = useContext(BrandContext);
-    const isFuta = platformName.toLowerCase() === 'futa';
 
     const isBaseTokenMoneynessGreaterOrEqual =
         pool.baseToken.symbol && pool.quoteToken.symbol
@@ -77,7 +74,6 @@ export default function PoolsListItem(props: propsIF) {
     const { pathname } = useLocation();
 
     const navTarget = useMemo<pageNames>(() => {
-        if (isFuta) return 'swap';
         let output: pageNames;
         if (
             pathname.startsWith('/trade/market') ||
@@ -96,7 +92,7 @@ export default function PoolsListItem(props: propsIF) {
             output = 'market';
         }
         return output as pageNames;
-    }, [pathname, isFuta]);
+    }, [pathname]);
 
     const { tokenA, tokenB } = useContext(TradeDataContext);
 
@@ -116,7 +112,7 @@ export default function PoolsListItem(props: propsIF) {
 
     const poolDisplay = (
         <FlexContainer gap={8} alignItems='center'>
-            {!mobileScreen && !isFuta && (
+            {!mobileScreen && (
                 <FlexContainer gap={4}>
                     <TokenIcon
                         token={

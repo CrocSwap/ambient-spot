@@ -114,7 +114,7 @@ export default function ChartSettings(props: ContextMenuIF) {
                 setIsSelecboxActive(false);
             }}
         >
-            <ContextMenu isFuta={false}>
+            <ContextMenu>
                 <ContextMenuHeader>
                     <ContextMenuHeaderText>
                         Chart Settings

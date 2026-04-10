@@ -11,20 +11,6 @@
     padding: none;
 }
 
-.circleContainerFuta {
-
-
-    position: relative;
-    width: 12.5px;
-    height: 12.5px;
-    background-color: var(--accent1);
-    border-radius: 0;
-    cursor: pointer;
-    display: flex;
-    outline: none;
-    border: none;
-    padding: none;
-}
 .circleButton {
     outline: none;
     padding: none;
@@ -34,7 +20,7 @@
     position: relative;
 }
 
-.redDot{
+.redDot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -47,18 +33,6 @@
     border-radius: 30px;
     width: 40px;
     height: 40px;
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    animation: pulsate 1s ease-out infinite;
-    opacity: 0;
-}
-
-.ringFuta {
-    border: 3px solid var(--accent1);
-    border-radius: 0;
-    width: 25px;
-    height: 25px;
     position: absolute;
     top: -50%;
     left: -50%;

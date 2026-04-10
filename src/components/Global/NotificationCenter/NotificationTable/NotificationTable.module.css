@@ -72,10 +72,6 @@
         top: 60px;
     }
 
-    .containerFuta {
-        width: 95%;
-        right: 2.2rem;
-    }
     .container {
         width: 100%;
         border: 1px solid var(--accent1);
