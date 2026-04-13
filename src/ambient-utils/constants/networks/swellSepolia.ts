@@ -73,7 +73,6 @@ export const swellSepolia: NetworkIF = {
     evmRpcUrls: [PRIMARY_RPC_URL, FALLBACK_RPC_URL],
     chainSpecForAppKit,
     defaultPair: [SWELL_SEPOLIA_TOKENS.ETH, SWELL_SEPOLIA_TOKENS.USDC],
-    defaultPairFuta: [SWELL_SEPOLIA_TOKENS.ETH, SWELL_SEPOLIA_TOKENS.USDC],
     poolIndex: chainSpecFromSDK.poolIndex,
     gridSize: chainSpecFromSDK.gridSize,
     isTestnet: chainSpecFromSDK.isTestNet,

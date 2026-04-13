@@ -1,6 +1,5 @@
 import { useContext } from 'react';
 import { CandleDataIF, TokenIF } from '../../../ambient-utils/types';
-import { BrandContext } from '../../../contexts/BrandContext';
 import { ChartContext } from '../../../contexts/ChartContext';
 import { TradeDataContext } from '../../../contexts/TradeDataContext';
 import useMediaQuery from '../../../utils/hooks/useMediaQuery';
@@ -34,21 +33,15 @@ export default function ChartTooltip(props: propsIF) {
 
     const getDollarPrice = useDollarPrice();
 
-    const { platformName } = useContext(BrandContext);
-
-    const isFuta = ['futa'].includes(platformName);
-
     const chartTooltip = (
         <ChartTooltipDiv
             isToolbarOpen={isToolbarOpen}
             isFullScreen={isFullScreen}
-            isFuta={isFuta}
         >
             {showTooltip && currentData ? (
-                <CurrentDataDiv isFuta={isFuta}>
+                <CurrentDataDiv>
                     <p>
-                        {(isFuta && smallScreen) ||
-                        (!isFuta && smallScreen && mobileView)
+                        {smallScreen && mobileView
                             ? ''
                             : `${topToken.symbol}/${bottomToken.symbol} ${matchingCandleTime?.readable} `}
                         {`O: ${getDollarPrice(isDenomBase ? currentData.invPriceOpenExclMEVDecimalCorrected : currentData.priceOpenExclMEVDecimalCorrected).formattedValue} `}

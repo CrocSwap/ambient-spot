@@ -7,7 +7,6 @@ interface PropsIF {
     onClick: () => void;
     variant?: 'outlined' | 'secondary' | 'filled'; // default is outlined
     disabled?: boolean;
-    isFuta?: boolean;
 }
 
 const purpleOutlineHover = `                
@@ -40,7 +39,7 @@ export const Chip = styled.button<PropsIF>`
     font-size: var(--body-size);
 
     border: 1px solid var(--dark3);
-    border-radius: ${({ isFuta }) => (isFuta ? '0' : '50px')};
+    border-radius: 50px;
 
     ${({ variant, disabled }) => {
         switch (variant) {

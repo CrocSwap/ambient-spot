@@ -26,65 +26,13 @@
     color: var(--text1);
 }
 
-.futa_active_selected_button,
-.futa_non_active_selected_button {
-    display: flex;
-    background: var(--dark2);
-    transition: var(--transition);
-    cursor: pointer;
-    font-size: var(--body-size);
-    line-height: var(--body-lh);
-    color: var(--text2);
-    text-align: center;
-    text-justify: auto;
-    outline: none;
-    position: relative;
-    text-transform: uppercase;
-    align-items: center;
-    justify-content: center;
-
-    border: none;
-
-    padding: 4px 16px 4px 16px;
-}
-
-.futa_active_selected_button:hover,
-.futa_non_active_selected_button:hover {
-    background-color: var(--dark3);
-    color: var(--accent1);
-}
-
-.futa_active_selected_button {
-    color: var(--accent1);
-    border: 1px solid var(--accent1);
-}
-
 .active_selected_button {
     width: 100%;
     height: 100%;
     color: var(--text1);
 }
 
-.futa_non_active_selected_button {
-    color: var(--text2);
-}
-
 .non_active_selected_button {
-    color: var(--text2);
-}
-
-.non_active_selected_button {
-    color: var(--text2);
-}
-
-.futa_active_selected_button {
-    width: 100%;
-    height: 100%;
-    color: var(--accent1);
-    border: 1px solid var(--accent1);
-}
-
-.futa_non_active_selected_button {
     color: var(--text2);
 }
 
@@ -94,8 +42,6 @@
 
 .main_time_frame_container button:focus-visible,
 .active_selected_button:focus-visible,
-.futa_active_selected_button:focus-visible,
-.futa_non_active_selected_button:focus-visible,
 .non_active_selected_button:focus-visible {
     box-shadow: var(--glow-light-box-shadow);
 }
@@ -160,14 +106,13 @@
         min-height: 0;
         padding: 0;
         gap: 0;
-        padding-top: 2px
+        padding-top: 2px;
     }
     .mobile_settings_header {
         display: none;
     }
     .active_selected_button:hover,
-    .futa_active_selected_button:hover .non_active_selected_button:hover,
-    .futa_non_active_selected_button {
+    .non_active_selected_button:hover {
         /* background: var(--title-gradient); */
         color: var(--text1);
     }
@@ -181,15 +126,13 @@
     }
 }
 
-.active_selected_button,
-.futa_active_selected_button {
+.active_selected_button {
     width: 100%;
     height: 100%;
     color: var(--text1);
 }
 
-.non_active_selected_button,
-.futa_non_active_selected_button {
+.non_active_selected_button {
     color: var(--text2);
 }
 

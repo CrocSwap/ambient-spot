@@ -7,7 +7,7 @@ export const baseSepoliaBrandAssets: brandIF = {
         // base sepolia
         '0x14a34': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: baseLogo,
         },

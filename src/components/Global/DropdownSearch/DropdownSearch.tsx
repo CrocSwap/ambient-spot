@@ -10,7 +10,6 @@ import { AiOutlineFire } from 'react-icons/ai';
 import { BiSearch } from 'react-icons/bi';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
-import { brand } from '../../../ambient-utils/constants';
 import { TokenIF } from '../../../ambient-utils/types';
 import SidebarSearchResults from '../../../App/components/Sidebar/SidebarSearchResults/SidebarSearchResults';
 import useKeyPress from '../../../App/hooks/useKeyPress';
@@ -229,8 +228,6 @@ const DropdownSearch = () => {
         </div>
     );
 
-    const isFuta = brand === 'futa';
-
     return (
         <AnimatePresence>
             <FlexContainer gap={8} className={styles.main_container}>
@@ -240,26 +237,24 @@ const DropdownSearch = () => {
                     onClick={toggleDropdown}
                     style={{ justifyContent: 'flex-start' }}
                 >
-                    {!isFuta && (
-                        <FlexContainer
-                            id='trade_chart_header_token_pair_logos'
-                            role='button'
-                            gap={8}
-                        >
-                            <TokenIcon
-                                token={topToken}
-                                src={topToken.logoURI}
-                                alt={topToken.symbol}
-                                size={smallScrenView ? 's' : 'l'}
-                            />
-                            <TokenIcon
-                                token={bottomToken}
-                                src={bottomToken.logoURI}
-                                alt={bottomToken.symbol}
-                                size={smallScrenView ? 's' : 'l'}
-                            />
-                        </FlexContainer>
-                    )}
+                    <FlexContainer
+                        id='trade_chart_header_token_pair_logos'
+                        role='button'
+                        gap={8}
+                    >
+                        <TokenIcon
+                            token={topToken}
+                            src={topToken.logoURI}
+                            alt={topToken.symbol}
+                            size={smallScrenView ? 's' : 'l'}
+                        />
+                        <TokenIcon
+                            token={bottomToken}
+                            src={bottomToken.logoURI}
+                            alt={bottomToken.symbol}
+                            size={smallScrenView ? 's' : 'l'}
+                        />
+                    </FlexContainer>
                     <HeaderText
                         id='trade_chart_header_token_pair_symbols'
                         fontSize='header1'

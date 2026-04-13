@@ -1,7 +1,6 @@
 import { Dispatch, RefObject, SetStateAction, useContext } from 'react';
 import ReceiptDisplay from '../ReceiptDisplay/ReceiptDisplay';
 
-import { BrandContext } from '../../../../contexts/BrandContext';
 import { ReceiptContext } from '../../../../contexts/ReceiptContext';
 import { FlexContainer } from '../../../../styled/Common';
 import useMediaQuery from '../../../../utils/hooks/useMediaQuery';
@@ -23,8 +22,6 @@ const NotificationTable = (props: NotificationTableProps) => {
         notificationItemRef,
         setShowNotificationTable,
     } = props;
-
-    const { platformName } = useContext(BrandContext);
     const showMobileVersion = useMediaQuery('(max-width: 768px)');
 
     const { resetReceiptData, transactionsByType, sessionReceipts } =
@@ -60,14 +57,9 @@ const NotificationTable = (props: NotificationTableProps) => {
         />
     ));
 
-    const isFuta = ['futa'].includes(platformName);
-
     const mainContent = (
         <div className={styles.mainContainer}>
-            <div
-                className={`${styles.container} ${isFuta ? styles.container_futa : ''}`}
-                ref={notificationItemRef}
-            >
+            <div className={styles.container} ref={notificationItemRef}>
                 {<h3 className={styles.header}>Recent Transactions</h3>}
 
                 <div className={styles.content}>
@@ -78,9 +70,7 @@ const NotificationTable = (props: NotificationTableProps) => {
                 <FlexContainer justifyContent='center' margin='auto'>
                     <button
                         className={styles.footerButton}
-                        style={{
-                            color: isFuta ? 'var(--dark1)' : 'var(--accent5)',
-                        }}
+                        style={{ color: 'var(--accent5)' }}
                         onClick={() => {
                             resetReceiptData();
                         }}

@@ -1,6 +1,5 @@
 import { CrocImpact } from '@crocswap-libs/sdk';
 import { memo, useContext } from 'react';
-import { brand } from '../../../ambient-utils/constants';
 import {
     getFormattedNumber,
     getPriceImpactString,
@@ -29,8 +28,6 @@ function SwapExtraInfo(props: propsIF) {
         swapGasPriceinDollars,
         showExtraInfoDropdown,
     } = props;
-
-    const isFuta = brand === 'futa';
 
     const {
         poolPriceDisplay,
@@ -158,16 +155,6 @@ function SwapExtraInfo(props: propsIF) {
             data: liquidityProviderFeeString,
             placement: 'bottom',
         },
-        ...(isFuta
-            ? [
-                  {
-                      title: 'Network Fee',
-                      tooltipTitle: `Estimated cost of gas for this swap is ${swapGasPriceinDollars}`,
-                      data: swapGasPriceinDollars,
-                      placement: 'bottom',
-                  },
-              ]
-            : []),
     ].filter(Boolean); // Filters out any `null` or `undefined` items
 
     return (

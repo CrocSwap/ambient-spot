@@ -11,10 +11,9 @@ import {
 import { RiArrowDownSLine } from 'react-icons/ri';
 
 import { Link, useLocation } from 'react-router-dom';
-import { getFormattedNumber, uriToHttp } from '../../ambient-utils/dataLayer';
+import { uriToHttp } from '../../ambient-utils/dataLayer';
 import { TokenIF } from '../../ambient-utils/types';
 import { AppStateContext } from '../../contexts';
-import { BrandContext } from '../../contexts/BrandContext';
 import { TradeDataContext } from '../../contexts/TradeDataContext';
 import { linkGenMethodsIF, useLinkGen } from '../../utils/hooks/useLinkGen';
 import { useModal } from '../Global/Modal/useModal';
@@ -24,7 +23,6 @@ import TokenIcon from '../Global/TokenIcon/TokenIcon';
 import { SoloTokenSelect } from '../Global/TokenSelectContainer/SoloTokenSelect';
 import { SoloTokenSelectModal } from '../Global/TokenSelectContainer/SoloTokenSelectModal';
 import styles from './TokenInputQuantity.module.css';
-import { brand } from '../../ambient-utils/constants';
 
 interface propsIF {
     tokenAorB: 'A' | 'B' | null;
@@ -67,13 +65,8 @@ function TokenInputQuantity(props: propsIF) {
         reverseTokens,
         setTokenModalOpen = () => null,
         customBorderRadius,
-        usdValue,
         noModals,
-        walletBalance,
-        percentDiffUsdValue,
     } = props;
-
-    const { platformName } = useContext(BrandContext);
 
     const location = useLocation();
 
@@ -81,8 +74,6 @@ function TokenInputQuantity(props: propsIF) {
     const {
         activeNetwork: { chainId },
     } = useContext(AppStateContext);
-
-    const isFuta = brand === 'futa';
 
     const linkGenInitPool: linkGenMethodsIF = useLinkGen('initpool');
 
@@ -262,90 +253,6 @@ function TokenInputQuantity(props: propsIF) {
             {!noModals && <RiArrowDownSLine size={27} />}
         </button>
     );
-
-    const [isTickerModalOpen, setIsTickerModalOpen] = useState<boolean>(false);
-
-    const showWarning =
-        usdValue &&
-        percentDiffUsdValue !== undefined &&
-        percentDiffUsdValue < -10;
-
-    const futaLayout = (
-        <section className={styles.futaLayout}>
-            <div className={styles.futaLayoutLeft}>
-                {inputDisplay}
-                {!isLoading && (
-                    <p
-                        className={styles.usdValue}
-                        style={
-                            showWarning
-                                ? { color: 'var(--other-red)' }
-                                : undefined
-                        }
-                    >
-                        {percentDiffUsdValue && showWarning
-                            ? usdValue +
-                              ' (' +
-                              (percentDiffUsdValue !== undefined
-                                  ? getFormattedNumber({
-                                        value: percentDiffUsdValue,
-                                        isPercentage: true,
-                                    }) + '%)'
-                                  : undefined)
-                            : usdValue}
-                    </p>
-                )}
-            </div>
-            <div className={styles.futaLayoutRight}>
-                <button
-                    className={styles.tokenButton}
-                    style={{
-                        cursor: 'default',
-                        justifyContent: isFuta ? 'center' : 'space-between',
-                    }}
-                    onClick={() => setIsTickerModalOpen(true)}
-                >
-                    {!isFuta && (
-                        <TokenIcon
-                            token={token}
-                            src={uriToHttp(token.logoURI)}
-                            alt={token.symbol}
-                            size='xl'
-                        />
-                    )}
-                    {tokenSymbol}
-                </button>
-                <button
-                    className={styles.walletBalanceButton}
-                    style={{ cursor: 'default' }}
-                    onClick={() => null}
-                >
-                    {walletBalance
-                        ? getFormattedNumber({
-                              value: parseFloat(walletBalance),
-                              abbrevThreshold: 100000, // use 'm', 'b' format > 10m
-                          })
-                        : '...'}
-                </button>
-            </div>
-            {isTickerModalOpen && (
-                <SoloTokenSelectModal
-                    onClose={() => setIsTickerModalOpen(false)}
-                    showSoloSelectTokenButtons={showSoloSelectTokenButtons}
-                    setShowSoloSelectTokenButtons={
-                        setShowSoloSelectTokenButtons
-                    }
-                    isSingleToken={!tokenAorB}
-                    tokenAorB={tokenAorB}
-                    reverseTokens={reverseTokens}
-                    platform='futa'
-                    isFuta
-                />
-            )}
-        </section>
-    );
-
-    if (platformName.toLowerCase() === 'futa') return futaLayout;
 
     return (
         <div

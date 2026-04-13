@@ -149,8 +149,6 @@ export default defineConfig({
                     //     return 'vendor'; // General vendor chunk for everything else in node_modules
                     // } else if (id.toLowerCase().includes('assets')) {
                     //     return 'assets';
-                    // } else if (id.toLowerCase().includes('futa')) {
-                    //     return 'futa';
                     // } else if (id.toLowerCase().includes('ambient-utils')) {
                     //     return 'chat-utils';
                     // } else if (id.toLowerCase().includes('chat')) {

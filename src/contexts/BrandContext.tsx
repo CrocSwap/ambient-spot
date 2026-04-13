@@ -1,4 +1,11 @@
-import { ReactNode, createContext, useContext, useMemo, useState } from 'react';
+import {
+    ReactNode,
+    createContext,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import { chainHexIds } from '../ambient-utils/types';
 import { skins } from '../App/hooks/useSkin';
 import {
@@ -7,7 +14,6 @@ import {
     baseSepoliaBrandAssets,
     blastBrandAssets,
     defaultBrandAssets,
-    futaBrandAssets,
     monadTestnetBrandAssets,
     plumeBrandAssets,
     scrollBrandAssets,
@@ -83,8 +89,6 @@ export const BrandContextProvider = (props: { children: ReactNode }) => {
                 return scrollBrandAssets;
             case 'swell':
                 return swellBrandAssets;
-            case 'futa':
-                return futaBrandAssets;
             case 'ambientProduction':
                 return ambientProductionBrandAssets;
             case 'ambientTestnet':
@@ -124,6 +128,13 @@ export const BrandContextProvider = (props: { children: ReactNode }) => {
         const defaultSkin: skins[] = getAvailableSkins();
         return defaultSkin[0];
     }
+
+    useEffect(() => {
+        const availableSkins = getAvailableSkins();
+        if (!availableSkins.includes(skin)) {
+            setSkin(availableSkins[0]);
+        }
+    }, [chainId, userAddress, brandAssets.platformName, skin]);
 
     // data to be returned to the app
     const brandData: BrandContextIF = {

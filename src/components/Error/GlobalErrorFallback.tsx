@@ -1,6 +1,4 @@
 import React from 'react';
-import { brand } from '../../ambient-utils/constants';
-import futaBg from '../../assets/futa/home/hexBg.png';
 import ambiBg from '../../assets/images/home/home_wallpaper.webp';
 import Button from '../Form/Button';
 import styles from './GlobalErrorFallback.module.css';
@@ -9,8 +7,6 @@ interface GlobalErrorFallbackProps {
 }
 
 const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error }) => {
-    const isFuta = brand === 'futa';
-
     const handleCopyError = () => {
         if (error) {
             navigator.clipboard
@@ -38,7 +34,7 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error }) => {
         <div
             className={styles.errorContainer}
             style={{
-                background: `${isFuta ? futaBg : ambiBg} no-repeat
+                background: `${ambiBg} no-repeat
         center center fixed`,
             }}
         >

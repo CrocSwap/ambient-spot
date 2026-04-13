@@ -1,9 +1,8 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import { CandleDataIF } from '../../../../ambient-utils/types';
-import { BrandContext } from '../../../../contexts/BrandContext';
 import { ChartThemeIF } from '../../../../contexts/ChartContext';
 import { scaleData, setCanvasResolution } from '../ChartUtils/chartUtils';
 
@@ -33,8 +32,6 @@ export default function VolumeBarCanvas(props: propsIF) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [barSeries, setBarSeries] = useState<any>();
 
-    const { platformName } = useContext(BrandContext);
-
     useEffect(() => {
         if (scaleData !== undefined) {
             const canvasBarChart = d3fc
@@ -60,12 +57,7 @@ export default function VolumeBarCanvas(props: propsIF) {
                         chartThemeColors.upCandleBorderColor.copy();
 
                     if (d3DarkStrokeColor) d3DarkStrokeColor.opacity = 0.5;
-                    if (d3LightStrokeColor)
-                        d3LightStrokeColor.opacity = ['futa'].includes(
-                            platformName,
-                        )
-                            ? 1
-                            : 0.5;
+                    if (d3LightStrokeColor) d3LightStrokeColor.opacity = 0.5;
 
                     const close = denomInBase
                         ? d.invPriceCloseExclMEVDecimalCorrected

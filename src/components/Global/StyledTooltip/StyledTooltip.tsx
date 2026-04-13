@@ -70,15 +70,3 @@ export const RedTextTooltip = createStyledTooltip(
     },
     'RedTextTooltip',
 );
-
-export const FutaTooltip = createStyledTooltip(
-    {
-        [`& .${tooltipClasses.tooltip}`]: {
-            color: 'var(--text2)',
-            backgroundColor: 'var(--dark2)',
-            border: '1px solid yellow',
-            padding: '8px',
-        },
-    },
-    'FutaTooltip',
-);

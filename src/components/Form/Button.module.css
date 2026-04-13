@@ -55,25 +55,3 @@
     background: var(--dark2);
     color: var(--accent1);
 }
-
-.isFuta {
-    background: var(--accent1, #0ccdff);
-    color: var(--dark1);
-    border: none;
-    text-transform: uppercase !important;
-    border-radius: 0;
-    font-size: 24px;
-}
-
-.isFuta:hover,
-.isFuta:focus-visible {
-    background: var(--accent2);
-    color: var(--dark1);
-}
-
-.isFutaDisabled {
-    pointer-events: none;
-    background: var(--dark3);
-    border: none;
-    color: var(--text3);
-}

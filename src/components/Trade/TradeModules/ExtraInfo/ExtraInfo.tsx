@@ -9,7 +9,6 @@ import {
 
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import TooltipComponent from '../../../Global/TooltipComponent/TooltipComponent';
-import { brand } from '../../../../ambient-utils/constants';
 
 interface PropsIF {
     extraInfo:
@@ -36,8 +35,6 @@ export const ExtraInfo = (props: PropsIF) => {
         priceImpactExceedsThreshold,
     } = props;
 
-    const isFuta = brand === 'futa';
-
     const { toggleDidUserFlipDenom } = useContext(TradeDataContext);
 
     const [showExtraInfo, setShowExtraInfo] = useState<boolean>(false);
@@ -56,12 +53,11 @@ export const ExtraInfo = (props: PropsIF) => {
         )
     ) : null;
 
-    const staticDropdown = isFuta ? true : showExtraInfo && showDropdown;
+    const staticDropdown = showExtraInfo && showDropdown;
 
     return (
         <>
             <ExtraInfoContainer
-                style={{ display: isFuta ? 'none' : 'flex' }}
                 role='button'
                 justifyContent='space-between'
                 alignItems='center'
@@ -70,7 +66,6 @@ export const ExtraInfo = (props: PropsIF) => {
                 fontSize='body'
                 padding='4px'
                 active={showDropdown}
-                isFuta={isFuta}
                 onClick={
                     showDropdown
                         ? () => setShowExtraInfo(!showExtraInfo)
@@ -102,9 +97,7 @@ export const ExtraInfo = (props: PropsIF) => {
                 <div style={{ height: '22px' }}>{arrowToRender}</div>
             </ExtraInfoContainer>
             {staticDropdown && (
-                <ExtraDetailsContainer
-                    style={{ textTransform: isFuta ? 'uppercase' : 'none' }}
-                >
+                <ExtraDetailsContainer>
                     {extraInfo?.map((item, idx) => (
                         <FlexContainer
                             key={idx}
@@ -123,13 +116,7 @@ export const ExtraInfo = (props: PropsIF) => {
                             }
                         >
                             <FlexContainer gap={4}>
-                                <div
-                                    style={{
-                                        color: isFuta ? 'var(--text3)' : '',
-                                    }}
-                                >
-                                    {item.title}
-                                </div>
+                                <div>{item.title}</div>
                                 <TooltipComponent
                                     title={item.tooltipTitle}
                                     svgColor='#4D5255'

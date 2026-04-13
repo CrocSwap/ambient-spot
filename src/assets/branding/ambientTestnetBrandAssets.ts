@@ -10,30 +10,30 @@ export const ambientTestnetBrandAssets: brandIF = {
         // ethereum sepolia
         '0xaa36a7': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
         },
         // monad testnet
         // '0x279f': {
-        //     color: ['purple_dark', 'purple_light', 'futa_dark'],
+        //     color: ['purple_dark', 'purple_light'],
         //     premiumColor: [],
         //     cobrandingLogo: monadLogo,
         // },
         // swell sepolia
         '0x784': {
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: swellLogo,
         },
         // base sepolia
         '0x14a34': {
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: baseLogo,
         },
         // blast sepolia
         '0xa0c71fd': {
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: blastLogo,
         },

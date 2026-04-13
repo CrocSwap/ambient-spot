@@ -5,7 +5,6 @@ import { AnimationProps, Animations } from '../Common/Animations';
 
 interface TradeModuleLinkProps {
     isActive: boolean;
-    isFuta?: boolean;
 }
 
 export const TradeModuleLink = styled(Link)<TradeModuleLinkProps>`
@@ -13,46 +12,22 @@ export const TradeModuleLink = styled(Link)<TradeModuleLinkProps>`
     justify-content: center;
     align-items: center;
     width: 116px;
-    height: ${({ isFuta }) => (isFuta ? '29px' : '25px')};
+    height: 25px;
     font-size: 18px;
     border-radius: var(--border-radius);
     transition: all var(--animation-speed) ease-in-out;
 
-    color: ${({ isFuta }) => (isFuta ? 'var(--text2)' : 'var(--text1)')};
-    background: ${({ isFuta }) => (isFuta ? 'var(--dark2)' : 'var(--dark2)')};
+    color: var(--text1);
+    background: var(--dark2);
 
-    ${({ isFuta, isActive }) =>
-        isFuta &&
-        css`
-            ${isActive &&
-            css`
-                color: var(--accent1);
-                background: var(--base-dark2, #14161a);
-                border: 0.5px solid var(--base-accent1, #62ebf1);
-            `}
-
-            &:hover {
-                opacity: 0.5;
-                border: 0.5px solid var(--base-accent1, #62ebf1);
-            }
-            border-radius: 0;
-            width: 50%;
-            transition: all var(--animation-speed) ease-in-out;
-        `}
-
-    ${({ isActive, isFuta }) =>
-        !isFuta &&
+    ${({ isActive }) =>
         isActive &&
         css`
             background: var(--accent1);
         `}
-    
+
     &:hover {
-        ${({ isFuta }) =>
-            !isFuta &&
-            css`
-                background: var(--accent1);
-            `}
+        background: var(--accent1);
     }
 `;
 
@@ -314,42 +289,8 @@ export const RefreshButton = styled(IconButton)`
     }
 `;
 
-export const RefreshButtonFuta = styled.button`
-    display: flex;
-    width: 82px;
-    margin-left: auto;
-    padding: 0px 12px;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    background: var(--dark2, #14161a);
-    color: var(--text2, #939c9e);
-    text-align: center;
-
-    font-family: 'Fira Mono';
-    font-size: 18px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
-    letter-spacing: -0.36px;
-
-    border: none;
-    cursor: pointer;
-    transition: color 0.3s ease;
-
-    &:hover {
-        color: var(--text1);
-    }
-
-    &:focus-visible {
-        color: var(--text1);
-        cursor: pointer;
-    }
-`;
-
 export const ExtraInfoContainer = styled(FlexContainer)<{
     active: boolean;
-    isFuta?: boolean;
 }>`
     border-radius: var(--border-radius);
 
@@ -385,15 +326,6 @@ export const ExtraInfoContainer = styled(FlexContainer)<{
             background: transparent;
         }
     `}
-
-    ${({ isFuta }) =>
-        isFuta
-            ? `
-        & {
-          text-transform: uppercase !important;
-        }
-    `
-            : ''}
 `;
 
 export const ExtraDetailsContainer = styled.div`

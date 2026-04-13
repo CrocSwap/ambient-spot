@@ -98,7 +98,6 @@ export const plumeLegacy: NetworkIF = {
     evmRpcUrls: [PRIMARY_RPC_URL, FALLBACK_RPC_URL],
     chainSpecForAppKit,
     defaultPair: [PLUME_LEGACY_TOKENS.pETH, PLUME_LEGACY_TOKENS.pUSD],
-    defaultPairFuta: [PLUME_LEGACY_TOKENS.pETH, PLUME_LEGACY_TOKENS.pUSD],
     poolIndex: chainSpecFromSDK.poolIndex,
     gridSize: chainSpecFromSDK.gridSize,
     isTestnet: chainSpecFromSDK.isTestNet,

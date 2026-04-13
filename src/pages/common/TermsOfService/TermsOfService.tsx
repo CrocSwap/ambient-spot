@@ -1,15 +1,11 @@
 import styles from './TermsOfService.module.css';
-import futaBg from '../../../assets/futa/home/background.png';
 import ambientBg from '../../../assets/images/backgrounds/background.png';
-import { brand } from '../../../ambient-utils/constants';
 export default function TermsOfService() {
-    const isFuta = brand === 'futa';
-
     return (
         <div
             className={styles.background}
             style={{
-                background: `url(${isFuta ? futaBg : ambientBg}) no-repeat`,
+                background: `url(${ambientBg}) no-repeat`,
             }}
         >
             <div className={styles.container}>
@@ -1145,7 +1141,8 @@ export default function TermsOfService() {
                             the subsection entitled “Applicability of
                             Arbitration Agreement” above. There is no judge or
                             jury in arbitration, and court review of an
-                            arbitration award is subject to very limited review.{' '}
+                            arbitration award is subject to very limited
+                            review.{' '}
                         </p>
                         <p>
                             <span style={{ fontWeight: 'bold' }}>
@@ -1621,7 +1618,8 @@ export default function TermsOfService() {
                                 13.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                             </span>
                             <span style={{ fontWeight: 'bold' }}>
-                                Not Registered with the SEC or Any Other Agency.{' '}
+                                Not Registered with the SEC or Any Other
+                                Agency.{' '}
                             </span>
                             We are not registered with the U.S. Securities and
                             Exchange Commission as a national securities

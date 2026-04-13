@@ -1,5 +1,4 @@
 import React from 'react';
-import { brand } from '../../ambient-utils/constants';
 import styles from './Button.module.css';
 
 interface propsIF {
@@ -28,7 +27,6 @@ export default function Button(props: propsIF) {
         style,
         thin,
     } = props;
-    const isFuta = brand === 'futa';
 
     const ariaLabelToDisplay = disabled
         ? `Button is disabled. ${title}`
@@ -41,8 +39,6 @@ export default function Button(props: propsIF) {
         flat ? styles.flat : styles.gradient,
         disabled && styles.disabled,
         warning && styles.warning,
-        isFuta && styles.isFuta,
-        isFuta && disabled && styles.isFutaDisabled,
     ]
         .filter(Boolean)
         .join(' ');

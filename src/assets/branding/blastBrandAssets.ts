@@ -6,7 +6,7 @@ export const blastBrandAssets: brandIF = {
     networks: {
         '0x13e31': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: blastLogo,
         },

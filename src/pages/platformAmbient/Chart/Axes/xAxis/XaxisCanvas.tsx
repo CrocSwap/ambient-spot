@@ -8,7 +8,6 @@ import {
     diffHashSigScaleData,
 } from '../../../../../ambient-utils/dataLayer';
 import { CandleDataIF } from '../../../../../ambient-utils/types';
-import { BrandContext } from '../../../../../contexts/BrandContext';
 import { CandleContext } from '../../../../../contexts/CandleContext';
 import { xAxisHeightPixel } from '../../ChartUtils/chartConstants';
 import {
@@ -90,8 +89,6 @@ function XAxisCanvas(props: xAxisIF) {
     const utcDiffHours = Math.floor(utcDiff / 60);
 
     const location = useLocation();
-
-    const { platformName } = useContext(BrandContext);
 
     useEffect(() => {
         if (scaleData) {
@@ -405,11 +402,7 @@ function XAxisCanvas(props: xAxisIF) {
                                     textWidth,
                                     height * 0.65,
                                 );
-                                context.fillStyle = ['futa'].includes(
-                                    platformName,
-                                )
-                                    ? 'black'
-                                    : 'rgb(214, 214, 214)';
+                                context.fillStyle = 'rgb(214, 214, 214)';
                                 context.font = '800 13px Lexend Deca';
                                 context.textAlign = 'center';
                                 context.textBaseline = 'middle';

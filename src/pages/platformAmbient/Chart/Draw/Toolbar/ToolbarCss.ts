@@ -5,14 +5,13 @@ const ToolbarContainer = styled.div<{
     isMobile: boolean;
     isFullScreen: boolean;
     isSmallScreen: boolean;
-    isFuta: boolean;
     backgroundColor: string;
     marginTopValue: number;
     height: number;
 }>`
-    ${({ isActive, marginTopValue, isMobile, isFullScreen, isFuta }) => {
+    ${({ isActive, marginTopValue, isMobile, isFullScreen }) => {
         const marginTop = isMobile ? '' : `${marginTopValue}px`;
-        const marginLeft = isFullScreen || isFuta ? 16 : 0;
+        const marginLeft = isFullScreen ? 16 : 0;
         if (isActive) {
             return `
             width: 38px;
@@ -35,7 +34,7 @@ const ToolbarContainer = styled.div<{
             margin-left:${marginLeft + 5}px;
 
             margin-left:5px;
-            margin-top: ${marginTop};
+            margin-top: ${marginTop}
             `;
         }
     }}
@@ -238,7 +237,7 @@ const DividerButton = styled.div<{ isActive: boolean }>`
         isActive ? 'var(--dark1)' : 'var(--accent1)}'};
 `;
 
-const ArrowRight = styled.span<{ isActive: boolean; isFuta: boolean }>`
+const ArrowRight = styled.span<{ isActive: boolean }>`
     ${({ isActive }) => {
         if (isActive) {
             return `
@@ -256,10 +255,10 @@ const ArrowRight = styled.span<{ isActive: boolean; isFuta: boolean }>`
     display: inline-block;
     width: 5px;
     height: 5px;
-    border-top: ${({ isFuta, isActive }) =>
-        isFuta && !isActive ? '1px solid var(--dark1)' : '1px solid #dbdbdb'};
-    border-right: ${({ isFuta, isActive }) =>
-        isFuta && !isActive ? '1px solid var(--dark1)' : '1px solid #dbdbdb'};
+    border-top: ${({ isActive }) =>
+        !isActive ? '1px solid var(--dark1)' : '1px solid #dbdbdb'};
+    border-right: ${({ isActive }) =>
+        !isActive ? '1px solid var(--dark1)' : '1px solid #dbdbdb'};
     transition: all 600ms;
 `;
 

@@ -1,16 +1,12 @@
 import { Link } from 'react-router-dom';
 import styles from './NotFound.module.css';
 import ambiBg from '../../../assets/images/home/home_wallpaper.webp';
-import futaBg from '../../../assets/futa/home/hexBg.png';
-import { brand } from '../../../ambient-utils/constants';
 export default function NotFound() {
-    const isFuta = brand === 'futa';
-
     return (
         <div
             className={styles.flexContainer}
             style={{
-                background: `${isFuta ? futaBg : ambiBg} no-repeat
+                background: `${ambiBg} no-repeat
     center center fixed`,
             }}
         >

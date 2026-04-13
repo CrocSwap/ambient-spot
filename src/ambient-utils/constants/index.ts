@@ -148,25 +148,19 @@ export const CACHE_UPDATE_FREQ_IN_MS = 60000; // 1 minute
 // Refresh USD prices in 30 second windows
 export const PRICE_WINDOW_GRANULARITY = 30 * 1000;
 
-export const DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES =
-    brand === 'futa'
-        ? Infinity
-        : import.meta.env.VITE_DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES
-          ? parseFloat(
-                import.meta.env
-                    .VITE_DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES,
-            )
-          : undefined;
+export const DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES = import.meta.env
+    .VITE_DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES
+    ? parseFloat(
+          import.meta.env.VITE_DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES,
+      )
+    : undefined;
 
-export const DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES =
-    brand === 'futa'
-        ? Infinity
-        : import.meta.env.VITE_DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES
-          ? parseFloat(
-                import.meta.env
-                    .VITE_DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES,
-            )
-          : undefined;
+export const DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES = import.meta.env
+    .VITE_DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES
+    ? parseFloat(
+          import.meta.env.VITE_DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES,
+      )
+    : undefined;
 
 export const WALLETCONNECT_PROJECT_ID = import.meta.env
     .VITE_WALLETCONNECT_PROJECT_ID
@@ -181,8 +175,6 @@ export const CROCODILE_LABS_LINKS = [
 
 export const LS_USER_VERIFY_TOKEN = 'CHAT_user_verify';
 export const LS_USER_NON_VERIFIED_MESSAGES = 'CHAT_non_verified_messages';
-
-export const CURRENT_AUCTION_VERSION = 1;
 
 // using to disable tutos which showing by default
 // controlled with a toggle on settings in ui

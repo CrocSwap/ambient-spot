@@ -17,34 +17,6 @@
     background: var(--dark2);
 }
 
-/* Futa active trade link */
-.trade_link_futa_active {
-    border: 1px solid var(--accent1, #AACFD1);
-    background: var(--dark2, #14161A);
-    color: var(--accent1, #AACFD1);
-    text-align: center;
-  
-    font-family: "Fira Mono";
-    font-size: 24px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
-    text-transform: uppercase;
-  }
-  
-  /* Futa inactive trade link (no borders) */
-  .trade_link_futa {
-    color: var(--text2, #939C9E);
-    text-align: center;
-    border: 1px solid transparent;
-    
-    font-family: "Fira Mono";
-    font-size: 24px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
-    text-transform: uppercase;
-  }
 .trade_link_active {
     background: var(--accent1);
 }

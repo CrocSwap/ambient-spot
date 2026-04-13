@@ -8,7 +8,7 @@
 // !important:  ... across multiple deployments to the same URL as local
 // !important:  ... storage is specific to a single URL domain
 
-export type skins = 'purple_dark' | 'purple_light' | 'futa_dark';
+export type skins = 'purple_dark' | 'purple_light';
 
 // export interface skinMethodsIF {
 //     active: skins;

@@ -14,7 +14,6 @@ import { BrandContext } from '../../../contexts/BrandContext';
 import useMediaQuery from '../../../utils/hooks/useMediaQuery';
 import { chartItemStates } from '../../platformAmbient/Chart/ChartUtils/chartUtils';
 import ChartSettingsContent from './ChartSettingsContent';
-import { brand } from '../../../ambient-utils/constants';
 
 interface ContextMenuIF {
     contextMenuPlacement?: { top: number; left: number; isReversed: boolean };
@@ -54,8 +53,7 @@ export default function ChartSettings(props: ContextMenuIF) {
 
     const contextMenuRef = useRef<HTMLInputElement | null>(null);
 
-    const { platformName } = useContext(BrandContext);
-    const isFuta = brand === 'futa';
+    const { platformName: _platformName } = useContext(BrandContext);
 
     const [isSaving, setIsSaving] = useState(false);
     const [applyDefault, setApplyDefault] = useState(false);
@@ -116,12 +114,10 @@ export default function ChartSettings(props: ContextMenuIF) {
                 setIsSelecboxActive(false);
             }}
         >
-            <ContextMenu isFuta={isFuta}>
+            <ContextMenu>
                 <ContextMenuHeader>
                     <ContextMenuHeaderText>
-                        {['futa'].includes(platformName)
-                            ? 'CHART SETTINGS'
-                            : 'Chart Settings'}
+                        Chart Settings
                     </ContextMenuHeaderText>
                     <CloseButton onClick={() => setIsSettingsClosing(true)}>
                         <VscClose size={24} />

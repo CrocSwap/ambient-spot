@@ -45,7 +45,6 @@
         "start": "pnpm install && vite",
         "start-only": "vite",
         "force": "pnpm start --force",
-        "futa": "pnpm start --force --mode futa --port 3001",
         "plume": "pnpm start --force --mode plume --port 3001",
         "build": "tsc && vite build",
         "preview": "vite preview",

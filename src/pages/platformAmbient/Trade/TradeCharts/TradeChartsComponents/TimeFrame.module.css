@@ -5,14 +5,6 @@
     padding-left: 4px;
 }
 
-.futa_chart_overlay_container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding-left: 4px;
-    gap: 10px;
-}
-
 .main_time_frame_container {
     display: flex;
     flex-direction: row;
@@ -41,83 +33,16 @@
     color: var(--text1);
 }
 
-.futa_active_selected_button,
-.futa_non_active_selected_button {
-    display: flex;
-    background: var(--dark2);
-    transition: var(--transition);
-    cursor: pointer;
-    font-size: var(--body-size);
-    line-height: var(--body-lh);
-    color: var(--text2);
-    text-align: center;
-    text-justify: auto;
-    outline: none;
-    position: relative;
-
-    align-items: center;
-    justify-content: center;
-
-    border: none;
-
-    width: 49px;
-    height: 25px;
-    padding: 4px 16px 4px 16px;
-}
-
-.futa_active_selected_button:hover,
-.futa_non_active_selected_button:hover {
-    background-color: var(--dark3);
-    color: var(--accent1);
-}
-
-.futa_active_selected_button {
-    color: var(--accent1);
-    border: 1px solid var(--accent1);
-}
-
 .active_selected_button {
     width: 100%;
     height: 100%;
     color: var(--text1);
 }
-
-.futa_non_active_selected_button {
-    color: var(--text2);
-}
-
 .non_active_selected_button {
     color: var(--text2);
 }
 
-.non_active_selected_button {
-    color: var(--text2);
-}
-
-.futa_active_selected_button {
-    color: var(--accent1);
-    border: 1px solid var(--accent1);
-}
-
-.active_selected_button {
-    width: 100%;
-    height: 100%;
-    color: var(--text1);
-}
-
-.futa_non_active_selected_button {
-    color: var(--text2);
-}
-
-.non_active_selected_button {
-    color: var(--text2);
-}
-
-.main_time_frame_container button:focus-visible,
-.active_selected_button:focus-visible,
-.futa_active_selected_button:focus-visible,
-.futa_non_active_selected_button:focus-visible,
-.non_active_selected_button:focus-visible {
+.main_time_frame_container button:focus-visible {
     box-shadow: var(--glow-light-box-shadow);
 }
 

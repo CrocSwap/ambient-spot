@@ -87,7 +87,6 @@ function TooltipComponent(props: TooltipComponentProps) {
                             <AiOutlineQuestionCircle
                                 size={18}
                                 color={props.svgColor ?? 'var(--text2)'}
-                                className='futaStyleSvg'
                             />
                         )}
                     </div>

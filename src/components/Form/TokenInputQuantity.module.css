@@ -107,48 +107,6 @@
     animation: shadow-pulse 1s 6;
 }
 
-.futaLayout {
-    display: grid;
-    grid-template-columns: auto 120px;
-    gap: 8px;
-    width: 100%;
-    font-family: 'Fira Mono';
-    height: 70px;
-}
-
-.futaLayoutLeft {
-    background: var(--dark2, #111a1e);
-    height: 100%;
-    display: flex;
-    padding: 8px;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
-    flex: 1 0 0;
-    align-self: stretch;
-    height: 70px;
-}
-
-.futaLayoutLeft p {
-    font-size: 14px;
-    color: var(--text2);
-}
-
-.futaLayoutRight {
-    height: 70px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-.futaLayoutRight button {
-    background: var(--dark2, #111a1e);
-    outline: none;
-    border: none;
-}
-
 .tokenButton {
     width: 100%;
     display: flex;

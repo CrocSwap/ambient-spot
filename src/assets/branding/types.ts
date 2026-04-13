@@ -6,7 +6,7 @@ export interface heroItem {
     processAs: 'text' | 'image' | 'separator';
 }
 
-export type fontSets = 'ambient' | 'futa';
+export type fontSets = 'ambient';
 
 export type networkPrefs = Partial<
     Record<

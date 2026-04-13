@@ -81,7 +81,6 @@ export const ethereumSepolia: NetworkIF = {
     evmRpcUrls: [PRIMARY_RPC_URL, FALLBACK_RPC_URL],
     chainSpecForAppKit,
     defaultPair: [SEPOLIA_TOKENS.ETH, SEPOLIA_TOKENS.USDC],
-    defaultPairFuta: [SEPOLIA_TOKENS.ETH, SEPOLIA_TOKENS.WBTC],
     poolIndex: chainSpecFromSDK.poolIndex,
     gridSize: chainSpecFromSDK.gridSize,
     isTestnet: chainSpecFromSDK.isTestNet,
