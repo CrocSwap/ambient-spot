@@ -34,12 +34,11 @@ import {
 } from '../ChatConstants/ChatEndpoints';
 
 import useWebSocketImport, { ReadyState } from 'react-use-websocket';
+import { unwrapCjsDefault } from '../../../utils/cjsDefaultInterop';
 
-// CJS default-export interop: Vite may wrap the module object as the default
+// CJS default-export interop (see utils/cjsDefaultInterop.ts).
 const useWebSocket =
-    typeof useWebSocketImport === 'function'
-        ? useWebSocketImport
-        : (useWebSocketImport as any).default;
+    unwrapCjsDefault<typeof useWebSocketImport>(useWebSocketImport);
 import { AppStateContext } from '../../../contexts/AppStateContext';
 import { UserDataContext } from '../../../contexts/UserDataContext';
 import {

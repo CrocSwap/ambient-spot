@@ -14,28 +14,20 @@ import { FiEdit3 } from 'react-icons/fi';
 import JazziconImport, {
     jsNumberForAddress as jsNumberForAddressImport,
 } from 'react-jazzicon';
-
-// CJS default-export interop: Vite/Rolldown pre-bundles some CJS modules with
-// `export default require_x()` which yields the whole exports object instead
-// of the actual component/function. Unwrap `.default` if present.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Blockies: any =
-    typeof BlockiesImport === 'function'
-        ? BlockiesImport
-        : ((BlockiesImport as any)?.default ?? BlockiesImport);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Jazzicon: any =
-    typeof JazziconImport === 'function'
-        ? JazziconImport
-        : ((JazziconImport as any)?.default ?? JazziconImport);
-const jsNumberForAddress: (address: string) => number =
-    typeof jsNumberForAddressImport === 'function'
-        ? jsNumberForAddressImport
-        : (JazziconImport as any)?.jsNumberForAddress;
+import { unwrapCjsDefault } from '../../utils/cjsDefaultInterop';
 import { AVATAR_TYPES } from './ChatConstants/ChatConstants';
 import { UserAvatarDataIF } from './ChatIFs';
 import styles from './ChatRenderUtils.module.css';
 import { UserSummaryModel } from './Model/UserSummaryModel';
+
+// CJS default-export interop (see utils/cjsDefaultInterop.ts).
+const Blockies = unwrapCjsDefault<typeof BlockiesImport>(BlockiesImport);
+const Jazzicon = unwrapCjsDefault<typeof JazziconImport>(JazziconImport);
+const jsNumberForAddress: (address: string) => number =
+    typeof jsNumberForAddressImport === 'function'
+        ? jsNumberForAddressImport
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (JazziconImport as any)?.jsNumberForAddress;
 
 export const getAvatarFromMessage = (message: Message) => {
     return (
