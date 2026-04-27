@@ -33,7 +33,13 @@ import {
     updateUnverifiedMessagesEndpoint,
 } from '../ChatConstants/ChatEndpoints';
 
-import useWebSocket, { ReadyState } from 'react-use-websocket';
+import useWebSocketImport, { ReadyState } from 'react-use-websocket';
+
+// CJS default-export interop: Vite may wrap the module object as the default
+const useWebSocket =
+    typeof useWebSocketImport === 'function'
+        ? useWebSocketImport
+        : (useWebSocketImport as any).default;
 import { AppStateContext } from '../../../contexts/AppStateContext';
 import { UserDataContext } from '../../../contexts/UserDataContext';
 import {
@@ -116,7 +122,7 @@ const useChatSocket = (
         fromSocketIO: true,
         shouldReconnect: () => isChatOpen,
         reconnectAttempts: 20,
-        reconnectInterval: (attemptNumber) =>
+        reconnectInterval: (attemptNumber: number) =>
             Math.min(Math.pow(2, attemptNumber) * 1000, 10000),
         share: true,
         onOpen: () => {
