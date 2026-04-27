@@ -95,7 +95,7 @@
         "superagent": "^10.3.0",
         "typescript": "^5.9.3",
         "vite": "^7.3.2",
-        "vite-plugin-checker": "^0.12.0",
+        "vite-plugin-checker": "^0.13.0",
         "vitest": "^4.1.5"
     },
     "main": "index.js",
