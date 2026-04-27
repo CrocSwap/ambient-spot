@@ -9,9 +9,29 @@ import { Message } from './Model/MessageModel';
 import { User } from './Model/UserModel';
 
 import { Emoji } from 'emoji-picker-react';
-import Blockies from 'react-blockies';
+import BlockiesImport from 'react-blockies';
 import { FiEdit3 } from 'react-icons/fi';
-import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
+import JazziconImport, {
+    jsNumberForAddress as jsNumberForAddressImport,
+} from 'react-jazzicon';
+
+// CJS default-export interop: Vite/Rolldown pre-bundles some CJS modules with
+// `export default require_x()` which yields the whole exports object instead
+// of the actual component/function. Unwrap `.default` if present.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Blockies: any =
+    typeof BlockiesImport === 'function'
+        ? BlockiesImport
+        : ((BlockiesImport as any)?.default ?? BlockiesImport);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Jazzicon: any =
+    typeof JazziconImport === 'function'
+        ? JazziconImport
+        : ((JazziconImport as any)?.default ?? JazziconImport);
+const jsNumberForAddress: (address: string) => number =
+    typeof jsNumberForAddressImport === 'function'
+        ? jsNumberForAddressImport
+        : (JazziconImport as any)?.jsNumberForAddress;
 import { AVATAR_TYPES } from './ChatConstants/ChatConstants';
 import { UserAvatarDataIF } from './ChatIFs';
 import styles from './ChatRenderUtils.module.css';
