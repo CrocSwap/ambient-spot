@@ -1,2 +1,5 @@
-onlyBuiltDependencies:
-  - '@reown/appkit'
+allowBuilds:
+    '@reown/appkit': true
+    unrs-resolver: true
+blockExoticSubdeps: true
+minimumReleaseAge: 10080

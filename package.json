@@ -3,6 +3,7 @@
     "version": "4.0.3",
     "private": true,
     "type": "module",
+    "packageManager": "pnpm@11.0.0",
     "dependencies": {
         "@crocswap-libs/sdk": "^2.0.14",
         "@d3fc/d3fc-extent": "^4.0.2",
@@ -35,7 +36,8 @@
     },
     "pnpm": {
         "overrides": {
-            "axios": "^1.15.0"
+            "axios": "^1.15.2",
+            "bn.js": "5.2.3"
         }
     },
     "scripts": {
