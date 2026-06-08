@@ -9,8 +9,8 @@ import { GCGO_TESTNET_URLS } from '../gcgo';
 import { TopPool } from './TopPool';
 import { GcgoProvider } from '../../../utils/gcgoProvider';
 
-const PUBLIC_RPC_URL = 'https://eth-sepolia.public.blastapi.io';
-const SECONDARY_PUBLIC_RPC_URL = 'https://1rpc.io/sepolia';
+const PUBLIC_RPC_URL = 'https://ethereum-sepolia-rpc.publicnode.com';
+const SECONDARY_PUBLIC_RPC_URL = 'https://0xrpc.io/sep';
 
 const RESTRICTED_RPC_URL =
     import.meta.env.VITE_SEPOLIA_RPC_URL !== undefined
