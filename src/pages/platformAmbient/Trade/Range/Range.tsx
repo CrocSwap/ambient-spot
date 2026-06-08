@@ -522,7 +522,13 @@ function Range() {
         const sliderInput = document.getElementById(
             'input-slider-range',
         ) as HTMLInputElement;
-        if (sliderInput && sliderInput.value !== simpleRangeWidth.toString()) {
+        if (!sliderInput) return;
+        // Don't overwrite the thumb while the user is actively dragging the
+        // slider. The slider's context update is throttled to one per animation
+        // frame, so the committed value can lag the live cursor by up to a
+        // frame; writing it back here would visibly snap the thumb backward.
+        if (document.activeElement === sliderInput) return;
+        if (sliderInput.value !== simpleRangeWidth.toString()) {
             sliderInput.value = simpleRangeWidth.toString();
         }
     }, [simpleRangeWidth]);

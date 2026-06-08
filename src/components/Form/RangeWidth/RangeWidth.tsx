@@ -1,4 +1,12 @@
-import { Dispatch, memo, SetStateAction, useContext } from 'react';
+import {
+    ChangeEvent,
+    Dispatch,
+    memo,
+    SetStateAction,
+    useContext,
+    useEffect,
+    useRef,
+} from 'react';
 import { AiOutlineInfoCircle } from 'react-icons/ai';
 
 import { AppStateContext } from '../../../contexts/AppStateContext';
@@ -13,7 +21,6 @@ import { FlexContainer, Text } from '../../../styled/Common';
 import { Chip } from '../Chip';
 import { ExplanationButton } from '../Icons/Icons.styles';
 import RangeSlider from '../RangeSlider';
-import { handleRangeSlider } from './rangeWidthFunctions';
 
 // interface for React functional component props
 interface propsIF {
@@ -52,6 +59,36 @@ function RangeWidth(props: propsIF) {
         : [5, 10, 25, 50, 100];
     // type annotation as union of number-literals in `balancedPresets`
     type presetValues = (typeof balancedPresets)[number];
+
+    // The native <input type=range> thumb tracks the cursor on its own. The
+    // expensive part is the `setRangeWidthPercentage` context update, which
+    // cascades into a re-render of the whole Range page plus every chart effect
+    // keyed on the range width. Firing that synchronously on every `input`
+    // event blocks the main thread and makes the thumb visibly lag the cursor.
+    // We coalesce updates to at most one per animation frame (always using the
+    // latest value) so the handler returns immediately and the thumb stays
+    // glued to the cursor while the heavy work runs once per frame.
+    const rafIdRef = useRef<number | null>(null);
+    const latestValueRef = useRef<number>(rangeWidthPercentage);
+
+    useEffect(() => {
+        return () => {
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+            }
+        };
+    }, []);
+
+    function handleSliderChange(event: ChangeEvent<HTMLInputElement>): void {
+        latestValueRef.current = parseFloat(
+            truncateDecimals(parseFloat(event.target.value), 2),
+        );
+        if (rafIdRef.current !== null) return;
+        rafIdRef.current = requestAnimationFrame(() => {
+            rafIdRef.current = null;
+            setRangeWidthPercentage(latestValueRef.current);
+        });
+    }
 
     // fn to update the width of range (balanced mode) from buttons
     function updateRangeWithButton(value: presetValues): void {
@@ -174,9 +211,7 @@ function RangeWidth(props: propsIF) {
                     percentageInput
                     defaultValue={rangeWidthPercentage}
                     id='input-slider-range'
-                    onChange={(event) =>
-                        handleRangeSlider(event, setRangeWidthPercentage)
-                    }
+                    onChange={handleSliderChange}
                     onClick={() => {
                         setRescaleRangeBoundariesWithSlider(true);
                     }}
