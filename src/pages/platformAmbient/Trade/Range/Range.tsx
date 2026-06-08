@@ -157,12 +157,17 @@ function Range() {
     }, [tokenAInputQty, tokenA.decimals]);
 
     const tokenBInputQtyNoExponentString = useMemo(() => {
-        return tokenBInputQty.includes('e')
-            ? toDisplayQty(
-                  fromDisplayQty(tokenBInputQty || '0', tokenB.decimals),
-                  tokenB.decimals,
-              )
-            : tokenBInputQty;
+        try {
+            return tokenBInputQty.includes('e')
+                ? toDisplayQty(
+                      fromDisplayQty(tokenBInputQty || '0', tokenB.decimals),
+                      tokenB.decimals,
+                  )
+                : tokenBInputQty;
+        } catch (error) {
+            console.log({ error });
+            return '0';
+        }
     }, [tokenBInputQty, tokenB.decimals]);
 
     // `rangeWidthPercentage` is a direct alias for the context value
@@ -285,8 +290,9 @@ function Range() {
         return value;
     }, [advancedHighTick, currentPoolPriceTick, shouldResetAdvancedHighTick]);
 
-    const userPositions = positionsByUser.positions.filter(
-        (x) => x.chainId === chainId,
+    const userPositions = useMemo(
+        () => positionsByUser.positions.filter((x) => x.chainId === chainId),
+        [positionsByUser.positions, chainId],
     );
     // Represents whether user is adding to an existing range position
     const isAdd = useMemo(
@@ -1045,7 +1051,7 @@ function Range() {
         rangeButtonErrorMessage: rangeButtonErrorMessageTokenB,
     } = useHandleRangeButtonMessage(
         tokenB,
-        tokenBInputQty,
+        tokenBInputQtyNoExponentString,
         tokenBBalance,
         tokenBDexBalance,
         isTokenBInputDisabled,
