@@ -185,14 +185,6 @@ function Range() {
         useState(DEFAULT_MIN_PRICE_DIFF_PERCENTAGE);
     const [maxPriceDifferencePercentage, setMaxPriceDifferencePercentage] =
         useState(DEFAULT_MAX_PRICE_DIFF_PERCENTAGE);
-    const [rangeLowBoundNonDisplayPrice, setRangeLowBoundNonDisplayPrice] =
-        useState(0);
-    const [rangeHighBoundNonDisplayPrice, setRangeHighBoundNonDisplayPrice] =
-        useState(0);
-    const [pinnedMinPriceDisplayTruncated, setPinnedMinPriceDisplayTruncated] =
-        useState('');
-    const [pinnedMaxPriceDisplayTruncated, setPinnedMaxPriceDisplayTruncated] =
-        useState('');
     const [rangeLowBoundFieldBlurred, setRangeLowBoundFieldBlurred] =
         useState(false);
     const [rangeHighBoundFieldBlurred, setRangeHighBoundFieldBlurred] =
@@ -212,6 +204,19 @@ function Range() {
           }
         | undefined
     >();
+
+    // `pinnedDisplayPrices` is the single source of truth for the pinned range
+    // bounds. The truncated display strings and non-display bound prices are
+    // derived from it rather than tracked as separate state (which previously
+    // required keeping ~4 extra useState values in sync across every effect).
+    const pinnedMinPriceDisplayTruncated =
+        pinnedDisplayPrices?.pinnedMinPriceDisplayTruncated ?? '';
+    const pinnedMaxPriceDisplayTruncated =
+        pinnedDisplayPrices?.pinnedMaxPriceDisplayTruncated ?? '';
+    const rangeLowBoundNonDisplayPrice =
+        pinnedDisplayPrices?.pinnedMinPriceNonDisplay ?? 0;
+    const rangeHighBoundNonDisplayPrice =
+        pinnedDisplayPrices?.pinnedMaxPriceNonDisplay ?? 0;
 
     // local state values whether tx will use dex balance preferentially over
     // ... wallet funds, this layer of logic matters because the DOM may need
@@ -536,8 +541,21 @@ function Range() {
     useEffect(() => {
         if (rangeWidthPercentage === 100 && !advancedMode) {
             setIsAmbient(true);
-            setRangeLowBoundNonDisplayPrice(0);
-            setRangeHighBoundNonDisplayPrice(Infinity);
+            // ambient positions span the full price range; the truncated /
+            // with-commas display fields are not shown in ambient mode (the UI
+            // hardcodes '0' / '∞'), so only the non-display bounds matter here.
+            setPinnedDisplayPrices((prev) => ({
+                pinnedMinPriceDisplay: '0',
+                pinnedMaxPriceDisplay: 'Infinity',
+                pinnedMinPriceDisplayTruncated: '0',
+                pinnedMaxPriceDisplayTruncated: 'Infinity',
+                pinnedMinPriceDisplayTruncatedWithCommas: '0',
+                pinnedMaxPriceDisplayTruncatedWithCommas: 'Infinity',
+                pinnedLowTick: prev?.pinnedLowTick ?? 0,
+                pinnedHighTick: prev?.pinnedHighTick ?? 0,
+                pinnedMinPriceNonDisplay: 0,
+                pinnedMaxPriceNonDisplay: Infinity,
+            }));
         } else if (advancedMode) {
             setIsAmbient(false);
         } else {
@@ -560,20 +578,6 @@ function Range() {
             );
 
             setPinnedDisplayPrices(pinnedDisplayPrices);
-
-            setRangeLowBoundNonDisplayPrice(
-                pinnedDisplayPrices.pinnedMinPriceNonDisplay,
-            );
-            setRangeHighBoundNonDisplayPrice(
-                pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
-            );
-
-            setPinnedMinPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMinPriceDisplayTruncated,
-            );
-            setPinnedMaxPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-            );
 
             setAdvancedLowTick(pinnedDisplayPrices.pinnedLowTick);
             setAdvancedHighTick(pinnedDisplayPrices.pinnedHighTick);
@@ -626,19 +630,7 @@ function Range() {
                 defaultHighTick,
                 gridSize,
             );
-            setRangeLowBoundNonDisplayPrice(
-                pinnedDisplayPrices.pinnedMinPriceNonDisplay,
-            );
-            setRangeHighBoundNonDisplayPrice(
-                pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
-            );
-
-            setPinnedMinPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMinPriceDisplayTruncated,
-            );
-            setPinnedMaxPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-            );
+            setPinnedDisplayPrices(pinnedDisplayPrices);
 
             setAdvancedLowTick(pinnedDisplayPrices.pinnedLowTick);
             setAdvancedHighTick(pinnedDisplayPrices.pinnedHighTick);
@@ -725,13 +717,30 @@ function Range() {
                 gridSize,
             );
 
-            !isDenomBase
-                ? setRangeLowBoundNonDisplayPrice(
-                      pinnedDisplayPrices.pinnedMinPriceNonDisplay,
-                  )
-                : setRangeHighBoundNonDisplayPrice(
-                      pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
-                  );
+            // A low-bound edit commits the min truncated display string plus a
+            // single non-display bound (which one flips with the denom). Merge
+            // those into the pinned-prices source of truth.
+            setPinnedDisplayPrices((prev) => {
+                // `getPinnedPriceValuesFromDisplayPrices` omits the with-commas
+                // fields (only shown by RangePriceInfo in base mode, where prev
+                // is always populated), so default them when prev is undefined.
+                const base = prev ?? {
+                    ...pinnedDisplayPrices,
+                    pinnedMinPriceDisplayTruncatedWithCommas: '',
+                    pinnedMaxPriceDisplayTruncatedWithCommas: '',
+                };
+                return {
+                    ...base,
+                    pinnedMinPriceDisplayTruncated:
+                        pinnedDisplayPrices.pinnedMinPriceDisplayTruncated,
+                    pinnedMinPriceNonDisplay: !isDenomBase
+                        ? pinnedDisplayPrices.pinnedMinPriceNonDisplay
+                        : base.pinnedMinPriceNonDisplay,
+                    pinnedMaxPriceNonDisplay: !isDenomBase
+                        ? base.pinnedMaxPriceNonDisplay
+                        : pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
+                };
+            });
 
             !isDenomBase
                 ? setAdvancedLowTick(pinnedDisplayPrices.pinnedLowTick)
@@ -779,10 +788,6 @@ function Range() {
                       lowGeometricDifferencePercentage,
                   );
 
-            setPinnedMinPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMinPriceDisplayTruncated,
-            );
-
             if (rangeLowBoundDisplayField) {
                 rangeLowBoundDisplayField.value =
                     pinnedDisplayPrices.pinnedMinPriceDisplayTruncated;
@@ -814,13 +819,30 @@ function Range() {
                 gridSize,
             );
 
-            isDenomBase
-                ? setRangeLowBoundNonDisplayPrice(
-                      pinnedDisplayPrices.pinnedMinPriceNonDisplay,
-                  )
-                : setRangeHighBoundNonDisplayPrice(
-                      pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
-                  );
+            // A high-bound edit commits the max truncated display string plus a
+            // single non-display bound (which one flips with the denom). Merge
+            // those into the pinned-prices source of truth.
+            setPinnedDisplayPrices((prev) => {
+                // `getPinnedPriceValuesFromDisplayPrices` omits the with-commas
+                // fields (only shown by RangePriceInfo in base mode, where prev
+                // is always populated), so default them when prev is undefined.
+                const base = prev ?? {
+                    ...pinnedDisplayPrices,
+                    pinnedMinPriceDisplayTruncatedWithCommas: '',
+                    pinnedMaxPriceDisplayTruncatedWithCommas: '',
+                };
+                return {
+                    ...base,
+                    pinnedMaxPriceDisplayTruncated:
+                        pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
+                    pinnedMinPriceNonDisplay: isDenomBase
+                        ? pinnedDisplayPrices.pinnedMinPriceNonDisplay
+                        : base.pinnedMinPriceNonDisplay,
+                    pinnedMaxPriceNonDisplay: isDenomBase
+                        ? base.pinnedMaxPriceNonDisplay
+                        : pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
+                };
+            });
 
             isDenomBase
                 ? setMinPrice(
@@ -867,10 +889,6 @@ function Range() {
                 : setMaxPriceDifferencePercentage(
                       highGeometricDifferencePercentage,
                   );
-
-            setPinnedMaxPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-            );
 
             if (rangeHighBoundDisplayField) {
                 rangeHighBoundDisplayField.value =
