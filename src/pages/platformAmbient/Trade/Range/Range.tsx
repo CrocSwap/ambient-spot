@@ -165,8 +165,13 @@ function Range() {
             : tokenBInputQty;
     }, [tokenBInputQty, tokenB.decimals]);
 
-    const [rangeWidthPercentage, setRangeWidthPercentage] =
-        useState<number>(simpleRangeWidth);
+    // `rangeWidthPercentage` is a direct alias for the context value
+    // `simpleRangeWidth`. Keeping a separate local copy in sync with the
+    // context value via effects caused an infinite update loop (the two
+    // effects swapped the values every render whenever they diverged), so the
+    // local state was removed in favor of using the single source of truth.
+    const rangeWidthPercentage = simpleRangeWidth;
+    const setRangeWidthPercentage = setSimpleRangeWidth;
     const [isAmbient, setIsAmbient] = useState(false);
 
     const [minPriceInputString, setMinPriceInputString] = useState<string>('');
@@ -519,22 +524,18 @@ function Range() {
     // value showing if no acknowledgement is necessary
     const areBothAckd: boolean = !needConfirmTokenA && !needConfirmTokenB;
 
+    // The range-width slider is an uncontrolled input (`defaultValue`), so its
+    // DOM value must be synced manually when `simpleRangeWidth` changes for an
+    // external reason (e.g. pool switch defaults or a chart drag). One-way only
+    // — it never writes state, so it cannot loop.
     useEffect(() => {
-        if (simpleRangeWidth !== rangeWidthPercentage) {
-            setSimpleRangeWidth(simpleRangeWidth);
-            setRangeWidthPercentage(simpleRangeWidth);
-            const sliderInput = document.getElementById(
-                'input-slider-range',
-            ) as HTMLInputElement;
-            if (sliderInput) sliderInput.value = simpleRangeWidth.toString();
+        const sliderInput = document.getElementById(
+            'input-slider-range',
+        ) as HTMLInputElement;
+        if (sliderInput && sliderInput.value !== simpleRangeWidth.toString()) {
+            sliderInput.value = simpleRangeWidth.toString();
         }
     }, [simpleRangeWidth]);
-
-    useEffect(() => {
-        if (simpleRangeWidth !== rangeWidthPercentage) {
-            setSimpleRangeWidth(rangeWidthPercentage);
-        }
-    }, [rangeWidthPercentage]);
 
     useEffect(() => {
         resetConfirmation();
