@@ -147,7 +147,7 @@ function TokenInputQuantity(props: propsIF) {
                 enterDelay={700}
                 leaveDelay={200}
             >
-                <>{token.symbol}</>
+                <span>{token.symbol}</span>
             </DefaultTooltip>
         ) : (
             <>{token.symbol}</>
