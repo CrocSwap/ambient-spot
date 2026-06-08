@@ -11,7 +11,7 @@ import { GcgoProvider } from '../../../utils/gcgoProvider';
 
 const RPC_URLS = {
     PUBLIC: 'https://sepolia-rpc.scroll.io',
-    SECONDARY_PUBLIC: 'https://rpc.ankr.com/scroll_sepolia_testnet',
+    SECONDARY_PUBLIC: 'https://scroll-sepolia.drpc.org',
     RESTRICTED: import.meta.env.VITE_SCROLL_SEPOLIA_RPC_URL,
 };
 const PRIMARY_RPC_URL = RPC_URLS.RESTRICTED || RPC_URLS.PUBLIC;
