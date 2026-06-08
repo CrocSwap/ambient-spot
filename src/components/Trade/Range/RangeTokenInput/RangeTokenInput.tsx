@@ -138,7 +138,6 @@ function RangeTokenInput(props: propsIF) {
         : (): void => {
               resetTokenQuantities();
               setIsTokenAPrimary(!isTokenAPrimary);
-              setIsTokenAPrimary(!isTokenAPrimary);
               if (!rangeTicksCopied && !isInitPage) {
                   // URL params for link to pool page
                   const poolLinkParams: poolParamsIF = {
