@@ -413,7 +413,10 @@ function Range() {
         }
     }
 
-    const pinnedMinPriceDisplayTruncatedInBase = useMemo(
+    // A single `getPinnedPriceValuesFromTicks` call already computes both the
+    // min and max prices, so we only need one call per denomination (base /
+    // quote) rather than one call per (denom, bound) combination.
+    const pinnedPricesInBase = useMemo(
         () =>
             getPinnedPriceValuesFromTicks(
                 true,
@@ -422,15 +425,16 @@ function Range() {
                 defaultLowTick,
                 defaultHighTick,
                 gridSize,
-            ).pinnedMinPriceDisplayTruncatedWithCommas,
+            ),
         [
             baseTokenDecimals,
             quoteTokenDecimals,
             defaultLowTick,
             defaultHighTick,
+            gridSize,
         ],
     );
-    const pinnedMinPriceDisplayTruncatedInQuote = useMemo(
+    const pinnedPricesInQuote = useMemo(
         () =>
             getPinnedPriceValuesFromTicks(
                 false,
@@ -439,48 +443,23 @@ function Range() {
                 defaultLowTick,
                 defaultHighTick,
                 gridSize,
-            ).pinnedMinPriceDisplayTruncatedWithCommas,
+            ),
         [
             baseTokenDecimals,
             quoteTokenDecimals,
             defaultLowTick,
             defaultHighTick,
+            gridSize,
         ],
     );
-    const pinnedMaxPriceDisplayTruncatedInBase = useMemo(
-        () =>
-            getPinnedPriceValuesFromTicks(
-                true,
-                baseTokenDecimals,
-                quoteTokenDecimals,
-                defaultLowTick,
-                defaultHighTick,
-                gridSize,
-            ).pinnedMaxPriceDisplayTruncatedWithCommas,
-        [
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            defaultLowTick,
-            defaultHighTick,
-        ],
-    );
-    const pinnedMaxPriceDisplayTruncatedInQuote = useMemo(
-        () =>
-            getPinnedPriceValuesFromTicks(
-                false,
-                baseTokenDecimals,
-                quoteTokenDecimals,
-                defaultLowTick,
-                defaultHighTick,
-                gridSize,
-            ).pinnedMaxPriceDisplayTruncatedWithCommas,
-        [
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            defaultLowTick,
-            defaultHighTick,
-        ],
-    );
+    const pinnedMinPriceDisplayTruncatedInBase =
+        pinnedPricesInBase.pinnedMinPriceDisplayTruncatedWithCommas;
+    const pinnedMaxPriceDisplayTruncatedInBase =
+        pinnedPricesInBase.pinnedMaxPriceDisplayTruncatedWithCommas;
+    const pinnedMinPriceDisplayTruncatedInQuote =
+        pinnedPricesInQuote.pinnedMinPriceDisplayTruncatedWithCommas;
+    const pinnedMaxPriceDisplayTruncatedInQuote =
+        pinnedPricesInQuote.pinnedMaxPriceDisplayTruncatedWithCommas;
 
     const isTokenAWalletBalanceSufficient =
         fromDisplayQty(tokenABalance || '0', tokenA.decimals) >=
