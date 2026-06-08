@@ -125,18 +125,18 @@ export default function PriceInfo(props: propsIF) {
         <section>
             <div>
                 <p>{`Earned ${baseTokenSymbol}`}</p>
-                <p>
+                <div className={styles.token_value_row}>
                     {baseFeesDisplay === undefined ? '…' : baseFeesDisplay}
                     {baseTokenLogoDisplay}
-                </p>
+                </div>
             </div>
 
             <div>
                 <p>{`Earned ${quoteTokenSymbol}`}</p>
-                <p>
+                <div className={styles.token_value_row}>
                     {quoteFeesDisplay === undefined ? '…' : quoteFeesDisplay}
                     {quoteTokenLogoDisplay}
-                </p>
+                </div>
             </div>
         </section>
     );
@@ -266,22 +266,22 @@ export default function PriceInfo(props: propsIF) {
                     <section>
                         <div>
                             <p>{`Pooled ${baseTokenSymbol}`}</p>
-                            <p>
+                            <div className={styles.token_value_row}>
                                 {baseCollateralDisplay === undefined
                                     ? '…'
                                     : baseCollateralDisplay}
                                 {baseTokenLogoDisplay}
-                            </p>
+                            </div>
                         </div>
 
                         <div>
                             <p>{`Pooled ${quoteTokenSymbol}`}</p>
-                            <p>
+                            <div className={styles.token_value_row}>
                                 {quoteCollateralDisplay === undefined
                                     ? '…'
                                     : quoteCollateralDisplay}
                                 {quoteTokenLogoDisplay}
-                            </p>
+                            </div>
                         </div>
                     </section>
                     <span className={styles.divider} />
