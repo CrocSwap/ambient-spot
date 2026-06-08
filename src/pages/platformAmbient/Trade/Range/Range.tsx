@@ -99,7 +99,6 @@ function Range() {
         setIsLinesSwitched,
     } = useContext(RangeContext);
     const { tokens } = useContext(TokenContext);
-    // console.log(tokens);
     const {
         tokenAAllowance,
         tokenBAllowance,
@@ -259,13 +258,10 @@ function Range() {
         location.pathname.includes('lowTick') &&
         location.pathname.includes('highTick');
 
-    const shouldResetAdvancedLowTick =
-        !ticksInParams &&
-        currentPoolPriceTick !== undefined &&
-        (advancedHighTick > currentPoolPriceTick + 100000 ||
-            advancedLowTick < currentPoolPriceTick - 100000);
-
-    const shouldResetAdvancedHighTick =
+    // True when the persisted advanced ticks are implausibly far from the
+    // current pool price (or undefined) and should be reset to defaults. The
+    // condition is identical for both bounds, so a single flag drives both.
+    const shouldResetAdvancedTicks =
         !ticksInParams &&
         currentPoolPriceTick !== undefined &&
         (advancedHighTick > currentPoolPriceTick + 100000 ||
@@ -273,7 +269,7 @@ function Range() {
 
     // default low tick to seed in the DOM (range lower value)
     const defaultLowTick = useMemo<number>(() => {
-        const value: number = shouldResetAdvancedLowTick
+        const value: number = shouldResetAdvancedTicks
             ? roundDownTick(
                   currentPoolPriceTick +
                       DEFAULT_MIN_PRICE_DIFF_PERCENTAGE * 100,
@@ -281,11 +277,16 @@ function Range() {
               )
             : advancedLowTick;
         return value;
-    }, [advancedLowTick, currentPoolPriceTick, shouldResetAdvancedLowTick]);
+    }, [
+        advancedLowTick,
+        currentPoolPriceTick,
+        shouldResetAdvancedTicks,
+        gridSize,
+    ]);
 
     // default high tick to seed in the DOM (range upper value)
     const defaultHighTick = useMemo<number>(() => {
-        const value: number = shouldResetAdvancedHighTick
+        const value: number = shouldResetAdvancedTicks
             ? roundUpTick(
                   currentPoolPriceTick +
                       DEFAULT_MAX_PRICE_DIFF_PERCENTAGE * 100,
@@ -293,7 +294,12 @@ function Range() {
               )
             : advancedHighTick;
         return value;
-    }, [advancedHighTick, currentPoolPriceTick, shouldResetAdvancedHighTick]);
+    }, [
+        advancedHighTick,
+        currentPoolPriceTick,
+        shouldResetAdvancedTicks,
+        gridSize,
+    ]);
 
     const userPositions = useMemo(
         () => positionsByUser.positions.filter((x) => x.chainId === chainId),
@@ -939,21 +945,16 @@ function Range() {
                 gasPriceInGwei * GAS_DROPS_ESTIMATE_POOL * NUM_GWEI_IN_WEI;
 
             setAmountToReduceNativeTokenQtyMainnet(
-                costOfMainnetPoolInETH * RANGE_BUFFER_MULTIPLIER_MAINNET,
+                RANGE_BUFFER_MULTIPLIER_MAINNET * costOfMainnetPoolInETH,
             );
 
-            const l2CostOfScrollPoolInETH =
-                gasPriceInGwei * GAS_DROPS_ESTIMATE_POOL * NUM_GWEI_IN_WEI;
-
+            // L2 execution cost uses the same gas formula as mainnet, plus a
+            // flat L1 data-availability fee.
             const l1CostOfScrollPoolInETH =
                 l1GasFeePoolInGwei / NUM_GWEI_IN_ETH;
 
             const costOfScrollPoolInETH =
-                l1CostOfScrollPoolInETH + l2CostOfScrollPoolInETH;
-
-            setAmountToReduceNativeTokenQtyMainnet(
-                RANGE_BUFFER_MULTIPLIER_MAINNET * costOfMainnetPoolInETH,
-            );
+                l1CostOfScrollPoolInETH + costOfMainnetPoolInETH;
 
             setAmountToReduceNativeTokenQtyL2(
                 RANGE_BUFFER_MULTIPLIER_L2 * costOfScrollPoolInETH,
