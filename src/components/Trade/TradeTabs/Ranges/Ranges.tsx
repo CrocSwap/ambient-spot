@@ -89,9 +89,11 @@ function Ranges(props: propsIF) {
     const quoteTokenSymbol = quoteToken.symbol;
     const path = location.pathname;
 
-    if (!path.includes('reposition')) {
-        setCurrentRangeInReposition('');
-    }
+    useEffect(() => {
+        if (!path.includes('reposition')) {
+            setCurrentRangeInReposition('');
+        }
+    }, [path]);
 
     const activeUserPositionsInOtherPoolsLength = useMemo(
         () =>
