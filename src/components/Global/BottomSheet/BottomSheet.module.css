@@ -7,7 +7,6 @@
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.4); /* Semi-transparent overlay */
     backdrop-filter: blur(3px); /* Blur effect */
-    -webkit-backdrop-filter: blur(3px); /* Safari support */
     z-index: 999; /* Make sure it sits behind the modal */
 }
 
