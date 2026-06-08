@@ -59,7 +59,6 @@
 
 .networkItem:hover {
     backdrop-filter: blur(16.5px);
-    -webkit-backdrop-filter: blur(16.5px);
     border-radius: var(--border-radius);
 }
 

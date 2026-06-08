@@ -127,7 +127,6 @@
         backdrop-filter: blur(1rem);
         background: rgba(23, 29, 39, 0.5);
         backdrop-filter: blur(13px);
-        -webkit-backdrop-filter: blur(13px);
         border-radius: 10px;
         font-size: calc(var(--header2-size) + 0.5rem);
         line-height: calc(var(--header2-lh) + 0.5rem);

@@ -121,7 +121,6 @@ text.y_axis {
     font-size: large;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.47);
     backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     border-radius: var(--border-radius);
 }
 
@@ -134,7 +133,6 @@ div.liqTooltip {
     padding: 3px;
 
     backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     border-radius: var(--border-radius);
 }
 
@@ -147,7 +145,6 @@ div.xAxisTooltip {
     padding: 3px;
 
     backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     border-radius: var(--border-radius);
 }
 
@@ -160,7 +157,6 @@ div.xAxisTooltip {
     padding: 3px;
     font-size: small;
     backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     border-radius: var(--border-radius);
 }
 
@@ -172,7 +168,6 @@ div.tooltip {
     width: 15%;
     box-shadow: 0 8px 24px 0 rgba(31, 38, 135, 0.35);
     backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     border-radius: var(--border-radius);
     -webkit-transition: 2s all ease-in-out;
     -moz-transition: 2s all ease-in-out;
@@ -293,7 +288,6 @@ div.tooltip {
     font-size: medium;
     box-shadow: var(--gradient-box-shadow);
     backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     border-radius: var(--border-radius);
     width: 260px;
     z-index: 999999;

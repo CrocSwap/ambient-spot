@@ -25,8 +25,6 @@ const OrderHistoryContainer = styled.div`
 
     backdrop-filter: blur(4px);
 
-    -webkit-backdrop-filter: blur(4px);
-
     border-radius: 4px;
     box-shadow: 0 8px 32px 0 var(--dark1);
 
