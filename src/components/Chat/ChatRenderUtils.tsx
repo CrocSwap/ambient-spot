@@ -9,13 +9,25 @@ import { Message } from './Model/MessageModel';
 import { User } from './Model/UserModel';
 
 import { Emoji } from 'emoji-picker-react';
-import Blockies from 'react-blockies';
+import BlockiesImport from 'react-blockies';
 import { FiEdit3 } from 'react-icons/fi';
-import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
+import JazziconImport, {
+    jsNumberForAddress as jsNumberForAddressImport,
+} from 'react-jazzicon';
+import { unwrapCjsDefault } from '../../utils/cjsDefaultInterop';
 import { AVATAR_TYPES } from './ChatConstants/ChatConstants';
 import { UserAvatarDataIF } from './ChatIFs';
 import styles from './ChatRenderUtils.module.css';
 import { UserSummaryModel } from './Model/UserSummaryModel';
+
+// CJS default-export interop (see utils/cjsDefaultInterop.ts).
+const Blockies = unwrapCjsDefault<typeof BlockiesImport>(BlockiesImport);
+const Jazzicon = unwrapCjsDefault<typeof JazziconImport>(JazziconImport);
+const jsNumberForAddress: (address: string) => number =
+    typeof jsNumberForAddressImport === 'function'
+        ? jsNumberForAddressImport
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (JazziconImport as any)?.jsNumberForAddress;
 
 export const getAvatarFromMessage = (message: Message) => {
     return (

@@ -1,2 +1,8 @@
-onlyBuiltDependencies:
-  - '@reown/appkit'
+allowBuilds:
+    '@reown/appkit': true
+    unrs-resolver: true
+blockExoticSubdeps: true
+minimumReleaseAge: 10080
+overrides:
+    axios: ^1.15.2
+    bn.js: 5.2.3

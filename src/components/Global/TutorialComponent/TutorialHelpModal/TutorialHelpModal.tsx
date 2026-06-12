@@ -1,11 +1,6 @@
-import { memo, useContext } from 'react';
+import { memo } from 'react';
 import styles from './TutorialHelpModal.module.css';
-import {
-    AuctionHelpModal,
-    DefaultHelpModalAmbient,
-    DefaultHelpModalFuta,
-} from './TutorialHelpModalContents';
-import { BrandContext } from '../../../../contexts/BrandContext';
+import { DefaultHelpModalAmbient } from './TutorialHelpModalContents';
 
 interface propsIF {
     page: string;
@@ -15,19 +10,8 @@ interface propsIF {
 }
 
 function TutorialHelpModal(props: propsIF) {
-    const { platformName } = useContext(BrandContext);
-
     const getModalContent = () => {
-        switch (props.page) {
-            case 'auctions':
-                return <AuctionHelpModal />;
-            default:
-                return platformName === 'ambient' ? (
-                    <DefaultHelpModalAmbient />
-                ) : (
-                    <DefaultHelpModalFuta />
-                );
-        }
+        return <DefaultHelpModalAmbient />;
     };
 
     return (
@@ -36,7 +20,7 @@ function TutorialHelpModal(props: propsIF) {
             onClick={props.negativeBtnAction}
         >
             <div
-                className={`${styles.tuto_help_modal_body} ${platformName === 'ambient' ? styles.ambi : ''}`}
+                className={`${styles.tuto_help_modal_body} ${styles.ambi}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className={styles.tuto_help_modal_header}>

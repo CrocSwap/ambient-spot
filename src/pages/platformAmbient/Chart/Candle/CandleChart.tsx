@@ -32,7 +32,6 @@ interface candlePropsIF {
     isDiscontinuityScaleEnabled: boolean;
     visibleDateForCandle: number;
     chartThemeColors: ChartThemeIF | undefined;
-    showFutaCandles: boolean;
 }
 
 export default function CandleChart(props: candlePropsIF) {
@@ -50,7 +49,6 @@ export default function CandleChart(props: candlePropsIF) {
         isDiscontinuityScaleEnabled,
         visibleDateForCandle,
         chartThemeColors,
-        showFutaCandles,
     } = props;
     const d3CanvasCandle = useRef<HTMLCanvasElement | null>(null);
 
@@ -70,7 +68,7 @@ export default function CandleChart(props: candlePropsIF) {
     useEffect(() => {
         IS_LOCAL_ENV && console.debug('re-rending chart');
         if (tradeTableState === 'Expanded') return;
-        if (data && data.length > 0 && scaleData && !showFutaCandles) {
+        if (data && data.length > 0 && scaleData) {
             if (!showLatest) {
                 const domainLeft = scaleData?.xScale.domain()[0];
                 const domainRight = scaleData?.xScale.domain()[1];
@@ -115,15 +113,11 @@ export default function CandleChart(props: candlePropsIF) {
                 }
             }
         }
-    }, [tradeTableState, lastCandleData?.time, showFutaCandles]);
+    }, [tradeTableState, lastCandleData?.time]);
 
     useEffect(() => {
         renderCanvasArray([d3CanvasCandle]);
-    }, [
-        diffHashSigScaleData(scaleData),
-        diffHashSig(chartThemeColors),
-        diffHashSig(showFutaCandles),
-    ]);
+    }, [diffHashSigScaleData(scaleData), diffHashSig(chartThemeColors)]);
 
     useEffect(() => {
         if (scaleData !== undefined) {

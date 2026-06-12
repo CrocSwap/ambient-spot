@@ -23,7 +23,6 @@ import {
 import Spinner from '../../../../components/Global/Spinner/Spinner';
 import { RangeContext } from '../../../../contexts';
 import { AppStateContext } from '../../../../contexts/AppStateContext';
-import { BrandContext } from '../../../../contexts/BrandContext';
 import { CandleContext } from '../../../../contexts/CandleContext';
 import { ChartContext } from '../../../../contexts/ChartContext';
 import { GraphDataContext } from '../../../../contexts/GraphDataContext';
@@ -106,7 +105,6 @@ function TradeCandleStickChart(props: propsIF) {
         baseToken: { address: baseTokenAddress },
         quoteToken: { address: quoteTokenAddress },
     } = useContext(TradeTokenContext);
-    const { platformName } = useContext(BrandContext);
 
     const period = useMemo(
         () => chartSettings.candleTime.global.time,
@@ -1207,10 +1205,7 @@ function TradeCandleStickChart(props: propsIF) {
         const snapDiff = nowDate % (period * 1000);
         const snappedTime = nowDate + (period * 1000 - snapDiff);
 
-        const liqBuffer =
-            liqMode === 'none' || ['futa'].includes(platformName)
-                ? 0.95
-                : xAxisBuffer;
+        const liqBuffer = liqMode === 'none' ? 0.95 : xAxisBuffer;
 
         const centerX = snappedTime;
         const diff =

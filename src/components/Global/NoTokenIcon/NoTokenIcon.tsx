@@ -3,10 +3,9 @@ import styles from './NoTokenIcon.module.css';
 interface propsIF {
     tokenInitial: string | null;
     width?: string;
-    isFutaList?: boolean;
 }
 export default function NoTokenIcon(props: propsIF) {
-    const { tokenInitial, width, isFutaList } = props;
+    const { tokenInitial, width } = props;
 
     const widthStyle = width ? width : '30px';
     return (
@@ -18,18 +17,9 @@ export default function NoTokenIcon(props: propsIF) {
                 textTransform: 'none',
             }}
         >
-            {isFutaList ? (
-                <div className={styles.sub_container}>
-                    <p>
-                        <sub>f</sub>
-                        <span>{tokenInitial ?? ''}</span>
-                    </p>
-                </div>
-            ) : (
-                <div className={styles.sub_container}>
-                    <p>{tokenInitial ?? ''}</p>
-                </div>
-            )}
+            <div className={styles.sub_container}>
+                <p>{tokenInitial ?? ''}</p>
+            </div>
         </div>
     );
 }

@@ -33,7 +33,12 @@ import {
     updateUnverifiedMessagesEndpoint,
 } from '../ChatConstants/ChatEndpoints';
 
-import useWebSocket, { ReadyState } from 'react-use-websocket';
+import useWebSocketImport, { ReadyState } from 'react-use-websocket';
+import { unwrapCjsDefault } from '../../../utils/cjsDefaultInterop';
+
+// CJS default-export interop (see utils/cjsDefaultInterop.ts).
+const useWebSocket =
+    unwrapCjsDefault<typeof useWebSocketImport>(useWebSocketImport);
 import { AppStateContext } from '../../../contexts/AppStateContext';
 import { UserDataContext } from '../../../contexts/UserDataContext';
 import {
@@ -116,7 +121,7 @@ const useChatSocket = (
         fromSocketIO: true,
         shouldReconnect: () => isChatOpen,
         reconnectAttempts: 20,
-        reconnectInterval: (attemptNumber) =>
+        reconnectInterval: (attemptNumber: number) =>
             Math.min(Math.pow(2, attemptNumber) * 1000, 10000),
         share: true,
         onOpen: () => {

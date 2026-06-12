@@ -6,9 +6,7 @@ import TransactionSettingsModal, {
     TransactionModuleType,
 } from '../../Global/TransactionSettingsModal/TransactionSettingsModal';
 
-import { IoSettingsOutline } from 'react-icons/io5';
 import { LuSettings } from 'react-icons/lu';
-import { brand } from '../../../ambient-utils/constants';
 import { dexBalanceMethodsIF } from '../../../App/hooks/useExchangePrefs';
 import { FastLaneProtectionIF } from '../../../App/hooks/useFastLaneProtection';
 import { skipConfirmIF } from '../../../App/hooks/useSkipConfirm';
@@ -45,8 +43,6 @@ function TradeModuleHeader(props: propsIF) {
 
     const smallScreen = useMediaQuery('(max-width: 768px)');
 
-    const isFuta = brand === 'futa';
-
     const {
         baseToken,
         quoteToken,
@@ -71,7 +67,6 @@ function TradeModuleHeader(props: propsIF) {
                     <div
                         style={{
                             width: '100%',
-                            padding: isFuta ? '8px 0' : '',
                         }}
                     >
                         <TradeLinks
@@ -89,7 +84,6 @@ function TradeModuleHeader(props: propsIF) {
                         tabIndex={0}
                         aria-label='Settings button'
                         className={styles.icon_container}
-                        style={{ height: isFuta ? '31px' : '' }}
                     >
                         {smallScreen ? (
                             <LuSettings size={20} />
@@ -115,17 +109,13 @@ function TradeModuleHeader(props: propsIF) {
         <>
             <div style={{ paddingBottom: isSwapPage ? '16px' : '' }}>
                 <header className={styles.main_container}>
-                    {isFuta ? (
-                        <span />
-                    ) : (
-                        <AiOutlineShareAlt
-                            onClick={openShareModal}
-                            id='share_button'
-                            role='button'
-                            tabIndex={0}
-                            aria-label='Share button'
-                        />
-                    )}
+                    <AiOutlineShareAlt
+                        onClick={openShareModal}
+                        id='share_button'
+                        role='button'
+                        tabIndex={0}
+                        aria-label='Share button'
+                    />
 
                     {isSwapPage ? (
                         <h4
@@ -156,19 +146,8 @@ function TradeModuleHeader(props: propsIF) {
                             role='button'
                             tabIndex={0}
                             aria-label='Settings button'
-                            className={
-                                isFuta ? styles.settings_button_futa : ''
-                            }
                         >
-                            {isFuta ? (
-                                <IoSettingsOutline
-                                    size={18}
-                                    id='swap_settings_symbol'
-                                    aria-label='Chart settings button'
-                                />
-                            ) : (
-                                <LuSettings />
-                            )}
+                            <LuSettings />
                         </div>
                     </IconWithTooltip>
                 </header>

@@ -11,12 +11,6 @@
     Cache-Control = "public, max-age=3600, immutable"
 
 [[headers]]
-  for = "/futa-token-list.json"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Cache-Control = "public, max-age=3600, immutable"
-
-[[headers]]
   for = "/testnet-token-list.json" 
   [headers.values]
     Access-Control-Allow-Origin = "*"

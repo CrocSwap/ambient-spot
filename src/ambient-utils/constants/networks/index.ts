@@ -4,7 +4,6 @@ import {
     baseSepoliaBrandAssets,
     blastBrandAssets,
     defaultBrandAssets,
-    futaBrandAssets,
     monadTestnetBrandAssets,
     plumeBrandAssets,
     scrollBrandAssets,
@@ -76,23 +75,17 @@ export const supportedNetworks: { [x: string]: NetworkIF } =
                 ? getNetworks(Object.keys(blastBrandAssets.networks))
                 : brand === 'plume'
                   ? getNetworks(Object.keys(plumeBrandAssets.networks))
-                  : brand === 'futa'
-                    ? getNetworks(Object.keys(futaBrandAssets.networks))
-                    : brand === 'swellSepolia'
+                  : brand === 'swellSepolia'
+                    ? getNetworks(Object.keys(swellSepoliaBrandAssets.networks))
+                    : brand === 'monadTestnet'
                       ? getNetworks(
-                            Object.keys(swellSepoliaBrandAssets.networks),
+                            Object.keys(monadTestnetBrandAssets.networks),
                         )
-                      : brand === 'monadTestnet'
+                      : brand === 'baseSepolia'
                         ? getNetworks(
-                              Object.keys(monadTestnetBrandAssets.networks),
+                              Object.keys(baseSepoliaBrandAssets.networks),
                           )
-                        : brand === 'baseSepolia'
-                          ? getNetworks(
-                                Object.keys(baseSepoliaBrandAssets.networks),
-                            )
-                          : getNetworks(
-                                Object.keys(defaultBrandAssets.networks),
-                            );
+                        : getNetworks(Object.keys(defaultBrandAssets.networks));
 
 const vaultNetworks = networkDefinitions.filter((n: NetworkIF) =>
     n.vaultsEnabled ? n : null,
@@ -104,19 +97,10 @@ export const vaultSupportedNetworkIds = vaultNetworks.map(
 export const vaultSupportedNetworks = getNetworks(vaultSupportedNetworkIds);
 
 export function getDefaultPairForChain(chainId: string): [TokenIF, TokenIF] {
-    if (brand === 'futa') {
-        return (
-            supportedNetworks[chainId].defaultPairFuta ?? [
-                supportedNetworks[chainId].defaultPair[0],
-                supportedNetworks[chainId].defaultPair[1],
-            ]
-        );
-    } else {
-        return [
-            supportedNetworks[chainId].defaultPair[0],
-            supportedNetworks[chainId].defaultPair[1],
-        ];
-    }
+    return [
+        supportedNetworks[chainId].defaultPair[0],
+        supportedNetworks[chainId].defaultPair[1],
+    ];
 }
 
 export {

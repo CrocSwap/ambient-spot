@@ -3,7 +3,6 @@ import { ethers } from 'ethers';
 import { useContext } from 'react';
 import { FiExternalLink } from 'react-icons/fi';
 import { useLocation } from 'react-router-dom';
-import { brand } from '../../../../../ambient-utils/constants';
 import { getBlockExplorerUrl } from '../../../../../ambient-utils/dataLayer';
 import { AppStateContext } from '../../../../../contexts/AppStateContext';
 import Button from '../../../../Form/Button';
@@ -55,7 +54,6 @@ export default function TransactionSubmitted(props: PropsIF) {
     const blockExplorer = getBlockExplorerUrl(chainId);
     const txUrlOnBlockExplorer = `${blockExplorer}tx/${hash}`;
     const currentLocation = useLocation()?.pathname;
-    const isFuta = brand === 'futa';
 
     const { walletProvider } = useAppKitProvider('eip155');
     const handleAddToMetaMask = async () => {
@@ -85,13 +83,10 @@ export default function TransactionSubmitted(props: PropsIF) {
             rel='noreferrer'
             className={styles.view_etherscan}
             aria-label='view on block explorer'
-            style={{ color: isFuta ? 'var(--dark1)' : 'var(--text1)' }}
+            style={{ color: 'var(--text1)' }}
         >
             View on Block Explorer
-            <FiExternalLink
-                size={18}
-                color={isFuta ? 'var(--dark1)' : 'var(--text1)'}
-            />
+            <FiExternalLink size={18} color='var(--text1)' />
         </a>
     );
     return (

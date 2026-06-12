@@ -2,28 +2,21 @@ import {
     Dispatch,
     memo,
     SetStateAction,
-    useContext,
     useEffect,
     useRef,
     useState,
 } from 'react';
-import { AppStateContext } from '../../../contexts/AppStateContext';
-import { useFutaHomeContext } from '../../../contexts/Futa/FutaHomeContext';
-import { useLinkGen } from '../../../utils/hooks/useLinkGen';
-import { futaAuctionsSteps } from '../../../utils/tutorial/Futa/AuctionsSteps';
-import { futaAccountSteps } from '../../../utils/tutorial/Futa/FutaAccountSteps';
-import { futaCreateSteps } from '../../../utils/tutorial/Futa/FutaCreateSteps';
 import {
-    TutorialIF,
-    TutorialStepExternalComponent,
-    TutorialStepIF,
-} from '../../Chat/ChatIFs';
+    DISABLE_ALL_TUTOS,
+    SHOW_TUTOS_DEFAULT,
+} from '../../../ambient-utils/constants';
+import { useLinkGen } from '../../../utils/hooks/useLinkGen';
+import { TutorialIF, TutorialStepIF } from '../../Chat/ChatIFs';
 import { generateObjectHash, getLS, setLS } from '../../Chat/ChatUtils';
 import TutorialComponent from '../TutorialComponent/TutorialComponent';
-import TutorialHelpModal from '../TutorialComponent/TutorialHelpModal/TutorialHelpModal';
-import styles from './TutorialOverlayUrlBased.module.css';
 // import { ambientMarketSteps } from '../../../utils/tutorial/MarketSteps';
-import { DISABLE_ALL_TUTOS } from '../../../ambient-utils/constants';
+
+const SHOW_TUTOS_LOCAL_STORAGE_KEY = 'showTutosLocalStorage';
 
 interface TutorialOverlayPropsIF {
     replayTutorial: boolean;
@@ -47,96 +40,15 @@ function TutorialOverlayUrlBased(props: TutorialOverlayPropsIF) {
     const [showTutorial, setShowTutorial] = useState<boolean>(false);
     const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
 
-    const {
-        walletModal: { open: openWalletModal },
-    } = useContext(AppStateContext);
+    const [showTutosLocalStorage] = useState<boolean>(() => {
+        const lsValue = localStorage.getItem(SHOW_TUTOS_LOCAL_STORAGE_KEY);
+        return lsValue === null
+            ? SHOW_TUTOS_DEFAULT === 'true'
+            : lsValue === 'true';
+    });
 
-    const { showTutosLocalStorage } = useFutaHomeContext();
-
-    const connectButton = (
-        <button
-            id='connect_wallet_button_page_header'
-            onClick={openWalletModal}
-            className={styles.connectButton}
-        >
-            CONNECT WALLET
-        </button>
-    );
-
-    const pulseTutorialBtn = () => {
-        if (tutorialBtnRef.current) {
-            tutorialBtnRef.current.classList.add(styles.pulseAnim);
-            setTimeout(() => {
-                tutorialBtnRef.current?.classList.remove(styles.pulseAnim);
-            }, 5000);
-        }
-    };
-
-    const helpModal = (page: string) => {
-        return {
-            title: 'WHAT IS THIS?',
-            content: (
-                <TutorialHelpModal
-                    page={page}
-                    positiveBtnAction={() => {
-                        setShowHelpModal(false);
-                    }}
-                    negativeBtnAction={() => {
-                        setShowTutorial(false);
-                        pulseTutorialBtn();
-                        handleHardFinish();
-                    }}
-                />
-            ),
-        };
-    };
-
-    const getTutorialObjectForPage = (page: string) => {
-        let tutoObj: TutorialIF | undefined = undefined;
-
-        switch (page) {
-            case 'auctions':
-                tutoObj = {
-                    lsKey: 'tuto_auctions',
-                    steps: futaAuctionsSteps,
-                };
-                break;
-            case 'account':
-                tutoObj = {
-                    lsKey: 'tuto_futa_account',
-                    steps: futaAccountSteps,
-                    noHelpModal: true,
-                };
-                break;
-            case 'auctionCreate':
-                tutoObj = {
-                    lsKey: 'tuto_futa_create',
-                    steps: futaCreateSteps,
-                    externalComponents: new Map<
-                        string,
-                        TutorialStepExternalComponent
-                    >([
-                        [
-                            '#auctions_create_connect_button',
-                            { component: connectButton, placement: 'nav-end' },
-                        ],
-                    ]),
-                };
-                break;
-            // case 'market':
-            //     tutoObj = { lsKey: 'tuto_market', steps: ambientMarketSteps };
-            //     break;
-            default:
-                tutoObj = undefined;
-                break;
-        }
-
-        if (tutoObj && !tutoObj.noHelpModal) {
-            tutoObj.helpModal = helpModal(page);
-        }
-
-        return tutoObj;
-    };
+    const getTutorialObjectForPage = (_page: string): TutorialIF | undefined =>
+        undefined;
 
     const validateURL = () => {
         return (
@@ -191,14 +103,6 @@ function TutorialOverlayUrlBased(props: TutorialOverlayPropsIF) {
 
         setShowTutorial(false);
         setReplayTutorial(false);
-    };
-
-    const handleHardFinish = () => {
-        setShowTutorial(false);
-        setReplayTutorial(false);
-        if (selectedTutorialRef.current?.lsKey) {
-            setLS(selectedTutorialRef.current?.lsKey, new Date().toISOString());
-        }
     };
 
     const filterRenderedSteps = () => {

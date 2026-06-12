@@ -26,7 +26,6 @@ export function uriToHttp(uri: string, retry?: string): string | string[] {
         // any URIs in this array will be returned as-is
         const excludedURIs: string[] = [
             '/ambient-token-list.json',
-            '/futa-token-list.json',
             '/broken-list.json',
             '/testnet-token-list.json',
         ];

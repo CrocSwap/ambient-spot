@@ -6,7 +6,6 @@ import { useContext, useEffect, useState } from 'react';
 import { RiExternalLinkLine } from 'react-icons/ri';
 import { useSearchParams } from 'react-router-dom';
 import {
-    brand,
     MEV_PROTECTION_PREF_LS_KEY,
     supportedNetworks,
 } from '../../../../ambient-utils/constants';
@@ -65,7 +64,6 @@ export default function NetworkSelector(props: propsIF) {
     const { networks, platformName, includeCanto } = useContext(BrandContext);
     const { setCrocEnv } = useContext(CrocEnvContext);
     const fastLaneProtection = useFastLaneProtection();
-    const isFuta = brand === 'futa';
 
     const [isNetworkUpdateInProgress, setIsNetworkUpdateInProgress] =
         useState(false);
@@ -459,9 +457,9 @@ export default function NetworkSelector(props: propsIF) {
                 style={{
                     cursor: 'pointer',
                     // cursor: networks.length > 1 ? 'pointer' : 'default',
-                    borderRadius: isFuta ? 0 : smallScreen ? '50%' : '0',
-                    width: isFuta ? '25px' : smallScreen ? '35px' : 'auto',
-                    height: isFuta ? '25px' : '35px',
+                    borderRadius: smallScreen ? '50%' : '0',
+                    width: smallScreen ? '35px' : 'auto',
+                    height: '35px',
                 }}
             >
                 <DropdownMenu2

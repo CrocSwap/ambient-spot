@@ -1,6 +1,17 @@
-import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
+import JazziconImport, {
+    jsNumberForAddress as jsNumberForAddressImport,
+} from 'react-jazzicon';
+import { unwrapCjsDefault } from '../../../utils/cjsDefaultInterop';
 
 import PortfolioBannerAccount from './PortfolioBannerAccount/PortfolioBannerAccount';
+
+// CJS default-export interop (see utils/cjsDefaultInterop.ts).
+const Jazzicon = unwrapCjsDefault<typeof JazziconImport>(JazziconImport);
+const jsNumberForAddress: (address: string) => number =
+    typeof jsNumberForAddressImport === 'function'
+        ? jsNumberForAddressImport
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (JazziconImport as any)?.jsNumberForAddress;
 
 import { trimString } from '../../../ambient-utils/dataLayer';
 

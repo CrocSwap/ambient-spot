@@ -69,8 +69,6 @@ const BASE_URL_PATHS = {
     privacy: '/privacy',
     faq: '/faq',
     faqPoints: '/faq/points',
-    auctions: '/auctions',
-    auctionCreate: '/create',
     notFound: '/404',
 } as const;
 
@@ -136,10 +134,6 @@ export const useLinkGen = (page?: pageNames): linkGenMethodsIF => {
             pageName = 'privacy';
         } else if (pathname.startsWith(BASE_URL_PATHS.faqPoints)) {
             pageName = 'faqPoints';
-        } else if (pathname.endsWith(BASE_URL_PATHS.auctionCreate)) {
-            pageName = 'auctionCreate';
-        } else if (pathname.startsWith(BASE_URL_PATHS.auctions)) {
-            pageName = 'auctions';
         } else if (pathname.includes(BASE_URL_PATHS.notFound)) {
             pageName = 'notFound';
         } else {

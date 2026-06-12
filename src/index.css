@@ -25,7 +25,8 @@
     --mono: monospace, 'Lexend Deca' sans-serif;
 
     /* font */
-    --title-ts: 0px 0px 150px rgba(70, 183, 219, 0.5),
+    --title-ts:
+        0px 0px 150px rgba(70, 183, 219, 0.5),
         0px 0px 100px rgba(70, 183, 219, 0.5),
         0px 0px 30px rgba(70, 183, 219, 0.5),
         0px 0px 20px rgba(70, 183, 219, 0.5),
@@ -95,7 +96,6 @@
     --navbar-border: transparent;
     --dark-border-color: #010101;
     --dark-border: 0.2px solid var(--dark-border-color);
-    --futa-box-border: 2px solid #5c6f72;
 
     /* transitions */
     --transition: all var(--animation-speed) ease-in-out;
@@ -176,15 +176,18 @@
     --swap-box-shadow: none;
     --dark-box-shadow: 1px 1px 1px #000, 0 0 1px #0d0d0d;
     --dark1-box-shadow: 2px 2px 10px 0px var(--dark1);
-    --trade-box-shadow: 0 0 3px white, 0 0 5px white, 0 0 10px white,
-        0 0 30px #0ba9ca, 0 0 50px #0ba9ca, 0 0 80px #0ba9ca;
-    --glow-box-shadow: 0px 0px 100px rgba(205, 193, 255, 0.3),
+    --trade-box-shadow:
+        0 0 3px white, 0 0 5px white, 0 0 10px white, 0 0 30px #0ba9ca,
+        0 0 50px #0ba9ca, 0 0 80px #0ba9ca;
+    --glow-box-shadow:
+        0px 0px 100px rgba(205, 193, 255, 0.3),
         0px 0px 60px rgba(205, 193, 255, 0.3),
         0px 0px 20px rgba(205, 193, 255, 0.3),
         0px 0px 12px rgba(205, 193, 255, 0.3),
         0px 0px 6px rgba(205, 193, 255, 0.3),
         0px 0px 3px rgba(205, 193, 255, 0.3);
-    --glow-light-box-shadow: 0px 0px 36px rgba(205, 193, 255, 0.2),
+    --glow-light-box-shadow:
+        0px 0px 36px rgba(205, 193, 255, 0.2),
         0px 0px 21px rgba(205, 193, 255, 0.2),
         0px 0px 12px rgba(205, 193, 255, 0.2),
         0px 0px 7px rgba(205, 193, 255, 0.2), 0px 0px 4px var(--accent5),
@@ -199,116 +202,6 @@
         var(--accent5) 49.48%,
         var(--accent1) 100%
     );
-}
-
-[data-theme='futa_dark'] {
-    /* subtract full height from navbar(56px) and footer(20px on desktop, 64 on mobile) */
-    --content-height: calc(100vh - 76px);
-    --content-height-mobile: calc(100dvh - 60px);
-
-    /* font */
-    --title-ts: 0px 0px 150px rgba(242, 153, 74, 0.5),
-        0px 0px 100px rgba(242, 153, 74, 0.5),
-        0px 0px 30px rgba(242, 153, 74, 0.5),
-        0px 0px 20px rgba(242, 153, 74, 0.5),
-        0px 0px 10px rgba(242, 153, 74, 0.5),
-        0px 0px 3px rgba(242, 153, 74, 0.5);
-
-    --header1-size: 24px;
-    --header1-lh: 25px;
-
-    --header2-size: 18px;
-    --header2-lh: 22px;
-
-    --header-size: 16px;
-    --body-size: 12px;
-    --body-lh: 15px;
-
-    --mini-size: 10px;
-    --mini-lh: 12px;
-
-    /* colors */
-    --blur-bg: rgba(239, 178, 115, 0.5);
-
-    --text1: #e1eeee;
-    --text2: #939c9e;
-    --text3: #4d5255;
-
-    --dark1: #0d0f13ff;
-    --dark2: #14161a;
-    --dark3: #1b1e22;
-    --dark4: #171f22;
-    --accent1: #aacfd1;
-    --accent2: #5c6f72;
-    --accent3: #29585d;
-
-    --accent4: #71b5fc;
-    --accent5: #7be4ff;
-
-    --orange: #f1b162;
-    --green: #62f1b0;
-    --red: #f16962;
-
-    --positive: #62f1b0;
-    --negative: #f16962;
-    --chart-positive-body: #29585d;
-    --chart-positive-border: #29585d;
-    --chart-negative-body: #5c6f72;
-    --chart-negative-border: #5c6f72;
-    --chart-selected-color: #e480ff;
-    --liq-ask-color: #29585d;
-    --liq-bid-color: #5c6f72;
-    --chart-range-lines-color: #5c6f72;
-    --chart-limit-line-color: #5c6f72;
-    --shareable-line-color: #5c6f72;
-    --triangle-color: #5c6f72;
-    --order-buy-color: #26a69a;
-    --order-sell-color: #ef5350;
-
-    --other-green: #6bae52;
-    --other-red: #e75670;
-
-    /* border */
-    --color-border: 1px solid var(--accent1);
-    --border: #424649;
-    --border-radius: 0;
-    --swap-border: var(--title-gradient);
-    --grey-light-border: 1px solid var(--text2);
-    --navbar-border: transparent;
-    --dark-border: 0.2px solid #010101;
-
-    /* transitions */
-    --transition: all var(--animation-speed) ease-in-out;
-
-    /* animations */
-    --animation-speed: 300ms;
-
-    /* sizes */
-    --footer-height: 24px;
-
-    --font-logo: 'Fira Mono';
-    --font-family: 'Fira Mono';
-    --roboto: 'Fira Mono';
-    --mono: 'Fira Mono';
-
-    --scrollbar: none;
-    --scrollbar-track: transparent;
-    --scrollbar-color: transparent;
-    --scrollbar-thumb: linear-gradient(
-        0deg,
-        var(--accent1) 0%,
-        var(--accent5) 49.48%,
-        var(--accent1) 100%
-    );
-
-    --title-gradient: linear-gradient(
-        90deg,
-        #62ebf1 0%,
-        #7be4ff 49.48%,
-        #62ebf1 100%
-    );
-
-  
 }
 
 *::placeholder {
@@ -350,8 +243,8 @@
         #7d7db1 100%
     );
 
-    --swap-box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16),
-        0 3px 6px rgba(0, 0, 0, 0.23);
+    --swap-box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
     --swap-border: none;
     --navbar-border: #cacbcd;
     --dark-border: 0.2px solid #fefefe;

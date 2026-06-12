@@ -13,7 +13,6 @@ import {
     diffHashSig,
     diffHashSigScaleData,
 } from '../../../../../ambient-utils/dataLayer';
-import { BrandContext } from '../../../../../contexts/BrandContext';
 import { PoolContext } from '../../../../../contexts/PoolContext';
 import { RangeContext } from '../../../../../contexts/RangeContext';
 import {
@@ -122,8 +121,6 @@ function YAxisCanvas(props: yAxisIF) {
 
     const getDollarPrice = useDollarPrice();
     const { chartThemeColors } = useContext(ChartContext);
-
-    const { platformName } = useContext(BrandContext);
 
     useEffect(() => {
         if (scaleData) {
@@ -543,9 +540,7 @@ function YAxisCanvas(props: yAxisIF) {
                         downCandleBodyColor
                             ? downCandleBodyColor
                             : 'rgba(115, 113, 252, 1)',
-                        ['futa'].includes(platformName)
-                            ? 'black'
-                            : 'rgb(214, 214, 214)',
+                        'rgb(214, 214, 214)',
                         shapePoint,
                         undefined,
                         yAxisCanvasWidth,

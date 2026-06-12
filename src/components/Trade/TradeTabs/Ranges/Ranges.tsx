@@ -1,7 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import { memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useLocation } from 'react-router-dom';
 import { LS_KEY_HIDE_EMPTY_POSITIONS_ON_ACCOUNT } from '../../../../ambient-utils/constants';
 import { getPositionData } from '../../../../ambient-utils/dataLayer/functions/getPositionData';
 import { PositionIF, PositionServerIF } from '../../../../ambient-utils/types';
@@ -89,9 +88,11 @@ function Ranges(props: propsIF) {
     const quoteTokenSymbol = quoteToken.symbol;
     const path = location.pathname;
 
-    if (!path.includes('reposition')) {
-        setCurrentRangeInReposition('');
-    }
+    useEffect(() => {
+        if (!path.includes('reposition')) {
+            setCurrentRangeInReposition('');
+        }
+    }, [path]);
 
     const activeUserPositionsInOtherPoolsLength = useMemo(
         () =>

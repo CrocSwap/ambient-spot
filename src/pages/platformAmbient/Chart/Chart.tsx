@@ -47,7 +47,6 @@ import {
 } from '../../../ambient-utils/types';
 import { GraphDataContext } from '../../../contexts';
 import { AppStateContext } from '../../../contexts/AppStateContext';
-import { BrandContext } from '../../../contexts/BrandContext';
 import { CandleContext } from '../../../contexts/CandleContext';
 import { ChartContext } from '../../../contexts/ChartContext';
 import { PoolContext } from '../../../contexts/PoolContext';
@@ -121,7 +120,6 @@ import {
 import FloatingToolbar from './Draw/FloatingToolbar/FloatingToolbar';
 import FeeRateChart from './FeeRate/FeeRateChart';
 import LimitLineChart from './LimitLine/LimitLineChart';
-import CandleLineChart from './LineChart/LineChart';
 import LiquidityChart from './Liquidity/LiquidityChart';
 import OrderHistoryCanvas from './OrderHistoryCh/OrderHistoryCanvas';
 import OrderHistoryTooltip from './OrderHistoryCh/OrderHistoryTooltip';
@@ -268,7 +266,6 @@ export default function Chart(props: propsIF) {
         isCondensedModeEnabled,
         setIsCondensedModeEnabled,
         setCandleData,
-        showFutaCandles,
     } = useContext(CandleContext);
     const { poolPriceDisplay: poolPriceWithoutDenom } = useContext(PoolContext);
     const { advancedMode, setIsLinesSwitched } = useContext(RangeContext);
@@ -276,8 +273,6 @@ export default function Chart(props: propsIF) {
     const [isUpdatingShape, setIsUpdatingShape] = useState(false);
 
     const [isDragActive, setIsDragActive] = useState(false);
-
-    const { platformName } = useContext(BrandContext);
 
     const [localCandleDomains, setLocalCandleDomains] =
         useState<CandleDomainIF>({
@@ -2019,7 +2014,7 @@ export default function Chart(props: propsIF) {
     useEffect(() => {
         renderCanvasArray([d3CanvasMain]);
         render();
-    }, [diffHashSig(showFutaCandles)]);
+    }, []);
 
     useEffect(() => {
         IS_LOCAL_ENV && console.debug('timeframe changed');
@@ -3031,7 +3026,7 @@ export default function Chart(props: propsIF) {
             const snappedTime = nowDate + (period * 1000 - snapDiff);
 
             const liqBuffer =
-                liqMode === 'none' || ['futa'].includes(platformName)
+                liqMode === 'none'
                     ? 0.95
                     : mobileView
                       ? xAxisMobileBuffer
@@ -4378,8 +4373,9 @@ export default function Chart(props: propsIF) {
                                         }
 
                                         if (ctx) {
-                                            (ctx.fillStyle = textColor),
-                                                (ctx.font = '12px Lexend Deca');
+                                            ((ctx.fillStyle = textColor),
+                                                (ctx.font =
+                                                    '12px Lexend Deca'));
                                             ctx.textAlign =
                                                 alignment as CanvasTextAlign;
                                             ctx.textBaseline = textBaseline;
@@ -4628,7 +4624,6 @@ export default function Chart(props: propsIF) {
         isDragActive,
         isMagnetActiveLocal,
     ]);
-
     useEffect(() => {
         const visibilitychange = function () {
             render();
@@ -4740,30 +4735,20 @@ export default function Chart(props: propsIF) {
                 !isTriggeredByZoom &&
                 poolPriceWithoutDenom
             ) {
-                const isLine = ['futa'].includes(platformName);
-
                 const placeHolderPrice = denomInBase
                     ? 1 / poolPriceWithoutDenom
                     : poolPriceWithoutDenom;
 
                 const filteredMin = d3.min(visibleCandleData, (d) =>
                     denomInBase
-                        ? isLine
-                            ? d.invPriceCloseExclMEVDecimalCorrected
-                            : d.invMaxPriceExclMEVDecimalCorrected
-                        : isLine
-                          ? d.priceCloseExclMEVDecimalCorrected
-                          : d.minPriceExclMEVDecimalCorrected,
+                        ? d.invMaxPriceExclMEVDecimalCorrected
+                        : d.minPriceExclMEVDecimalCorrected,
                 );
 
                 const filteredMax = d3.max(visibleCandleData, (d) =>
                     denomInBase
-                        ? isLine
-                            ? d.invPriceCloseExclMEVDecimalCorrected
-                            : d.invMinPriceExclMEVDecimalCorrected
-                        : isLine
-                          ? d.priceCloseExclMEVDecimalCorrected
-                          : d.maxPriceExclMEVDecimalCorrected,
+                        ? d.invMinPriceExclMEVDecimalCorrected
+                        : d.maxPriceExclMEVDecimalCorrected,
                 );
 
                 if (filteredMin && filteredMax) {
@@ -7050,38 +7035,22 @@ export default function Chart(props: propsIF) {
                     gridTemplateRows: '1fr 0.1fr auto auto auto',
                 }}
             >
-                {platformName !== 'futa' || showFutaCandles ? (
-                    <CandleChart
-                        chartItemStates={props.chartItemStates}
-                        data={unparsedCandleData}
-                        denomInBase={denomInBase}
-                        lastCandleData={lastCandleData}
-                        period={period}
-                        scaleData={scaleData}
-                        selectedDate={selectedDate}
-                        showLatest={showLatest}
-                        setBandwidth={setBandwidth}
-                        prevlastCandleTime={prevlastCandleTime}
-                        setPrevLastCandleTime={setPrevLastCandleTime}
-                        isDiscontinuityScaleEnabled={isCondensedModeEnabled}
-                        visibleDateForCandle={visibleDateForCandle}
-                        chartThemeColors={chartThemeColors}
-                        showFutaCandles={showFutaCandles}
-                    />
-                ) : (
-                    <CandleLineChart
-                        period={period}
-                        scaleData={scaleData}
-                        denomInBase={denomInBase}
-                        data={visibleCandleData}
-                        showLatest={showLatest}
-                        lastCandleData={lastCandleData}
-                        prevlastCandleTime={prevlastCandleTime}
-                        setPrevLastCandleTime={setPrevLastCandleTime}
-                        chartThemeColors={chartThemeColors}
-                        showFutaCandles={showFutaCandles}
-                    />
-                )}
+                <CandleChart
+                    chartItemStates={props.chartItemStates}
+                    data={unparsedCandleData}
+                    denomInBase={denomInBase}
+                    lastCandleData={lastCandleData}
+                    period={period}
+                    scaleData={scaleData}
+                    selectedDate={selectedDate}
+                    showLatest={showLatest}
+                    setBandwidth={setBandwidth}
+                    prevlastCandleTime={prevlastCandleTime}
+                    setPrevLastCandleTime={setPrevLastCandleTime}
+                    isDiscontinuityScaleEnabled={isCondensedModeEnabled}
+                    visibleDateForCandle={visibleDateForCandle}
+                    chartThemeColors={chartThemeColors}
+                />
 
                 <VolumeBarCanvas
                     scaleData={scaleData}
@@ -7093,7 +7062,7 @@ export default function Chart(props: propsIF) {
                     chartThemeColors={chartThemeColors}
                 />
 
-                {liquidityScale && liquidityData && platformName !== 'futa' && (
+                {liquidityScale && liquidityData && (
                     <LiquidityChart
                         liqMode={liqMode}
                         liquidityData={liquidityData}

@@ -1,15 +1,11 @@
 import styles from '../TermsOfService/TermsOfService.module.css';
-import futaBg from '../../../assets/futa/home/background.png';
 import ambientBg from '../../../assets/images/backgrounds/background.png';
-import { brand } from '../../../ambient-utils/constants';
 export default function PrivacyPolicy() {
-    const isFuta = brand === 'futa';
-
     return (
         <div
             className={styles.background}
             style={{
-                background: `url(${isFuta ? futaBg : ambientBg}) no-repeat`,
+                background: `url(${ambientBg}) no-repeat`,
             }}
         >
             <div className={styles.container}>
@@ -302,7 +298,8 @@ export default function PrivacyPolicy() {
                             identifiable to you.&nbsp; We may use this anonymous
                             data and share it with third parties for our lawful
                             business purposes, including to analyze and improve
-                            the Service and promote our business.&nbsp;&nbsp;{' '}
+                            the Service and promote our
+                            business.&nbsp;&nbsp;{' '}
                         </p>
                         <p>
                             <span style={{ fontWeight: 'bold' }}>
@@ -377,7 +374,8 @@ export default function PrivacyPolicy() {
                             help us operate the Service or our business (such as
                             hosting, transaction relayers, information
                             technology, customer support, email delivery,
-                            marketing, consumer research and website analytics).{' '}
+                            marketing, consumer research and website
+                            analytics).{' '}
                         </p>
                         <p>
                             <span style={{ fontWeight: 'bold' }}>

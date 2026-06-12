@@ -1,5 +1,4 @@
 export { AppStateContext } from './AppStateContext';
-export { AuctionsContext } from './AuctionsContext';
 export { BrandContext } from './BrandContext';
 export { CachedDataContext } from './CachedDataContext';
 export { CandleContext } from './CandleContext';

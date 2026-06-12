@@ -37,8 +37,6 @@ interface propsIF {
     reverseTokens?: () => void;
     onClose: () => void;
     noModal?: boolean;
-    platform?: 'ambient' | 'futa';
-    isFuta?: boolean;
 }
 
 export const SoloTokenSelectModal = (props: propsIF) => {
@@ -49,7 +47,6 @@ export const SoloTokenSelectModal = (props: propsIF) => {
         isSingleToken,
         tokenAorB,
         reverseTokens,
-        platform = 'ambient',
     } = props;
 
     const { userAddress } = useContext(UserDataContext);
@@ -155,37 +152,6 @@ export const SoloTokenSelectModal = (props: propsIF) => {
         }
         setInput('');
         // close the token modal
-        onClose();
-    };
-
-    const chooseTokenFuta = (tkn: TokenIF): void => {
-        if (tokenAorB === 'A') {
-            if (tokenB.address.toLowerCase() === tkn.address.toLowerCase()) {
-                reverseTokens && reverseTokens();
-                onClose();
-                return;
-            } else {
-                linkGenSwap.navigate({
-                    chain: chainId,
-                    tokenA: tkn.address,
-                    tokenB: tokenB.address,
-                });
-            }
-        } else if (tokenAorB === 'B') {
-            if (tokenA.address.toLowerCase() === tkn.address.toLowerCase()) {
-                console.log('running');
-                console.log(reverseTokens);
-                reverseTokens && reverseTokens();
-                onClose();
-                return;
-            } else {
-                linkGenSwap.navigate({
-                    chain: chainId,
-                    tokenA: tokenA.address,
-                    tokenB: tkn.address,
-                });
-            }
-        }
         onClose();
     };
 
@@ -350,44 +316,43 @@ export const SoloTokenSelectModal = (props: propsIF) => {
                 </div>
                 <div className={styles.scrollContainer}>
                     <div style={{ padding: '1rem' }}>
-                        {platform !== 'futa' &&
-                            isWrappedNativeToken(validatedInput) && (
-                                <WarningBox
-                                    title=''
-                                    details={WETH_WARNING}
-                                    noBackground
-                                    button={
-                                        <button
-                                            onClick={() => {
-                                                try {
-                                                    const wethToken =
-                                                        tokens.getTokenByAddress(
-                                                            validatedInput,
-                                                        );
-                                                    if (wethToken) {
-                                                        chooseToken(
-                                                            wethToken,
-                                                            false,
-                                                        );
-                                                    }
-                                                } catch (err) {
-                                                    IS_LOCAL_ENV &&
-                                                        console.warn(err);
-                                                    onClose();
+                        {isWrappedNativeToken(validatedInput) && (
+                            <WarningBox
+                                title=''
+                                details={WETH_WARNING}
+                                noBackground
+                                button={
+                                    <button
+                                        onClick={() => {
+                                            try {
+                                                const wethToken =
+                                                    tokens.getTokenByAddress(
+                                                        validatedInput,
+                                                    );
+                                                if (wethToken) {
+                                                    chooseToken(
+                                                        wethToken,
+                                                        false,
+                                                    );
                                                 }
-                                            }}
-                                        >
-                                            {`I understand, use ${
-                                                tokens.getTokenByAddress(
-                                                    validatedInput,
-                                                )?.symbol
-                                            }`}
-                                        </button>
-                                    }
-                                />
-                            )}
+                                            } catch (err) {
+                                                IS_LOCAL_ENV &&
+                                                    console.warn(err);
+                                                onClose();
+                                            }
+                                        }}
+                                    >
+                                        {`I understand, use ${
+                                            tokens.getTokenByAddress(
+                                                validatedInput,
+                                            )?.symbol
+                                        }`}
+                                    </button>
+                                }
+                            />
+                        )}
                     </div>
-                    {platform === 'ambient' && (
+                    {
                         <>
                             {isWrappedNativeToken(validatedInput) &&
                                 [
@@ -425,66 +390,7 @@ export const SoloTokenSelectModal = (props: propsIF) => {
                                 />
                             )}
                         </>
-                    )}
-                    {platform === 'futa' &&
-                        tokens
-                            .getTokensFromList('/futa-token-list.json')
-                            .filter((tk: TokenIF) => {
-                                // fn to compare name and symbol to search input
-                                function matchSymbolOrName(
-                                    ...args: [string, ...string[]]
-                                ): boolean {
-                                    const isMatch: boolean = args.some(
-                                        (a: string) => {
-                                            return a
-                                                .toLowerCase()
-                                                .includes(
-                                                    validatedInput.toLowerCase(),
-                                                );
-                                        },
-                                    );
-                                    return isMatch;
-                                }
-                                // fn to compare token address to search input
-                                function matchAddress(
-                                    reference: string,
-                                ): boolean {
-                                    let isMatch: boolean;
-                                    if (reference.length === 42) {
-                                        isMatch =
-                                            reference.toLowerCase() ===
-                                            validatedInput.toLowerCase();
-                                        console.log(isMatch);
-                                    } else if (reference.length === 40) {
-                                        isMatch =
-                                            '0x' + reference.toLowerCase() ===
-                                            validatedInput.toLowerCase();
-                                    } else {
-                                        isMatch = false;
-                                    }
-                                    return isMatch;
-                                }
-                                // logic router for search type: name, symbol, address
-                                function checkForMatches(): boolean {
-                                    return validatedInput.length === 40 ||
-                                        validatedInput.length === 42
-                                        ? matchAddress(tk.address)
-                                        : matchSymbolOrName(tk.name, tk.symbol);
-                                }
-                                // if user entered search input text, check for matches,
-                                // ... else return `true` (no tokens filtered out)
-                                return validatedInput
-                                    ? checkForMatches()
-                                    : true;
-                            })
-                            .map((ticker: TokenIF) => (
-                                <TokenSelect
-                                    key={JSON.stringify(ticker)}
-                                    token={ticker}
-                                    chooseToken={chooseTokenFuta}
-                                    fromListsText=''
-                                />
-                            ))}
+                    }
                 </div>
             </section>
         </Modal>

@@ -109,7 +109,6 @@ export const swellMainnet: NetworkIF = {
     evmRpcUrls: [PRIMARY_RPC_URL, FALLBACK_RPC_URL],
     chainSpecForAppKit,
     defaultPair: [SWELL_TOKENS.ETH, SWELL_TOKENS.USDe],
-    defaultPairFuta: [SWELL_TOKENS.ETH, SWELL_TOKENS.USDe],
     poolIndex: chainSpecFromSDK.poolIndex,
     gridSize: chainSpecFromSDK.gridSize,
     isTestnet: chainSpecFromSDK.isTestNet,

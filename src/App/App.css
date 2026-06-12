@@ -58,7 +58,6 @@ svg:hover {
     cursor: pointer;
 }
 
-
 button:hover > svg {
     color: var(--accent1);
     cursor: pointer;
@@ -153,7 +152,6 @@ p:focus-visible {
     background: rgba(1, 0, 16, 0.25);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border-radius: var(--border-radius);
     transition: var(--transition);
 }
@@ -235,7 +233,8 @@ input[type='number'] {
     border: 2px solid transparent !important; /* Space for the border */
     background-clip: padding-box !important; /* Create space for the border */
     border-radius: 8px !important; /* Adjust the border radius as needed */
-    background-image: linear-gradient(#06060c, #06060c),
+    background-image:
+        linear-gradient(#06060c, #06060c),
         linear-gradient(
             0deg,
             var(--accent1) 0%,
@@ -243,7 +242,8 @@ input[type='number'] {
             var(--accent1) 100%
         ) !important;
     background-origin: border-box !important;
-    background-clip: content-box, border-box !important; /* Clip the border to show gradient */
+    background-clip:
+        content-box, border-box !important; /* Clip the border to show gradient */
     min-height: 50px !important; /* Set the minimum height for the scrollbar thumb */
 }
 .custom_scroll_ambient::-webkit-scrollbar-track,
@@ -251,55 +251,6 @@ input[type='number'] {
     background: #06060c !important; /* Background color of the scrollbar track */
     border-radius: 8px !important; /* Adjust the border radius as needed */
     padding: 2px !important; /* Add padding to the track */
-}
-/* -----------------------FUTA------------ */
-
-.futa_main {
-    scrollbar-color: var(--accent1) var(--dark2);
-}
-.futa_main::-webkit-scrollbar {
-    width: 12px;
-    border-radius: 0 !important;
-}
-
-.futa_main::-webkit-scrollbar-thumb {
-    background: var(--accent1);
-    border-radius: 0 !important;
-}
-
-.futa_main::-webkit-scrollbar-track {
-    background: var(--dark2);
-    border: 1px solid var(--accent1);
-    border-radius: 0 !important;
-}
-
-.futa_main::-webkit-scrollbar-button:vertical:start:decrement {
-    background: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polygon points="12,5 5,12 19,12" fill="%23FFFFFF"/></svg>')
-        no-repeat center;
-    background-size: 50%;
-}
-
-.futa_main::-webkit-scrollbar-button:vertical:end:increment {
-    background: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polygon points="12,19 5,12 19,12" fill="%23FFFFFF"/></svg>')
-        no-repeat center;
-    background-size: 50%;
-
-    width: 20px;
-    height: 20px;
-    background-color: red;
-}
-
-.futa_main::-webkit-scrollbar-button {
-    height: 12px;
-    background-color: #00ffff;
-    border-radius: 0 !important;
-}
-
-.custom-resizable-handle-futa {
-    background-color: red;
-    width: 200px;
-    overflow-y: scroll !important;
-    overflow-y: auto !important;
 }
 .custom_scroll_ambient::-webkit-scrollbar,
 .content-container::-webkit-scrollbar {
@@ -310,7 +261,8 @@ input[type='number'] {
     border: 2px solid transparent !important; /* Space for the border */
     background-clip: padding-box !important; /* Create space for the border */
     border-radius: 8px !important; /* Adjust the border radius as needed */
-    background-image: linear-gradient(#06060c, #06060c),
+    background-image:
+        linear-gradient(#06060c, #06060c),
         linear-gradient(
             0deg,
             var(--accent1) 0%,
@@ -318,7 +270,8 @@ input[type='number'] {
             var(--accent1) 100%
         ) !important;
     background-origin: border-box !important;
-    background-clip: content-box, border-box !important; /* Clip the border to show gradient */
+    background-clip:
+        content-box, border-box !important; /* Clip the border to show gradient */
     min-height: 50px !important; /* Set the minimum height for the scrollbar thumb */
 }
 .custom_scroll_ambient::-webkit-scrollbar-track,
@@ -363,54 +316,6 @@ input[type='number'] {
 scrollbar-color: transparent;
       } */
 }
-@media only screen and (min-width: 768px) {
-    /* 
-    .futa_routes {
-        background-color: rgba(13, 15, 19, 0.1);
-        text-shadow:
-            0 0 0.2em currentColor,
-            1px 1px rgba(255, 0, 255, 0.1),
-            -1px -1px rgba(0, 255, 255, 0.1); 
-        position: relative;
-        z-index: 0;
-    } */
-
-    .futa_routes::before,
-    .futa_routes::after {
-        content: '';
-        transform: translateZ(0); /* Stabilizes 3D rendering */
-        pointer-events: none;
-        mix-blend-mode: overlay;
-        position: absolute;
-        height: 100%;
-        width: 100%;
-        left: 0;
-        top: 0;
-        z-index: 1;
-        opacity: 0.2;
-    }
-
-    .futa_routes::before {
-        background: repeating-linear-gradient(
-            rgb(218, 49, 49) 0px,
-            rgb(112, 159, 115) 2px,
-            rgb(40, 129, 206) 4px
-        );
-    }
-
-    .futa_routes::after {
-        background: repeating-linear-gradient(
-            90deg,
-            rgba(218, 49, 49, 0.8) 1px,
-            transparent 2px,
-            rgba(112, 159, 115, 0.8) 3px,
-            transparent 4px,
-            rgba(40, 129, 206, 0.8) 5px,
-            transparent 6px
-        );
-    }
-}
-
 @media only screen and (min-width: 1280px) {
     .content-container {
         overflow-y: auto;

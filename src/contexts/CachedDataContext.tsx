@@ -21,19 +21,13 @@ import {
 import { NFTQueryFn, memoizeFetchNFT } from '../ambient-utils/api/fetchNft';
 import {
     AllPoolStatsFn,
-    AuctionStatusQueryFn,
     Change24Fn,
-    GlobalAuctionListQueryFn,
     LiquidityFeeFn,
     PoolStatsFn,
     SpotPriceFn,
-    UserAuctionListQueryFn,
     memoizeAllPoolStats,
     memoizeGet24hChange,
-    memoizeGetAuctionStatus,
-    memoizeGetGlobalAuctionsList,
     memoizeGetLiquidityFee,
-    memoizeGetUserAuctionsList,
     memoizePoolStats,
     memoizeQuerySpotPrice,
     memoizeQuerySpotTick,
@@ -47,9 +41,6 @@ export interface CachedDataContextIF {
     cachedAllPoolStatsFetch: AllPoolStatsFn;
     cachedGet24hChange: Change24Fn;
     cachedGetLiquidityFee: LiquidityFeeFn;
-    cachedGetGlobalAuctionsList: GlobalAuctionListQueryFn;
-    cachedGetAuctionStatus: AuctionStatusQueryFn;
-    cachedGetUserAuctionsList: UserAuctionListQueryFn;
     cachedQuerySpotPrice: SpotPriceFn;
     cachedQuerySpotTick: SpotPriceFn;
     cachedTokenDetails: FetchContractDetailsFn;
@@ -75,9 +66,6 @@ export const CachedDataContextProvider = (props: {
         cachedAllPoolStatsFetch: memoizeAllPoolStats(),
         cachedGet24hChange: memoizeGet24hChange(),
         cachedGetLiquidityFee: memoizeGetLiquidityFee(),
-        cachedGetGlobalAuctionsList: memoizeGetGlobalAuctionsList(),
-        cachedGetAuctionStatus: memoizeGetAuctionStatus(),
-        cachedGetUserAuctionsList: memoizeGetUserAuctionsList(),
         cachedQuerySpotPrice: memoizeQuerySpotPrice(),
         cachedQuerySpotTick: memoizeQuerySpotTick(),
         cachedTokenDetails: memoizeFetchContractDetails(),

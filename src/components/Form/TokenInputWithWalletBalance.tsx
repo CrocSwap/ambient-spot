@@ -1,14 +1,11 @@
 import { fromDisplayQty, toDisplayQty } from '@crocswap-libs/sdk';
 import { memo } from 'react';
 import { FiRefreshCw } from 'react-icons/fi';
-import { brand, HIDE_TOKEN_VALUES } from '../../ambient-utils/constants';
+import { HIDE_TOKEN_VALUES } from '../../ambient-utils/constants';
 import { getFormattedNumber } from '../../ambient-utils/dataLayer';
 import { TokenIF } from '../../ambient-utils/types';
 import { useSimulatedIsPoolInitialized } from '../../App/hooks/useSimulatedIsPoolInitialized';
-import {
-    RefreshButton,
-    RefreshButtonFuta,
-} from '../../styled/Components/TradeModules';
+import { RefreshButton } from '../../styled/Components/TradeModules';
 import { formatTokenInput, stringToBigInt } from '../../utils/numbers';
 import TokenInputQuantity from './TokenInputQuantity';
 import WalletBalanceSubinfo from './WalletBalanceSubinfo';
@@ -70,8 +67,6 @@ function TokenInputWithWalletBalance(props: propsIF) {
         percentDiffUsdValue,
         isSwap,
     } = props;
-
-    const isFuta = brand === 'futa';
 
     const usdValueForDom =
         usdValue && parseFloat(tokenInput) > 0
@@ -232,22 +227,14 @@ function TokenInputWithWalletBalance(props: propsIF) {
                 usdValue={usdValueForDom}
                 percentDiffUsdValue={percentDiffUsdValue}
             />
-            {handleRefresh &&
-                (isFuta ? (
-                    <RefreshButtonFuta
-                        onClick={handleRefresh}
-                        aria-label='Refresh data'
-                    >
-                        REFRESH
-                    </RefreshButtonFuta>
-                ) : (
-                    <RefreshButton
-                        onClick={handleRefresh}
-                        aria-label='Refresh data'
-                    >
-                        <FiRefreshCw size={18} />
-                    </RefreshButton>
-                ))}
+            {handleRefresh && (
+                <RefreshButton
+                    onClick={handleRefresh}
+                    aria-label='Refresh data'
+                >
+                    <FiRefreshCw size={18} />
+                </RefreshButton>
+            )}
         </>
     );
 }

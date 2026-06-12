@@ -7,19 +7,13 @@ import { FlexContainer, GridContainer } from '../../../styled/Common';
 import {
     AcknowledgeLink,
     AcknowledgeText,
-    LPButton,
 } from '../../../styled/Components/TradeModules';
 import Button from '../../Form/Button';
 import ContentContainer from '../../Global/ContentContainer/ContentContainer';
 
-import {
-    brand,
-    excludedTokenAddressesLowercase,
-} from '../../../ambient-utils/constants';
-import { openInNewTab } from '../../../ambient-utils/dataLayer';
+import { excludedTokenAddressesLowercase } from '../../../ambient-utils/constants';
 import { TradeDataContext } from '../../../contexts/TradeDataContext';
 import { UserDataContext } from '../../../contexts/UserDataContext';
-import { poolParamsIF } from '../../../utils/hooks/useLinkGen';
 import useMediaQuery from '../../../utils/hooks/useMediaQuery';
 import TradeLinks from './TradeLinks';
 
@@ -64,7 +58,6 @@ export const TradeModuleSkeleton = (props: PropsIF) => {
 
     const { tokenA, tokenB, limitTick, areDefaultTokensUpdatedForChain } =
         useContext(TradeDataContext);
-    const isFuta = brand === 'futa';
 
     // values if either token needs to be confirmed before transacting
     const needConfirmTokenA = useMemo(() => {
@@ -131,12 +124,6 @@ export const TradeModuleSkeleton = (props: PropsIF) => {
         '<span style="color: var(--negative); text-transform: uppercase;">$1</span>',
     );
 
-    const poolLinkParams: poolParamsIF = {
-        chain: chainId,
-        tokenA: tokenA.address,
-        tokenB: tokenB.address,
-    };
-
     const tokenAExplorerLink = (needConfirmTokenA || tokenAIsExcludedToken) && (
         <AcknowledgeLink
             href={blockExplorer + 'token/' + tokenA.address}
@@ -165,7 +152,7 @@ export const TradeModuleSkeleton = (props: PropsIF) => {
         <>
             <ContentContainer isOnTradeRoute={!isSwapPage}>
                 {header}
-                {!isSwapPage && !smallScreen && !isFuta && (
+                {!isSwapPage && !smallScreen && (
                     <TradeLinks
                         chainId={chainId}
                         tokenA={tokenA}
@@ -185,7 +172,7 @@ export const TradeModuleSkeleton = (props: PropsIF) => {
                     flexDirection='column'
                     gap={8}
                     margin='8px 0 0 0'
-                    padding={isFuta ? '0 16px' : '0 32px 30px 32px'}
+                    padding='0 32px 30px 32px'
                 >
                     {transactionDetails}
                     {isUserConnected === undefined ||
@@ -241,28 +228,6 @@ export const TradeModuleSkeleton = (props: PropsIF) => {
                         </GridContainer>
                     ) : null}
                     {warnings && warnings}
-                    {isFuta && (
-                        <LPButton
-                            onClick={() =>
-                                openInNewTab(
-                                    'https://testnet.ambient.finance/trade/pool/' +
-                                        // 'https://ambient.finance/trade/pool/' +
-                                        Object.entries(poolLinkParams)
-                                            .map(
-                                                (
-                                                    tup: [
-                                                        string,
-                                                        string | number,
-                                                    ],
-                                                ) => tup.join('='),
-                                            )
-                                            .join('&'),
-                                )
-                            }
-                        >
-                            Looking to LP?
-                        </LPButton>
-                    )}
                 </FlexContainer>
             </ContentContainer>
             {modal}

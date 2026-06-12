@@ -98,7 +98,6 @@ export const plumeMainnet: NetworkIF = {
     evmRpcUrls: [PRIMARY_RPC_URL, FALLBACK_RPC_URL],
     chainSpecForAppKit,
     defaultPair: [PLUME_TOKENS.PLUME, PLUME_TOKENS.pUSD],
-    defaultPairFuta: [PLUME_TOKENS.PLUME, PLUME_TOKENS.pUSD],
     poolIndex: chainSpecFromSDK.poolIndex,
     gridSize: chainSpecFromSDK.gridSize,
     isTestnet: chainSpecFromSDK.isTestNet,

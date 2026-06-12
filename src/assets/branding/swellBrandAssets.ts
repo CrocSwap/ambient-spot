@@ -7,7 +7,7 @@ export const swellBrandAssets: brandIF = {
         // swell mainnet
         '0x783': {
             // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: swellLogo,
         },

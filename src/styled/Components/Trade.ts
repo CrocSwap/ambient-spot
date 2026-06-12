@@ -46,7 +46,6 @@ export const MainSection = styled.section<{
 
 export const ResizableContainer = styled(Resizable)<{
     showResizeable: boolean;
-    isFuta?: boolean;
     isChartFullScreen?: boolean;
     alignItems?: string;
     minHeight?: string | number;
@@ -54,8 +53,8 @@ export const ResizableContainer = styled(Resizable)<{
     display: flex;
     overflow: hidden;
 
-    max-height: ${({ isFuta, isChartFullScreen }) =>
-        isFuta || isChartFullScreen ? 'calc(100% - 5px)' : 'calc(100% - 54px)'};
+    max-height: ${({ isChartFullScreen }) =>
+        isChartFullScreen ? 'calc(100% - 5px)' : 'calc(100% - 54px)'};
     min-height: ${({ minHeight }) => {
         let mhOutput: string;
         if (typeof minHeight === 'number') {
@@ -88,18 +87,17 @@ export const ResizableContainer = styled(Resizable)<{
 
 export const ChartContainer = styled.div<{
     fullScreen: boolean;
-    isFuta: boolean;
 }>`
-    ${({ fullScreen, isFuta }) =>
+    ${({ fullScreen }) =>
         fullScreen
             ? `
         transition: var(--transition);
-        background: ${isFuta ? 'var(--dark1)' : 'var(--dark2)'};
+        background: var(--dark2);
         width: 100%;
         height: 100%;
         left: 0;
         top: 56px;
-        background: ${isFuta ? 'var(--dark1)' : 'var(--dark2)'};
+        background: var(--dark2);
     `
             : `
         flex: 1 0;
@@ -114,7 +112,7 @@ export const ChartContainer = styled.div<{
         overflow: hidden;
 
         @media (min-width: 1200px) {
-            background: ${isFuta ? 'var(--dark1)' : 'var(--dark2)'};
+            background: var(--dark2);
         }
             
       
@@ -123,9 +121,6 @@ export const ChartContainer = styled.div<{
             padding-bottom: 80px;
         }
     `}
-
-    ${({ isFuta, fullScreen }) =>
-        isFuta && !fullScreen ? 'padding-bottom: 30px;' : ''}
 
     &::-webkit-scrollbar {
         display: none;

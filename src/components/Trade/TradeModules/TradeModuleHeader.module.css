@@ -49,19 +49,3 @@
 .swap_title {
     color: var(--text1);
 }
-.settings_button_futa{
-    width: 44px;
-    height: 36px;
-    display: flex;
-padding: 0px 12px;
-justify-content: center;
-align-items: center;
-gap: 10px;
-align-self: stretch;
-border: 1px solid var(--dark2, #14161A);
-background: var(--dark2, #14161A);
-}
-.settings_button_futa:hover{
-    border: 1px solid var(--dark3);
-
-}

@@ -15,7 +15,6 @@ import TableInfo from '../../../components/Trade/TableInfo/TableInfo';
 import TradeTabs2 from '../../../components/Trade/TradeTabs/TradeTabs2';
 import {
     AppStateContext,
-    BrandContext,
     ChartContext,
     CrocEnvContext,
     PoolContext,
@@ -32,7 +31,6 @@ import styles from './TradeMobile.module.css';
 
 interface propsIF {
     poolPrice: string;
-    futaActiveTab: string | undefined;
     poolPriceChangeString: string;
 
     // tradecharts
@@ -81,7 +79,6 @@ interface propsIF {
 export default function TradeMobile(props: propsIF) {
     const {
         poolPrice,
-        futaActiveTab,
         poolPriceChangeString,
         changeState,
         selectedDate,
@@ -95,12 +92,6 @@ export default function TradeMobile(props: propsIF) {
         unselectCandle,
         transactionFilter,
     } = props;
-
-    const { platformName } = useContext(BrandContext);
-    const isFuta = useMemo(
-        () => ['futa'].includes(platformName),
-        [platformName],
-    );
 
     const { provider } = useContext(CrocEnvContext);
     const { tokens } = useContext(TokenContext);
@@ -308,7 +299,6 @@ export default function TradeMobile(props: propsIF) {
             <div
                 className={styles.mobile_header}
                 style={{
-                    padding: isFuta ? '8px' : '',
                     zIndex: isBottomSheetOpen ? 0 : '2',
                 }}
             >
@@ -357,7 +347,6 @@ export default function TradeMobile(props: propsIF) {
             </div>
         ),
         [
-            isFuta,
             isBottomSheetOpen,
             isDenomBase,
             baseToken,
@@ -373,18 +362,17 @@ export default function TradeMobile(props: propsIF) {
         <div
             className={styles.mobile_container}
             style={{
-                height: !isFuta ? layout.contentHeight : '100%',
-
-                maxWidth: !isFuta && activeTab === 'Order' ? '600px' : '',
+                height: layout.contentHeight,
+                maxWidth: activeTab === 'Order' ? '600px' : '',
             }}
             // onTouchStart={handleTouchStart}
             // onTouchMove={handleTouchMove}
             // onTouchEnd={handleTouchEnd}
         >
-            {!isFuta && mobileTabs}
+            {mobileTabs}
             {headerContent}
 
-            {(isFuta ? futaActiveTab === 'Chart' : activeTab === 'Chart') && (
+            {activeTab === 'Chart' && (
                 <FlexContainer
                     style={{
                         justifyContent: 'space-between',
@@ -406,7 +394,7 @@ export default function TradeMobile(props: propsIF) {
 
             {/* <AnimatePresence initial={false} custom={direction}> */}
             <div
-                // key={isFuta ? futaActiveTab : activeTab}
+                // key={activeTab}
                 // custom={direction}
                 // variants={slideVariants}
                 // initial='enter'
@@ -422,12 +410,7 @@ export default function TradeMobile(props: propsIF) {
                     width: '100%',
                 }}
             >
-                {
-                    tabs.find(
-                        (tab) =>
-                            tab.id === (isFuta ? futaActiveTab : activeTab),
-                    )?.data
-                }
+                {tabs.find((tab) => tab.id === activeTab)?.data}
             </div>
             {/* </AnimatePresence> */}
         </div>

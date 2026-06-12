@@ -20,8 +20,6 @@ import FooterNav from '../components/Global/FooterNav/FooterNav';
 import { FlexContainer } from '../styled/Common';
 import useMediaQuery from '../utils/hooks/useMediaQuery';
 
-import Footer from '../components/Futa/Footer/Footer';
-import Navbar from '../components/Futa/Navbar/Navbar';
 import { useModal } from '../components/Global/Modal/useModal';
 import { ChartContext } from '../contexts';
 import { useBottomSheet } from '../contexts/BottomSheetContext';
@@ -110,7 +108,6 @@ export default function App() {
                 currentLocation !== '/privacy' &&
                 currentLocation !== '/faq' &&
                 !currentLocation.includes('/chat') &&
-                platformName !== 'futa' &&
                 isChatEnabled &&
                 !isFullScreen && <ChatPanel isFullScreen={false} />}
         </div>
@@ -136,38 +133,27 @@ export default function App() {
         };
     }, [isCSSModalOpen]);
 
-    const footerDisplay =
-        platformName === 'futa' ? (
-            <Footer data-theme={skin.active} />
-        ) : (
-            showMobileVersion && <FooterNav />
-        );
+    const footerDisplay = showMobileVersion && <FooterNav />;
 
     return (
         <>
             {import.meta.env.VITE_FOGO_SHOW_PRESALE_BANNER === 'true' && (
                 <FogoPresaleBanner />
             )}
-            {location.pathname == '/' && platformName !== 'futa' && (
-                <PageHeader />
-            )}
+            {location.pathname == '/' && <PageHeader />}
             <FlexContainer
                 flexDirection='column'
-                className={
-                    platformName === 'futa' ? 'futa_main' : containerStyle
-                }
+                className={containerStyle}
                 data-theme={skin.active}
                 style={{
                     height:
-                        location.pathname == '/' && platformName !== 'futa'
+                        location.pathname == '/'
                             ? 'calc(100vh - 56px)'
                             : '100dvh',
                 }}
             >
                 <AppOverlay />
-                {platformName === 'futa'
-                    ? location.pathname !== '/' && <Navbar />
-                    : location.pathname !== '/' && <PageHeader />}
+                {location.pathname !== '/' && <PageHeader />}
                 <RouteRenderer platformName={platformName} />
                 {isWalletModalOpen && <GateWalletModal />}
             </FlexContainer>

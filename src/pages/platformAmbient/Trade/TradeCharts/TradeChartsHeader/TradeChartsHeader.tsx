@@ -7,17 +7,13 @@ import { printDomToImage } from '../../../../../ambient-utils/dataLayer';
 import { useSimulatedIsPoolInitialized } from '../../../../../App/hooks/useSimulatedIsPoolInitialized';
 import { DefaultTooltip } from '../../../../../components/Global/StyledTooltip/StyledTooltip';
 import { AppStateContext } from '../../../../../contexts/AppStateContext';
-import { BrandContext } from '../../../../../contexts/BrandContext';
 import { CandleContext } from '../../../../../contexts/CandleContext';
 import { ChartContext } from '../../../../../contexts/ChartContext';
 import { PoolContext } from '../../../../../contexts/PoolContext';
 import { TradeDataContext } from '../../../../../contexts/TradeDataContext';
 import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
 import { FlexContainer } from '../../../../../styled/Common';
-import {
-    FutaHeaderButton,
-    HeaderButtons,
-} from '../../../../../styled/Components/Chart';
+import { HeaderButtons } from '../../../../../styled/Components/Chart';
 import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
 import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
 import TradeChartsTokenInfo from '../TradeChartsComponents/TradeChartsTokenInfo';
@@ -39,12 +35,8 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
     const { isTradeDollarizationEnabled, setIsTradeDollarizationEnabled } =
         useContext(PoolContext);
 
-    const {
-        isCondensedModeEnabled,
-        setIsCondensedModeEnabled,
-        showFutaCandles,
-        setShowFutaCandles,
-    } = useContext(CandleContext);
+    const { isCondensedModeEnabled, setIsCondensedModeEnabled } =
+        useContext(CandleContext);
 
     const {
         baseToken: { symbol: baseTokenSymbol },
@@ -52,8 +44,6 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
         isDenomBase,
     } = useContext(TradeDataContext);
 
-    const { platformName } = useContext(BrandContext);
-    const isFuta = ['futa'].includes(platformName);
     const tradeChartHeaderRef = useRef<HTMLDivElement>(null);
     const tabletView = useMediaQuery(
         '(min-width: 768px) and (max-width: 1200px)',
@@ -99,22 +89,6 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
 
     const graphSettingsContent = (
         <FlexContainer justifyContent='flex-end' alignItems='center' gap={8}>
-            {isFuta && (
-                <DefaultTooltip
-                    title={!showFutaCandles ? 'Candle Chart' : 'Line Chart'}
-                    enterDelay={500}
-                >
-                    <HeaderButtons
-                        isFuta={isFuta}
-                        onClick={() => setShowFutaCandles(!showFutaCandles)}
-                    >
-                        <FutaHeaderButton isActive={!showFutaCandles}>
-                            <>CANDLES</>
-                        </FutaHeaderButton>
-                    </HeaderButtons>
-                </DefaultTooltip>
-            )}
-
             <DefaultTooltip
                 title={
                     isCondensedModeEnabled
@@ -129,7 +103,6 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
                     }
                     mobileHide={activeMobileComponent !== 'chart'}
                     isActive={isCondensedModeEnabled}
-                    isFuta={isFuta}
                 >
                     <AiOutlineAreaChart
                         size={20}
@@ -159,7 +132,6 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
                     }
                     mobileHide={activeMobileComponent !== 'chart'}
                     isActive={isTradeDollarizationEnabled}
-                    isFuta={isFuta}
                 >
                     <AiOutlineDollarCircle
                         size={20}
@@ -173,47 +145,39 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
                     />
                 </HeaderButtons>
             </DefaultTooltip>
-            {!isFuta && (
-                <DefaultTooltip
-                    title={
-                        isChartFullScreen
-                            ? 'Close full screen chart'
-                            : 'Display full screen chart'
-                    }
-                    enterDelay={500}
+            <DefaultTooltip
+                title={
+                    isChartFullScreen
+                        ? 'Close full screen chart'
+                        : 'Display full screen chart'
+                }
+                enterDelay={500}
+            >
+                <HeaderButtons
+                    mobileHide
+                    onClick={() => {
+                        setIsChartFullScreen(!isChartFullScreen);
+                    }}
                 >
-                    <HeaderButtons
-                        mobileHide
-                        onClick={() => {
-                            setIsChartFullScreen(!isChartFullScreen);
-                        }}
-                    >
-                        <BsFullscreen
-                            size={16}
-                            id='trade_chart_full_screen_button'
-                            aria-label='Full screen chart button'
-                        />
-                    </HeaderButtons>
-                </DefaultTooltip>
-            )}
-            {!isFuta && (
-                <DefaultTooltip
-                    title={'Copy image of chart to clipboard'}
-                    enterDelay={500}
-                >
-                    <HeaderButtons
-                        mobileHide
-                        onClick={copyChartToClipboard}
-                        isFuta={isFuta}
-                    >
-                        <RiScreenshot2Fill
-                            size={20}
-                            id='trade_chart_save_image'
-                            aria-label='Copy chart image button'
-                        />
-                    </HeaderButtons>
-                </DefaultTooltip>
-            )}
+                    <BsFullscreen
+                        size={16}
+                        id='trade_chart_full_screen_button'
+                        aria-label='Full screen chart button'
+                    />
+                </HeaderButtons>
+            </DefaultTooltip>
+            <DefaultTooltip
+                title={'Copy image of chart to clipboard'}
+                enterDelay={500}
+            >
+                <HeaderButtons mobileHide onClick={copyChartToClipboard}>
+                    <RiScreenshot2Fill
+                        size={20}
+                        id='trade_chart_save_image'
+                        aria-label='Copy chart image button'
+                    />
+                </HeaderButtons>
+            </DefaultTooltip>
             <DefaultTooltip
                 title={'Open chart settings'}
                 enterDelay={500}
@@ -233,7 +197,6 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
                     }}
                     id='chart_settings_button'
                     isActive={contextmenu}
-                    isFuta={isFuta}
                 >
                     <IoSettingsOutline
                         size={20}
@@ -252,7 +215,7 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
                 useMediaQuery('(min-width: 2000px)') ? 'center' : 'flex-start'
             }
             padding={props.tradePage ? ' 8px' : '4px 4px 8px 4px'}
-            style={{ background: isFuta ? 'var(--dark1)' : 'var(--dark2)' }}
+            style={{ background: 'var(--dark2)' }}
             ref={tradeChartHeaderRef}
         >
             <TradeChartsTokenInfo />

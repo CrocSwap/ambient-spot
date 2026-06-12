@@ -37,7 +37,6 @@ import ChartToolbar from '../Chart/Draw/Toolbar/Toolbar';
 import { TradeChartsHeader } from './TradeCharts/TradeChartsHeader/TradeChartsHeader';
 
 import { AppStateContext } from '../../../contexts/AppStateContext';
-import { BrandContext } from '../../../contexts/BrandContext';
 
 import { useModal } from '../../../components/Global/Modal/useModal';
 import TradeCharts from './TradeCharts/TradeCharts';
@@ -47,8 +46,7 @@ import TradeMobile from './TradeMobile';
 const TRADE_CHART_MIN_HEIGHT = 175;
 
 // React functional component
-function Trade(props: { futaActiveTab?: string | undefined }) {
-    const { futaActiveTab } = props;
+function Trade() {
     const showMobileVersion = useMediaQuery('(max-width: 768px)');
 
     const { provider } = useContext(CrocEnvContext);
@@ -70,9 +68,6 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
     } = useContext(ChartContext);
 
     const isPoolInitialized = useSimulatedIsPoolInitialized();
-    const { platformName } = useContext(BrandContext);
-
-    const isFuta = ['futa'].includes(platformName);
 
     const { tokens } = useContext(TokenContext);
 
@@ -198,7 +193,6 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
         candleTime: chartSettings.candleTime.global,
         tokens,
         poolPrice,
-        futaActiveTab,
         poolPriceChangeString,
     };
 
@@ -206,7 +200,7 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
 
     return (
         <>
-            <MainSection isFill={isFuta}>
+            <MainSection isFill={false}>
                 <FlexContainer
                     flexDirection='column'
                     fullWidth
@@ -228,12 +222,9 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
                     >
                         <ResizableContainer
                             showResizeable={
-                                !isCandleDataNull &&
-                                !isChartFullScreen &&
-                                !isFuta
+                                !isCandleDataNull && !isChartFullScreen
                             }
                             isChartFullScreen={isChartFullScreen}
-                            isFuta={isFuta}
                             enable={{
                                 bottom: !isChartFullScreen,
                                 top: false,
@@ -246,10 +237,9 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
                             }}
                             size={{
                                 width: '100%',
-                                height:
-                                    isFuta || isChartFullScreen
-                                        ? '100%'
-                                        : chartHeights.current,
+                                height: isChartFullScreen
+                                    ? '100%'
+                                    : chartHeights.current,
                             }}
                             minHeight={4}
                             onResize={(
@@ -310,17 +300,14 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
                                 />
                             )}
                             {!isCandleDataNull && isPoolInitialized && (
-                                <ChartContainer
-                                    fullScreen={isChartFullScreen}
-                                    isFuta={isFuta}
-                                >
+                                <ChartContainer fullScreen={isChartFullScreen}>
                                     {!isCandleDataNull && (
                                         <TradeCharts {...tradeChartsProps} />
                                     )}
                                 </ChartContainer>
                             )}
                         </ResizableContainer>
-                        {!isChartFullScreen && !isFuta && (
+                        {!isChartFullScreen && (
                             <FlexContainer
                                 ref={tradeTableRef}
                                 style={{ flex: 1 }}

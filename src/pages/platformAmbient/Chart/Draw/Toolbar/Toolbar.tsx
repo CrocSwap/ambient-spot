@@ -10,7 +10,6 @@ import redoIcon from '../../../../../assets/images/icons/draw/redo.svg';
 import SnapSvg from '../../../../../assets/images/icons/draw/SnapSvg';
 import undoIcon from '../../../../../assets/images/icons/draw/undo.svg';
 import { AppStateContext } from '../../../../../contexts/AppStateContext';
-import { BrandContext } from '../../../../../contexts/BrandContext';
 import { ChartContext } from '../../../../../contexts/ChartContext';
 import { ArrowContainer } from '../../../../../styled/Components/Chart';
 import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
@@ -60,8 +59,6 @@ function ChartToolbar() {
     );
     const smallScreen = useMediaQuery('(max-width: 500px)');
 
-    const { platformName } = useContext(BrandContext);
-    const isFuta = ['futa'].includes(platformName);
     const [isTouchActive, setIsTouchActive] = useState(false);
 
     const {
@@ -330,22 +327,11 @@ function ChartToolbar() {
             isMobile={mobileView}
             isSmallScreen={smallScreen}
             isFullScreen={isFullScreen}
-            marginTopValue={
-                isFuta
-                    ? chartContainerOptions.top - 40
-                    : chartContainerOptions.top - 57
-            }
-            isFuta={isFuta}
+            marginTopValue={chartContainerOptions.top - 57}
             height={chartContainerOptions.height - xAxisHeightPixel}
             id='toolbar_container'
             ref={toolbarRef}
-            backgroundColor={
-                isFuta
-                    ? 'transparent'
-                    : mobileView
-                      ? 'var(--dark1)'
-                      : 'var(--dark2)'
-            }
+            backgroundColor={mobileView ? 'var(--dark1)' : 'var(--dark2)'}
             onMouseLeave={handleMouseLeave}
             onMouseMove={handleMouseMove}
         >
@@ -583,10 +569,7 @@ function ChartToolbar() {
                         setIsToolbarOpen((prev: boolean) => !prev);
                     }}
                 >
-                    <ArrowRight
-                        isActive={isToolbarOpen}
-                        isFuta={isFuta}
-                    ></ArrowRight>
+                    <ArrowRight isActive={isToolbarOpen} />
                 </DividerButton>
             </DividerContainer>
         </ToolbarContainer>

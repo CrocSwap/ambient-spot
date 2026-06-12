@@ -19,7 +19,6 @@ import DollarizationModalControl from '../../../../components/Global/Dollarizati
 import Modal from '../../../../components/Global/Modal/Modal';
 import Spinner from '../../../../components/Global/Spinner/Spinner';
 import { CandleContext, PoolContext } from '../../../../contexts';
-import { BrandContext } from '../../../../contexts/BrandContext';
 import { ChartContext } from '../../../../contexts/ChartContext';
 import { SidebarContext } from '../../../../contexts/SidebarContext';
 import { UserDataContext } from '../../../../contexts/UserDataContext';
@@ -105,17 +104,11 @@ function TradeCharts(props: propsIF) {
 
     const { isUserConnected } = useContext(UserDataContext);
 
-    const { platformName } = useContext(BrandContext);
-
     const { pathname } = useLocation();
     const smallScreen = useMediaQuery('(max-width: 768px)');
     const tabletView = useMediaQuery(
         '(min-width: 768px) and (max-width: 1200px)',
     );
-
-    const isFuta = ['futa'].includes(platformName);
-    const tabletViewForFuta =
-        isFuta && useMediaQuery('(min-width: 768px) and (max-width: 1440px)');
 
     const isMarketOrLimitModule =
         pathname.includes('market') || pathname.includes('limit');
@@ -311,13 +304,9 @@ function TradeCharts(props: propsIF) {
                             setRescale(true);
                         }}
                         className={
-                            ['futa'].includes(platformName)
-                                ? reset
-                                    ? styles.futa_active_selected_button
-                                    : styles.futa_non_active_selected_button
-                                : reset
-                                  ? styles.active_selected_button
-                                  : styles.non_active_selected_button
+                            reset
+                                ? styles.active_selected_button
+                                : styles.non_active_selected_button
                         }
                         aria-label='Reset.'
                     >
@@ -333,13 +322,9 @@ function TradeCharts(props: propsIF) {
                             });
                         }}
                         className={
-                            ['futa'].includes(platformName)
-                                ? rescale
-                                    ? styles.futa_active_selected_button
-                                    : styles.futa_non_active_selected_button
-                                : rescale
-                                  ? styles.active_selected_button
-                                  : styles.non_active_selected_button
+                            rescale
+                                ? styles.active_selected_button
+                                : styles.non_active_selected_button
                         }
                         aria-label='Auto rescale.'
                     >
@@ -384,14 +369,10 @@ function TradeCharts(props: propsIF) {
                     />
                 </div>
             )}
-            {!isFuta && (
-                <div className={styles.mobile_settings_row}>
-                    <p className={styles.mobile_settings_header}>
-                        Curve/Depth:
-                    </p>
-                    <CurveDepth overlayMethods={chartSettings.poolOverlay} />
-                </div>
-            )}
+            <div className={styles.mobile_settings_row}>
+                <p className={styles.mobile_settings_header}>Curve/Depth:</p>
+                <CurveDepth overlayMethods={chartSettings.poolOverlay} />
+            </div>
             <div className={styles.mobile_settings_row}>
                 <p className={styles.mobile_settings_header}>Chart Scale:</p>
                 <div>{resetAndRescaleDisplay}</div>
@@ -502,7 +483,7 @@ function TradeCharts(props: propsIF) {
                 </Modal>
             )}
         </>
-    ) : tabletView || tabletViewForFuta ? (
+    ) : tabletView ? (
         timeFrameContentTablet
     ) : (
         timeFrameContentDesktop
@@ -518,11 +499,7 @@ function TradeCharts(props: propsIF) {
                 fullWidth
                 style={{
                     padding: isChartFullScreen ? '1rem' : '0',
-                    background: isChartFullScreen
-                        ? isFuta
-                            ? 'var(--dark1)'
-                            : 'var(--dark2)'
-                        : '',
+                    background: isChartFullScreen ? 'var(--dark2)' : '',
                 }}
                 ref={chartCanvasRef}
             >

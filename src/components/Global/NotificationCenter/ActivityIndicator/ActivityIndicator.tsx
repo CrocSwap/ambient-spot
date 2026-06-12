@@ -10,7 +10,6 @@ import React, {
 import styles from './ActivityIndicator.module.css';
 
 import { AppStateContext } from '../../../../contexts/AppStateContext';
-import { BrandContext } from '../../../../contexts/BrandContext';
 
 interface ActivityIndicatorProps {
     value: number;
@@ -26,7 +25,6 @@ type AnimationState = 'hidden' | 'visible' | 'pop' | 'hover' | 'pressed';
 
 const ActivityIndicator = (props: ActivityIndicatorProps) => {
     const { appHeaderDropdown } = useContext(AppStateContext);
-    const { platformName } = useContext(BrandContext);
     const { showRedDot, setShowRedDot } = props;
     const { value, pending, showNotificationTable, setShowNotificationTable } =
         props;
@@ -64,8 +62,6 @@ const ActivityIndicator = (props: ActivityIndicatorProps) => {
         setShowRedDot(false);
     };
 
-    const isFuta = ['futa'].includes(platformName);
-
     // Calculate styles based on animation state
     const getButtonStyle = (): CSSProperties => {
         switch (animationState) {
@@ -89,19 +85,17 @@ const ActivityIndicator = (props: ActivityIndicatorProps) => {
         transition: isHovered
             ? 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
             : 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-in-out',
-        borderRadius: isFuta ? '0' : '50%',
+        borderRadius: '50%',
     };
 
     if (pending) {
         return (
             <button
-                className={
-                    isFuta ? styles.circleContainerFuta : styles.circleContainer
-                }
+                className={styles.circleContainer}
                 onClick={toggleNotificationCenter}
                 aria-label='Loading notifications'
             >
-                <span className={isFuta ? styles.ringFuta : styles.ring} />
+                <span className={styles.ring} />
             </button>
         );
     }
@@ -131,7 +125,7 @@ const ActivityIndicator = (props: ActivityIndicatorProps) => {
                         style={buttonStyle}
                     >
                         <div
-                            className={`${styles.activityIndicatorDiv} ${isFuta ? '' : styles.circleButton}`}
+                            className={`${styles.activityIndicatorDiv} ${styles.circleButton}`}
                         >
                             <span
                                 aria-live='polite'

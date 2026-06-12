@@ -83,7 +83,7 @@ export default function PriceInfo(props: propsIF) {
     const sellContent = (
         <div className={styles.sell_content}>
             <p>{'Sell:'}</p>
-            <p>
+            <div className={styles.token_value_row}>
                 {isBid ? originalPositionLiqBase : originalPositionLiqQuote}
                 <TokenIcon
                     token={!isBid ? quoteToken : baseToken}
@@ -91,14 +91,14 @@ export default function PriceInfo(props: propsIF) {
                     alt={!isBid ? quoteTokenSymbol : baseTokenSymbol}
                     size='s'
                 />
-            </p>
+            </div>
         </div>
     );
 
     const buyContent = (
         <div className={styles.buy_content}>
             <p>{'Buy:'}</p>
-            <p>
+            <div className={styles.token_value_row}>
                 {isBid ? expectedPositionLiqQuote : expectedPositionLiqBase}
                 <TokenIcon
                     token={isBid ? quoteToken : baseToken}
@@ -106,7 +106,7 @@ export default function PriceInfo(props: propsIF) {
                     alt={isBid ? quoteTokenSymbol : baseTokenSymbol}
                     size='s'
                 />
-            </p>
+            </div>
         </div>
     );
 
