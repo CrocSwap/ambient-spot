@@ -61,7 +61,9 @@
 }
 
 .buy_content p,
-.sell_content p {
+.sell_content p,
+.buy_content .token_value_row,
+.sell_content .token_value_row {
     display: flex;
     flex-direction: row;
     align-items: center;

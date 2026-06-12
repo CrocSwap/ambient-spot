@@ -69,7 +69,8 @@
     gap: 4px;
 }
 
-.earned_container p {
+.earned_container p,
+.earned_container .token_value_row {
     display: flex;
     flex-direction: row;
     align-items: center;

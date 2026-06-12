@@ -99,7 +99,6 @@ function Range() {
         setIsLinesSwitched,
     } = useContext(RangeContext);
     const { tokens } = useContext(TokenContext);
-    // console.log(tokens);
     const {
         tokenAAllowance,
         tokenBAllowance,
@@ -157,16 +156,26 @@ function Range() {
     }, [tokenAInputQty, tokenA.decimals]);
 
     const tokenBInputQtyNoExponentString = useMemo(() => {
-        return tokenBInputQty.includes('e')
-            ? toDisplayQty(
-                  fromDisplayQty(tokenBInputQty || '0', tokenB.decimals),
-                  tokenB.decimals,
-              )
-            : tokenBInputQty;
+        try {
+            return tokenBInputQty.includes('e')
+                ? toDisplayQty(
+                      fromDisplayQty(tokenBInputQty || '0', tokenB.decimals),
+                      tokenB.decimals,
+                  )
+                : tokenBInputQty;
+        } catch (error) {
+            console.log({ error });
+            return '0';
+        }
     }, [tokenBInputQty, tokenB.decimals]);
 
-    const [rangeWidthPercentage, setRangeWidthPercentage] =
-        useState<number>(simpleRangeWidth);
+    // `rangeWidthPercentage` is a direct alias for the context value
+    // `simpleRangeWidth`. Keeping a separate local copy in sync with the
+    // context value via effects caused an infinite update loop (the two
+    // effects swapped the values every render whenever they diverged), so the
+    // local state was removed in favor of using the single source of truth.
+    const rangeWidthPercentage = simpleRangeWidth;
+    const setRangeWidthPercentage = setSimpleRangeWidth;
     const [isAmbient, setIsAmbient] = useState(false);
 
     const [minPriceInputString, setMinPriceInputString] = useState<string>('');
@@ -175,14 +184,6 @@ function Range() {
         useState(DEFAULT_MIN_PRICE_DIFF_PERCENTAGE);
     const [maxPriceDifferencePercentage, setMaxPriceDifferencePercentage] =
         useState(DEFAULT_MAX_PRICE_DIFF_PERCENTAGE);
-    const [rangeLowBoundNonDisplayPrice, setRangeLowBoundNonDisplayPrice] =
-        useState(0);
-    const [rangeHighBoundNonDisplayPrice, setRangeHighBoundNonDisplayPrice] =
-        useState(0);
-    const [pinnedMinPriceDisplayTruncated, setPinnedMinPriceDisplayTruncated] =
-        useState('');
-    const [pinnedMaxPriceDisplayTruncated, setPinnedMaxPriceDisplayTruncated] =
-        useState('');
     const [rangeLowBoundFieldBlurred, setRangeLowBoundFieldBlurred] =
         useState(false);
     const [rangeHighBoundFieldBlurred, setRangeHighBoundFieldBlurred] =
@@ -202,6 +203,19 @@ function Range() {
           }
         | undefined
     >();
+
+    // `pinnedDisplayPrices` is the single source of truth for the pinned range
+    // bounds. The truncated display strings and non-display bound prices are
+    // derived from it rather than tracked as separate state (which previously
+    // required keeping ~4 extra useState values in sync across every effect).
+    const pinnedMinPriceDisplayTruncated =
+        pinnedDisplayPrices?.pinnedMinPriceDisplayTruncated ?? '';
+    const pinnedMaxPriceDisplayTruncated =
+        pinnedDisplayPrices?.pinnedMaxPriceDisplayTruncated ?? '';
+    const rangeLowBoundNonDisplayPrice =
+        pinnedDisplayPrices?.pinnedMinPriceNonDisplay ?? 0;
+    const rangeHighBoundNonDisplayPrice =
+        pinnedDisplayPrices?.pinnedMaxPriceNonDisplay ?? 0;
 
     // local state values whether tx will use dex balance preferentially over
     // ... wallet funds, this layer of logic matters because the DOM may need
@@ -244,13 +258,10 @@ function Range() {
         location.pathname.includes('lowTick') &&
         location.pathname.includes('highTick');
 
-    const shouldResetAdvancedLowTick =
-        !ticksInParams &&
-        currentPoolPriceTick !== undefined &&
-        (advancedHighTick > currentPoolPriceTick + 100000 ||
-            advancedLowTick < currentPoolPriceTick - 100000);
-
-    const shouldResetAdvancedHighTick =
+    // True when the persisted advanced ticks are implausibly far from the
+    // current pool price (or undefined) and should be reset to defaults. The
+    // condition is identical for both bounds, so a single flag drives both.
+    const shouldResetAdvancedTicks =
         !ticksInParams &&
         currentPoolPriceTick !== undefined &&
         (advancedHighTick > currentPoolPriceTick + 100000 ||
@@ -258,7 +269,7 @@ function Range() {
 
     // default low tick to seed in the DOM (range lower value)
     const defaultLowTick = useMemo<number>(() => {
-        const value: number = shouldResetAdvancedLowTick
+        const value: number = shouldResetAdvancedTicks
             ? roundDownTick(
                   currentPoolPriceTick +
                       DEFAULT_MIN_PRICE_DIFF_PERCENTAGE * 100,
@@ -266,11 +277,16 @@ function Range() {
               )
             : advancedLowTick;
         return value;
-    }, [advancedLowTick, currentPoolPriceTick, shouldResetAdvancedLowTick]);
+    }, [
+        advancedLowTick,
+        currentPoolPriceTick,
+        shouldResetAdvancedTicks,
+        gridSize,
+    ]);
 
     // default high tick to seed in the DOM (range upper value)
     const defaultHighTick = useMemo<number>(() => {
-        const value: number = shouldResetAdvancedHighTick
+        const value: number = shouldResetAdvancedTicks
             ? roundUpTick(
                   currentPoolPriceTick +
                       DEFAULT_MAX_PRICE_DIFF_PERCENTAGE * 100,
@@ -278,10 +294,16 @@ function Range() {
               )
             : advancedHighTick;
         return value;
-    }, [advancedHighTick, currentPoolPriceTick, shouldResetAdvancedHighTick]);
+    }, [
+        advancedHighTick,
+        currentPoolPriceTick,
+        shouldResetAdvancedTicks,
+        gridSize,
+    ]);
 
-    const userPositions = positionsByUser.positions.filter(
-        (x) => x.chainId === chainId,
+    const userPositions = useMemo(
+        () => positionsByUser.positions.filter((x) => x.chainId === chainId),
+        [positionsByUser.positions, chainId],
     );
     // Represents whether user is adding to an existing range position
     const isAdd = useMemo(
@@ -402,7 +424,10 @@ function Range() {
         }
     }
 
-    const pinnedMinPriceDisplayTruncatedInBase = useMemo(
+    // A single `getPinnedPriceValuesFromTicks` call already computes both the
+    // min and max prices, so we only need one call per denomination (base /
+    // quote) rather than one call per (denom, bound) combination.
+    const pinnedPricesInBase = useMemo(
         () =>
             getPinnedPriceValuesFromTicks(
                 true,
@@ -411,15 +436,16 @@ function Range() {
                 defaultLowTick,
                 defaultHighTick,
                 gridSize,
-            ).pinnedMinPriceDisplayTruncatedWithCommas,
+            ),
         [
             baseTokenDecimals,
             quoteTokenDecimals,
             defaultLowTick,
             defaultHighTick,
+            gridSize,
         ],
     );
-    const pinnedMinPriceDisplayTruncatedInQuote = useMemo(
+    const pinnedPricesInQuote = useMemo(
         () =>
             getPinnedPriceValuesFromTicks(
                 false,
@@ -428,48 +454,23 @@ function Range() {
                 defaultLowTick,
                 defaultHighTick,
                 gridSize,
-            ).pinnedMinPriceDisplayTruncatedWithCommas,
+            ),
         [
             baseTokenDecimals,
             quoteTokenDecimals,
             defaultLowTick,
             defaultHighTick,
+            gridSize,
         ],
     );
-    const pinnedMaxPriceDisplayTruncatedInBase = useMemo(
-        () =>
-            getPinnedPriceValuesFromTicks(
-                true,
-                baseTokenDecimals,
-                quoteTokenDecimals,
-                defaultLowTick,
-                defaultHighTick,
-                gridSize,
-            ).pinnedMaxPriceDisplayTruncatedWithCommas,
-        [
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            defaultLowTick,
-            defaultHighTick,
-        ],
-    );
-    const pinnedMaxPriceDisplayTruncatedInQuote = useMemo(
-        () =>
-            getPinnedPriceValuesFromTicks(
-                false,
-                baseTokenDecimals,
-                quoteTokenDecimals,
-                defaultLowTick,
-                defaultHighTick,
-                gridSize,
-            ).pinnedMaxPriceDisplayTruncatedWithCommas,
-        [
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            defaultLowTick,
-            defaultHighTick,
-        ],
-    );
+    const pinnedMinPriceDisplayTruncatedInBase =
+        pinnedPricesInBase.pinnedMinPriceDisplayTruncatedWithCommas;
+    const pinnedMaxPriceDisplayTruncatedInBase =
+        pinnedPricesInBase.pinnedMaxPriceDisplayTruncatedWithCommas;
+    const pinnedMinPriceDisplayTruncatedInQuote =
+        pinnedPricesInQuote.pinnedMinPriceDisplayTruncatedWithCommas;
+    const pinnedMaxPriceDisplayTruncatedInQuote =
+        pinnedPricesInQuote.pinnedMaxPriceDisplayTruncatedWithCommas;
 
     const isTokenAWalletBalanceSufficient =
         fromDisplayQty(tokenABalance || '0', tokenA.decimals) >=
@@ -519,22 +520,24 @@ function Range() {
     // value showing if no acknowledgement is necessary
     const areBothAckd: boolean = !needConfirmTokenA && !needConfirmTokenB;
 
+    // The range-width slider is an uncontrolled input (`defaultValue`), so its
+    // DOM value must be synced manually when `simpleRangeWidth` changes for an
+    // external reason (e.g. pool switch defaults or a chart drag). One-way only
+    // — it never writes state, so it cannot loop.
     useEffect(() => {
-        if (simpleRangeWidth !== rangeWidthPercentage) {
-            setSimpleRangeWidth(simpleRangeWidth);
-            setRangeWidthPercentage(simpleRangeWidth);
-            const sliderInput = document.getElementById(
-                'input-slider-range',
-            ) as HTMLInputElement;
-            if (sliderInput) sliderInput.value = simpleRangeWidth.toString();
+        const sliderInput = document.getElementById(
+            'input-slider-range',
+        ) as HTMLInputElement;
+        if (!sliderInput) return;
+        // Don't overwrite the thumb while the user is actively dragging the
+        // slider. The slider's context update is throttled to one per animation
+        // frame, so the committed value can lag the live cursor by up to a
+        // frame; writing it back here would visibly snap the thumb backward.
+        if (document.activeElement === sliderInput) return;
+        if (sliderInput.value !== simpleRangeWidth.toString()) {
+            sliderInput.value = simpleRangeWidth.toString();
         }
     }, [simpleRangeWidth]);
-
-    useEffect(() => {
-        if (simpleRangeWidth !== rangeWidthPercentage) {
-            setSimpleRangeWidth(rangeWidthPercentage);
-        }
-    }, [rangeWidthPercentage]);
 
     useEffect(() => {
         resetConfirmation();
@@ -550,8 +553,21 @@ function Range() {
     useEffect(() => {
         if (rangeWidthPercentage === 100 && !advancedMode) {
             setIsAmbient(true);
-            setRangeLowBoundNonDisplayPrice(0);
-            setRangeHighBoundNonDisplayPrice(Infinity);
+            // ambient positions span the full price range; the truncated /
+            // with-commas display fields are not shown in ambient mode (the UI
+            // hardcodes '0' / '∞'), so only the non-display bounds matter here.
+            setPinnedDisplayPrices((prev) => ({
+                pinnedMinPriceDisplay: '0',
+                pinnedMaxPriceDisplay: 'Infinity',
+                pinnedMinPriceDisplayTruncated: '0',
+                pinnedMaxPriceDisplayTruncated: 'Infinity',
+                pinnedMinPriceDisplayTruncatedWithCommas: '0',
+                pinnedMaxPriceDisplayTruncatedWithCommas: 'Infinity',
+                pinnedLowTick: prev?.pinnedLowTick ?? 0,
+                pinnedHighTick: prev?.pinnedHighTick ?? 0,
+                pinnedMinPriceNonDisplay: 0,
+                pinnedMaxPriceNonDisplay: Infinity,
+            }));
         } else if (advancedMode) {
             setIsAmbient(false);
         } else {
@@ -574,20 +590,6 @@ function Range() {
             );
 
             setPinnedDisplayPrices(pinnedDisplayPrices);
-
-            setRangeLowBoundNonDisplayPrice(
-                pinnedDisplayPrices.pinnedMinPriceNonDisplay,
-            );
-            setRangeHighBoundNonDisplayPrice(
-                pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
-            );
-
-            setPinnedMinPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMinPriceDisplayTruncated,
-            );
-            setPinnedMaxPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-            );
 
             setAdvancedLowTick(pinnedDisplayPrices.pinnedLowTick);
             setAdvancedHighTick(pinnedDisplayPrices.pinnedHighTick);
@@ -640,19 +642,7 @@ function Range() {
                 defaultHighTick,
                 gridSize,
             );
-            setRangeLowBoundNonDisplayPrice(
-                pinnedDisplayPrices.pinnedMinPriceNonDisplay,
-            );
-            setRangeHighBoundNonDisplayPrice(
-                pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
-            );
-
-            setPinnedMinPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMinPriceDisplayTruncated,
-            );
-            setPinnedMaxPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-            );
+            setPinnedDisplayPrices(pinnedDisplayPrices);
 
             setAdvancedLowTick(pinnedDisplayPrices.pinnedLowTick);
             setAdvancedHighTick(pinnedDisplayPrices.pinnedHighTick);
@@ -739,13 +729,30 @@ function Range() {
                 gridSize,
             );
 
-            !isDenomBase
-                ? setRangeLowBoundNonDisplayPrice(
-                      pinnedDisplayPrices.pinnedMinPriceNonDisplay,
-                  )
-                : setRangeHighBoundNonDisplayPrice(
-                      pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
-                  );
+            // A low-bound edit commits the min truncated display string plus a
+            // single non-display bound (which one flips with the denom). Merge
+            // those into the pinned-prices source of truth.
+            setPinnedDisplayPrices((prev) => {
+                // `getPinnedPriceValuesFromDisplayPrices` omits the with-commas
+                // fields (only shown by RangePriceInfo in base mode, where prev
+                // is always populated), so default them when prev is undefined.
+                const base = prev ?? {
+                    ...pinnedDisplayPrices,
+                    pinnedMinPriceDisplayTruncatedWithCommas: '',
+                    pinnedMaxPriceDisplayTruncatedWithCommas: '',
+                };
+                return {
+                    ...base,
+                    pinnedMinPriceDisplayTruncated:
+                        pinnedDisplayPrices.pinnedMinPriceDisplayTruncated,
+                    pinnedMinPriceNonDisplay: !isDenomBase
+                        ? pinnedDisplayPrices.pinnedMinPriceNonDisplay
+                        : base.pinnedMinPriceNonDisplay,
+                    pinnedMaxPriceNonDisplay: !isDenomBase
+                        ? base.pinnedMaxPriceNonDisplay
+                        : pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
+                };
+            });
 
             !isDenomBase
                 ? setAdvancedLowTick(pinnedDisplayPrices.pinnedLowTick)
@@ -793,10 +800,6 @@ function Range() {
                       lowGeometricDifferencePercentage,
                   );
 
-            setPinnedMinPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMinPriceDisplayTruncated,
-            );
-
             if (rangeLowBoundDisplayField) {
                 rangeLowBoundDisplayField.value =
                     pinnedDisplayPrices.pinnedMinPriceDisplayTruncated;
@@ -828,13 +831,30 @@ function Range() {
                 gridSize,
             );
 
-            isDenomBase
-                ? setRangeLowBoundNonDisplayPrice(
-                      pinnedDisplayPrices.pinnedMinPriceNonDisplay,
-                  )
-                : setRangeHighBoundNonDisplayPrice(
-                      pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
-                  );
+            // A high-bound edit commits the max truncated display string plus a
+            // single non-display bound (which one flips with the denom). Merge
+            // those into the pinned-prices source of truth.
+            setPinnedDisplayPrices((prev) => {
+                // `getPinnedPriceValuesFromDisplayPrices` omits the with-commas
+                // fields (only shown by RangePriceInfo in base mode, where prev
+                // is always populated), so default them when prev is undefined.
+                const base = prev ?? {
+                    ...pinnedDisplayPrices,
+                    pinnedMinPriceDisplayTruncatedWithCommas: '',
+                    pinnedMaxPriceDisplayTruncatedWithCommas: '',
+                };
+                return {
+                    ...base,
+                    pinnedMaxPriceDisplayTruncated:
+                        pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
+                    pinnedMinPriceNonDisplay: isDenomBase
+                        ? pinnedDisplayPrices.pinnedMinPriceNonDisplay
+                        : base.pinnedMinPriceNonDisplay,
+                    pinnedMaxPriceNonDisplay: isDenomBase
+                        ? base.pinnedMaxPriceNonDisplay
+                        : pinnedDisplayPrices.pinnedMaxPriceNonDisplay,
+                };
+            });
 
             isDenomBase
                 ? setMinPrice(
@@ -882,10 +902,6 @@ function Range() {
                       highGeometricDifferencePercentage,
                   );
 
-            setPinnedMaxPriceDisplayTruncated(
-                pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-            );
-
             if (rangeHighBoundDisplayField) {
                 rangeHighBoundDisplayField.value =
                     pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated;
@@ -929,21 +945,16 @@ function Range() {
                 gasPriceInGwei * GAS_DROPS_ESTIMATE_POOL * NUM_GWEI_IN_WEI;
 
             setAmountToReduceNativeTokenQtyMainnet(
-                costOfMainnetPoolInETH * RANGE_BUFFER_MULTIPLIER_MAINNET,
+                RANGE_BUFFER_MULTIPLIER_MAINNET * costOfMainnetPoolInETH,
             );
 
-            const l2CostOfScrollPoolInETH =
-                gasPriceInGwei * GAS_DROPS_ESTIMATE_POOL * NUM_GWEI_IN_WEI;
-
+            // L2 execution cost uses the same gas formula as mainnet, plus a
+            // flat L1 data-availability fee.
             const l1CostOfScrollPoolInETH =
                 l1GasFeePoolInGwei / NUM_GWEI_IN_ETH;
 
             const costOfScrollPoolInETH =
-                l1CostOfScrollPoolInETH + l2CostOfScrollPoolInETH;
-
-            setAmountToReduceNativeTokenQtyMainnet(
-                RANGE_BUFFER_MULTIPLIER_MAINNET * costOfMainnetPoolInETH,
-            );
+                l1CostOfScrollPoolInETH + costOfMainnetPoolInETH;
 
             setAmountToReduceNativeTokenQtyL2(
                 RANGE_BUFFER_MULTIPLIER_L2 * costOfScrollPoolInETH,
@@ -1044,7 +1055,7 @@ function Range() {
         rangeButtonErrorMessage: rangeButtonErrorMessageTokenB,
     } = useHandleRangeButtonMessage(
         tokenB,
-        tokenBInputQty,
+        tokenBInputQtyNoExponentString,
         tokenBBalance,
         tokenBDexBalance,
         isTokenBInputDisabled,
