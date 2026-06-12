@@ -34,12 +34,6 @@
         "react-use-websocket": "^4.13.0",
         "styled-components": "^6.4.1"
     },
-    "pnpm": {
-        "overrides": {
-            "axios": "^1.15.2",
-            "bn.js": "5.2.3"
-        }
-    },
     "scripts": {
         "ambi": "pnpm start --force",
         "dev": "pnpm start --force",
