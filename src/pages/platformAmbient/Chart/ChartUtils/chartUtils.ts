@@ -559,7 +559,7 @@ export function getCandleCount(
     if (filtered && dataLenght && isCondensedMode) {
         const diffMaxPixel = xScale(filtered[0].time * 1000) - xScale(max);
         const diffMinPixel =
-            xScale(filtered[filtered.length - 1].time) - xScale(min);
+            xScale(filtered[filtered.length - 1].time * 1000) - xScale(min);
 
         const maxGap = Math.floor(
             (max - filtered[0].time * 1000) / (period * 1000),

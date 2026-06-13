@@ -103,6 +103,9 @@ import {
 } from './ChartUtils/chartUtils';
 import { checkCircleLocation, createCircle } from './ChartUtils/circle';
 import useDollarPrice from './ChartUtils/getDollarPrice';
+import { createShapeLocationCheckers } from './ChartUtils/shapeLocations';
+import { useChartScale } from './ChartUtils/useChartScale';
+import { useLimitNoGoZone } from './ChartUtils/useLimitNoGoZone';
 import { Zoom } from './ChartUtils/zoom';
 import {
     createArrowPointsOfDPRangeLine,
@@ -115,7 +118,6 @@ import DrawCanvas from './Draw/DrawCanvas/DrawCanvas';
 import {
     createAnnotationLineSeries,
     createLinearLineSeries,
-    distanceToLine,
 } from './Draw/DrawCanvas/LinearLineSeries';
 import FloatingToolbar from './Draw/FloatingToolbar/FloatingToolbar';
 import FeeRateChart from './FeeRate/FeeRateChart';
@@ -1249,7 +1251,7 @@ export default function Chart(props: propsIF) {
         isDenomBase,
     ]);
     useEffect(() => {
-        useHandleSwipeBack(d3Container, toolbarRef);
+        return useHandleSwipeBack(d3Container, toolbarRef);
     }, [d3Container === null]);
 
     useEffect(() => {
@@ -1282,6 +1284,60 @@ export default function Chart(props: propsIF) {
         const nd = d3.select('#d3fc_group').node() as any;
         if (nd) nd.requestRedraw();
     }, []);
+
+    const {
+        setYaxisDomain,
+        changeScale,
+        changeScaleSwap,
+        changeScaleLimit,
+        changeScaleRangeOrReposition,
+    } = useChartScale({
+        scaleData,
+        unparsedCandleData,
+        visibleCandleData,
+        poolPriceWithoutDenom,
+        denomInBase,
+        isDenomBase,
+        rescale,
+        chartPoolPrice,
+        poolPriceDisplay,
+        limit,
+        minTickForLimit,
+        maxTickForLimit,
+        currentPoolPriceTick,
+        minPrice,
+        maxPrice,
+        simpleRangeWidth,
+        advancedMode,
+        ranges,
+        baseTokenDecimals,
+        quoteTokenDecimals,
+        gridSize,
+        locationPathname: location.pathname,
+        render,
+    });
+
+    const {
+        reverseTokenForChart,
+        getNoZoneData,
+        setLimitTickNearNoGoZone,
+        setLimitForNoGoZone,
+        calculateLimit,
+    } = useLimitNoGoZone({
+        poolPriceDisplay,
+        sellOrderStyle,
+        noGoZoneBoundaries,
+        baseTokenDecimals,
+        quoteTokenDecimals,
+        denomInBase,
+        isDenomBase,
+        isTokenABase,
+        gridSize,
+        limit,
+        setMinTickForLimit,
+        setMaxTickForLimit,
+        setLimit,
+    });
 
     // controls the distance of the mouse to the range lines, if close, activates the dragRange event
     const canUserDragRange = useMemo<boolean>(() => {
@@ -2154,188 +2210,6 @@ export default function Chart(props: propsIF) {
         diffHashSigScaleData(scaleData, 'y'),
     ]);
 
-    // *** LIMIT ***
-    /**
-     * This function checks if the limit values trigger a position changes buy /sell .
-     * If the conditions are met, it initiates a pulse animation and updates the limit direction accordingly.
-     * @param limitPreviousData  limit value before the operation started
-     * @param newLimitValue  limit value the operation finished
-     */
-    function reverseTokenForChart(
-        limitPreviousData: number,
-        newLimitValue: number,
-    ): boolean {
-        // output variable
-        let needsInversion = false;
-        // doesn't exist on initialization
-        if (poolPriceDisplay) {
-            // logic tree to determine if the limit price crosses the current pool price
-            // sell => buy or buy to sell
-            if (sellOrderStyle === 'order_sell') {
-                // Check if new limit is below current price
-                if (newLimitValue < poolPriceDisplay) {
-                    needsInversion = true;
-                }
-            } else {
-                // Check if new limit is above current price.
-                if (newLimitValue > poolPriceDisplay) {
-                    needsInversion = true;
-                }
-            }
-        }
-        return needsInversion;
-    }
-
-    // *** LIMIT ***
-    /**
-     * This function retrieves the 'noGoZoneMin' and 'noGoZoneMax' values from the 'noGoZoneBoundaries' array.
-     * These values represent the minimum and maximum boundaries of a no-go zone.
-     *
-     * @returns {Object} An object containing 'noGoZoneMin' and 'noGoZoneMax'.
-     */
-    const getNoZoneData = () => {
-        const noGoZoneMin = noGoZoneBoundaries[0];
-        const noGoZoneMax = noGoZoneBoundaries[1];
-        return { noGoZoneMin: noGoZoneMin, noGoZoneMax: noGoZoneMax };
-    };
-
-    // *** LIMIT ***
-    /**
-     * finds border ticks of nogozone
-     * This function sets the 'minTickForLimit' and 'maxTickForLimit' values
-     * tick values are calculated based on the 'low' and 'high' values provided near the no go zone.
-     *
-     * @param low   The low value for the calculation
-     * @param high  The high value for the calculation
-     */
-    const setLimitTickNearNoGoZone = (low: number, high: number) => {
-        const limitNonDisplay = fromDisplayPrice(
-            parseFloat(low.toString()),
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            denomInBase,
-        );
-        const pinnedTickLower: number = pinTickLower(limitNonDisplay, gridSize);
-
-        const tickPriceLower = tickToPrice(
-            pinnedTickLower + (denomInBase ? 1 : -1) * gridSize * 2,
-        );
-
-        const displayPriceWithDenomLower = toDisplayPrice(
-            tickPriceLower,
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            denomInBase,
-        );
-
-        setMinTickForLimit(displayPriceWithDenomLower);
-
-        const limitNonDisplayMax = fromDisplayPrice(
-            parseFloat(high.toString()),
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            denomInBase,
-        );
-        const pinnedTickUpper: number = pinTickUpper(
-            limitNonDisplayMax,
-            gridSize,
-        );
-
-        const tickPriceUpper = tickToPrice(
-            pinnedTickUpper + (denomInBase ? -1 : 1) * gridSize * 2,
-        );
-
-        const displayPriceWithDenomUpper = toDisplayPrice(
-            tickPriceUpper,
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            denomInBase,
-        );
-
-        setMaxTickForLimit(displayPriceWithDenomUpper);
-    };
-
-    // If the limit is set to no gozone, it will jump to the nearest tick
-    function setLimitForNoGoZone(newLimitValue: number) {
-        const { noGoZoneMin, noGoZoneMax } = getNoZoneData();
-
-        if (newLimitValue > noGoZoneMin && newLimitValue < noGoZoneMax) {
-            if (newLimitValue > noGoZoneMin) {
-                if (newLimitValue < limit) {
-                    newLimitValue = noGoZoneMax;
-                } else {
-                    newLimitValue = noGoZoneMin;
-                }
-            } else if (newLimitValue < noGoZoneMax) {
-                if (newLimitValue > limit) {
-                    newLimitValue = noGoZoneMin;
-                } else {
-                    newLimitValue = noGoZoneMax;
-                }
-            }
-        }
-
-        return newLimitValue;
-    }
-
-    // *** LİMİT ***
-    // This function calculates a new limit value, and adjusts it as a corrected limit if it falls within the No-Go Zone boundaries.
-    function calculateLimit(newLimitValue: number) {
-        if (newLimitValue < 0) newLimitValue = 0;
-
-        // If the calculated limit value is within "No Go Zone", it returns the limit value outside the region
-        newLimitValue = setLimitForNoGoZone(newLimitValue);
-
-        // Get data for the No-Go Zone (minimum and maximum values)
-        const { noGoZoneMin, noGoZoneMax } = getNoZoneData();
-
-        const limitNonDisplay = fromDisplayPrice(
-            newLimitValue,
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            denomInBase,
-        );
-        // Check if the newLimitValue matches the No-Go Zone maximum or minimum
-        const isNoGoneZoneMax = newLimitValue === noGoZoneMax;
-        const isNoGoneZoneMin = newLimitValue === noGoZoneMin;
-
-        let pinnedTick: number = isTokenABase
-            ? pinTickLower(limitNonDisplay, gridSize)
-            : pinTickUpper(limitNonDisplay, gridSize);
-
-        // If it is equal to the minimum value of no go zone, value is rounded lower tick
-        if (isNoGoneZoneMin) {
-            pinnedTick = isDenomBase
-                ? pinTickUpper(limitNonDisplay, gridSize)
-                : pinTickLower(limitNonDisplay, gridSize);
-        }
-
-        // If it is equal to the max value of no go zone, value is rounded upper tick
-        if (isNoGoneZoneMax) {
-            pinnedTick = isDenomBase
-                ? pinTickLower(limitNonDisplay, gridSize)
-                : pinTickUpper(limitNonDisplay, gridSize);
-        }
-
-        const tickPrice = tickToPrice(pinnedTick);
-
-        const displayPriceWithDenom = toDisplayPrice(
-            tickPrice,
-            baseTokenDecimals,
-            quoteTokenDecimals,
-            denomInBase,
-        );
-        newLimitValue = displayPriceWithDenom;
-
-        // Update newLimitValue if it's outside the No-Go Zone
-        if (!(newLimitValue > noGoZoneMin && newLimitValue < noGoZoneMax)) {
-            setLimit(() => {
-                return newLimitValue;
-            });
-        }
-        return newLimitValue;
-    }
-
     // dragRange
     useEffect(() => {
         if (scaleData) {
@@ -2736,6 +2610,8 @@ export default function Chart(props: propsIF) {
                     d3.select('#y-axis-canvas').style('cursor', 'default');
 
                     setCrosshairActive('none');
+
+                    document.removeEventListener('keydown', cancelDragEvent);
                 });
 
             setDragRange(() => {
@@ -2920,6 +2796,8 @@ export default function Chart(props: propsIF) {
                 d3.select(d3CanvasMain.current).style('cursor', 'default');
                 d3.select('#y-axis-canvas').style('cursor', 'default');
                 setIsLineDrag(false);
+
+                document.removeEventListener('keydown', cancelDragEvent);
             });
 
         setDragLimit(() => {
@@ -4726,202 +4604,6 @@ export default function Chart(props: propsIF) {
         return [lowTickDisplayPrice, highTickDisplayPrice];
     };
 
-    const getYAxisBoundary = (isTriggeredByZoom: boolean) => {
-        let minYBoundary = undefined;
-        let maxYBoundary = undefined;
-        if (scaleData) {
-            if (
-                unparsedCandleData !== undefined &&
-                !isTriggeredByZoom &&
-                poolPriceWithoutDenom
-            ) {
-                const placeHolderPrice = denomInBase
-                    ? 1 / poolPriceWithoutDenom
-                    : poolPriceWithoutDenom;
-
-                const filteredMin = d3.min(visibleCandleData, (d) =>
-                    denomInBase
-                        ? d.invMaxPriceExclMEVDecimalCorrected
-                        : d.minPriceExclMEVDecimalCorrected,
-                );
-
-                const filteredMax = d3.max(visibleCandleData, (d) =>
-                    denomInBase
-                        ? d.invMinPriceExclMEVDecimalCorrected
-                        : d.maxPriceExclMEVDecimalCorrected,
-                );
-
-                if (filteredMin && filteredMax) {
-                    minYBoundary = Math.min(placeHolderPrice, filteredMin);
-                    maxYBoundary = Math.max(placeHolderPrice, filteredMax);
-                }
-            }
-        }
-
-        return { minYBoundary: minYBoundary, maxYBoundary: maxYBoundary };
-    };
-
-    function changeScaleSwap(isTriggeredByZoom: boolean) {
-        if (scaleData && poolPriceWithoutDenom && rescale) {
-            const placeHolderPrice = denomInBase
-                ? 1 / poolPriceWithoutDenom
-                : poolPriceWithoutDenom;
-
-            const { minYBoundary, maxYBoundary } =
-                getYAxisBoundary(isTriggeredByZoom);
-
-            if (maxYBoundary !== undefined && minYBoundary !== undefined) {
-                const diffBoundary = Math.abs(maxYBoundary - minYBoundary);
-                const buffer = diffBoundary
-                    ? diffBoundary / 6
-                    : minYBoundary / 2;
-                const domain = [
-                    Math.min(minYBoundary, maxYBoundary, placeHolderPrice) -
-                        buffer,
-                    Math.max(minYBoundary, maxYBoundary, placeHolderPrice) +
-                        buffer / 2,
-                ];
-
-                setYaxisDomain(domain[0], domain[1]);
-            }
-        }
-
-        render();
-    }
-
-    function changeScaleLimit(isTriggeredByZoom: boolean) {
-        if (scaleData && chartPoolPrice && rescale) {
-            const { minYBoundary, maxYBoundary } =
-                getYAxisBoundary(isTriggeredByZoom);
-
-            if (maxYBoundary !== undefined && minYBoundary !== undefined) {
-                const value = limit;
-                const low = Math.min(
-                    minYBoundary,
-                    value,
-                    minTickForLimit,
-                    chartPoolPrice,
-                );
-
-                const high = Math.max(
-                    maxYBoundary,
-                    value,
-                    maxTickForLimit,
-                    chartPoolPrice,
-                );
-
-                const bufferForLimit = Math.abs((low - high) / 6);
-                if (value > 0 && Math.abs(value) !== Infinity) {
-                    const domain = [
-                        Math.min(low, high) - bufferForLimit,
-                        Math.max(low, high) + bufferForLimit / 2,
-                    ];
-
-                    setYaxisDomain(domain[0], domain[1]);
-                }
-            }
-        }
-
-        render();
-    }
-
-    function changeScaleRangeOrReposition(isTriggeredByZoom: boolean) {
-        if (scaleData && rescale && currentPoolPriceTick !== undefined) {
-            const min = minPrice;
-            const max = maxPrice;
-
-            if (!chartPoolPrice) {
-                scaleData.yScale.domain(
-                    scaleData.priceRange(visibleCandleData),
-                );
-            }
-
-            const { minYBoundary, maxYBoundary } =
-                getYAxisBoundary(isTriggeredByZoom);
-
-            if (
-                maxYBoundary !== undefined &&
-                chartPoolPrice &&
-                minYBoundary !== undefined
-            ) {
-                if (simpleRangeWidth !== 100 || advancedMode) {
-                    if (minPrice && maxPrice) {
-                        ranges[0] = { name: 'Min', value: minPrice };
-                        ranges[1] = { name: 'Max', value: maxPrice };
-
-                        const low = Math.min(
-                            min,
-                            max,
-                            minYBoundary,
-                            chartPoolPrice,
-                        );
-
-                        const high = Math.max(
-                            min,
-                            max,
-                            maxYBoundary,
-                            chartPoolPrice,
-                        );
-
-                        const bufferForRange = Math.abs((low - high) / 6);
-
-                        const domain = [
-                            Math.min(low, high) - bufferForRange,
-                            Math.max(low, high) + bufferForRange / 2,
-                        ];
-
-                        setYaxisDomain(domain[0], domain[1]);
-                    } else {
-                        changeScaleSwap(isTriggeredByZoom);
-                    }
-                } else {
-                    const lowTick =
-                        currentPoolPriceTick - simpleRangeWidth * 100;
-                    const highTick =
-                        currentPoolPriceTick + simpleRangeWidth * 100;
-
-                    const pinnedDisplayPrices = getPinnedPriceValuesFromTicks(
-                        isDenomBase,
-                        baseTokenDecimals,
-                        quoteTokenDecimals,
-                        lowTick,
-                        highTick,
-                        gridSize,
-                    );
-
-                    const low = 0;
-                    const high = parseFloat(
-                        pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-                    );
-
-                    const bufferForRange = Math.abs((low - high) / 90);
-
-                    const domain = [
-                        Math.min(low, high) - bufferForRange,
-                        Math.max(low, high) + bufferForRange / 2,
-                    ];
-
-                    setYaxisDomain(domain[0], domain[1]);
-                }
-            }
-        }
-
-        render();
-    }
-
-    function changeScale(isTriggeredByZoom: boolean) {
-        if (location.pathname.includes('limit')) {
-            changeScaleLimit(isTriggeredByZoom);
-        } else if (
-            location.pathname.includes('pool') ||
-            location.pathname.includes('reposition')
-        ) {
-            changeScaleRangeOrReposition(isTriggeredByZoom);
-        } else {
-            changeScaleSwap(isTriggeredByZoom);
-        }
-    }
-
     useEffect(() => {
         if (
             rescale &&
@@ -4971,24 +4653,6 @@ export default function Chart(props: propsIF) {
             changeScaleLimit(false);
         }
     }, [location.pathname.includes('limit'), limit, isLineDrag]);
-
-    function setYaxisDomain(minDomain: number, maxDomain: number) {
-        if (scaleData) {
-            if (
-                minDomain === maxDomain ||
-                minDomain === poolPriceDisplay ||
-                maxDomain === poolPriceDisplay
-            ) {
-                const delta = minDomain / 8;
-                const tempMinDomain = minDomain - delta;
-                const tempMaxDomain = minDomain + delta;
-
-                scaleData.yScale.domain([tempMinDomain, tempMaxDomain]);
-            } else {
-                scaleData.yScale.domain([minDomain, maxDomain]);
-            }
-        }
-    }
 
     const mouseLeaveCanvas = () => {
         if (crosshairActive !== 'none') {
@@ -5283,213 +4947,21 @@ export default function Chart(props: propsIF) {
         showLiquidity,
     ]);
 
-    function checkLineLocation(
-        element: lineData[],
-        mouseX: number,
-        mouseY: number,
-        denomInBase: boolean,
-    ) {
-        const startX = element[0].x;
-        const startY =
-            element[0].denomInBase === denomInBase
-                ? element[0].y
-                : 1 / element[0].y;
-        const endX = element[1].x;
-        const endY =
-            element[1].denomInBase === denomInBase
-                ? element[1].y
-                : 1 / element[1].y;
-
-        if (scaleData) {
-            const threshold = 10;
-            const distance = distanceToLine(
-                mouseX,
-                mouseY,
-                scaleData.drawingLinearxScale(startX),
-                scaleData.yScale(startY),
-                scaleData.drawingLinearxScale(endX),
-                scaleData.yScale(endY),
-            );
-
-            return distance < threshold;
-        }
-
-        return false;
-    }
-
-    function checkRectLocation(
-        element: lineData[],
-        mouseX: number,
-        mouseY: number,
-        isDenomPrices: boolean,
-    ) {
-        let isOverLine = false;
-
-        if (scaleData) {
-            const threshold = 10;
-
-            const denomStartY =
-                element[0].denomInBase === denomInBase || isDenomPrices
-                    ? element[0].y
-                    : 1 / element[0].y;
-            const denomEndY =
-                element[0].denomInBase === denomInBase || isDenomPrices
-                    ? element[1].y
-                    : 1 / element[1].y;
-
-            const startY = Math.min(denomStartY, denomEndY);
-            const endY = Math.max(denomStartY, denomEndY);
-
-            const startX = Math.min(element[0].x, element[1].x);
-            const endX = Math.max(element[0].x, element[1].x);
-
-            if (
-                mouseX > scaleData.drawingLinearxScale(startX) - threshold &&
-                mouseX < scaleData.drawingLinearxScale(endX) + threshold &&
-                mouseY < scaleData.yScale(startY) + threshold &&
-                mouseY > scaleData.yScale(endY) - threshold
-            ) {
-                isOverLine = true;
-            }
-        }
-
-        return isOverLine;
-    }
-
-    function checkRayLineLocation(
-        element: lineData[],
-        mouseX: number,
-        mouseY: number,
-        denomInBase: boolean,
-    ) {
-        if (scaleData) {
-            const startX = element[0].x;
-            const startY =
-                element[0].denomInBase === denomInBase
-                    ? element[0].y
-                    : 1 / element[0].y;
-            const endX = scaleData.drawingLinearxScale.domain()[1];
-            const endY =
-                element[0].denomInBase === denomInBase
-                    ? element[0].y
-                    : 1 / element[0].y;
-
-            const threshold = 10;
-            const distance = distanceToLine(
-                mouseX,
-                mouseY,
-                scaleData.drawingLinearxScale(startX),
-                scaleData.yScale(startY),
-                scaleData.drawingLinearxScale(endX),
-                scaleData.yScale(endY),
-            );
-
-            return distance < threshold;
-        }
-
-        return false;
-    }
-
-    function checkSwapLoation(
-        element: lineData[],
-        mouseX: number,
-        mouseY: number,
-        diameter: number,
-        isTriangle = false,
-    ) {
-        if (scaleData && circleScale) {
-            const startX = scaleData.xScale(element[0].x);
-            const startY = scaleData.yScale(element[0].y);
-
-            const circleDiameter = Math.sqrt(
-                (isTriangle ? 1000 : circleScale(diameter)) / Math.PI,
-            );
-
-            let distance = false;
-
-            if (
-                startX < mouseX + circleDiameter &&
-                startY < mouseY + circleDiameter &&
-                startX > mouseX - circleDiameter &&
-                startY > mouseY - circleDiameter
-            ) {
-                distance = true;
-            }
-
-            return distance;
-        }
-
-        return false;
-    }
-
-    function checkFibonacciLocation(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data: any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        extraData: any,
-        mouseX: number,
-        mouseY: number,
-        denomInBase: boolean,
-        extendLeft: boolean,
-        extendRight: boolean,
-    ) {
-        if (scaleData) {
-            const fibLineData = calculateFibRetracement(
-                data,
-                extraData,
+    const {
+        checkLineLocation,
+        checkRectLocation,
+        checkRayLineLocation,
+        checkSwapLoation,
+        checkFibonacciLocation,
+    } = useMemo(
+        () =>
+            createShapeLocationCheckers({
+                scaleData,
                 denomInBase,
-            );
-
-            const startX = extendLeft
-                ? scaleData.drawingLinearxScale.domain()[0]
-                : fibLineData[0][0].x;
-            const endX = extendRight
-                ? scaleData.drawingLinearxScale.domain()[1]
-                : fibLineData[0][1].x;
-            const tempStartXLocation = scaleData.drawingLinearxScale(startX);
-            const tempEndXLocation = scaleData.drawingLinearxScale(endX);
-
-            const threshold = 10;
-
-            const startXLocation = Math.min(
-                tempStartXLocation,
-                tempEndXLocation,
-            );
-            const endXLocation = Math.max(tempStartXLocation, tempEndXLocation);
-
-            let startY = Number.MAX_VALUE;
-            let endY = Number.MIN_VALUE;
-
-            for (const items of fibLineData) {
-                for (const item of items) {
-                    startY = Math.min(startY, item.y);
-                    endY = Math.max(endY, item.y);
-                }
-            }
-
-            startY = data[0].denomInBase === denomInBase ? startY : 1 / startY;
-            endY = data[0].denomInBase === denomInBase ? endY : 1 / endY;
-
-            const tempStartYLocation = scaleData.yScale(startY);
-            const tempEndYLocation = scaleData.yScale(endY);
-
-            const startYLocation = Math.min(
-                tempStartYLocation,
-                tempEndYLocation,
-            );
-            const endYLocation = Math.max(tempStartYLocation, tempEndYLocation);
-
-            const isIncludeX =
-                startXLocation - threshold < mouseX &&
-                mouseX < endXLocation + threshold;
-
-            const isIncludeY =
-                startYLocation - threshold < mouseY &&
-                mouseY < endYLocation + threshold;
-
-            return isIncludeX && isIncludeY;
-        }
-    }
+                circleScale,
+            }),
+        [scaleData, denomInBase, circleScale],
+    );
 
     const drawnShapesHoverStatus = (mouseX: number, mouseY: number) => {
         let resElement = undefined;
