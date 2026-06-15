@@ -81,6 +81,7 @@ import {
     bandLineData,
     calculateFibRetracement,
     calculateFibRetracementBandAreas,
+    calculateVisibleCandles,
     chartItemStates,
     checkShowLatestCandle,
     crosshair,
@@ -95,6 +96,7 @@ import {
     renderSubchartCrCanvas,
     roundToNearestPreset,
     scaleData,
+    snapForCandle,
     selectedDrawnData,
     setCanvasResolution,
     timeGapsValue,
@@ -562,69 +564,11 @@ export default function Chart(props: propsIF) {
         }
     };
 
-    const calculateVisibleCandles = (
-        scaleData: scaleData | undefined,
-        unparsedCandleData: CandleDataChart[],
-        period: number,
-        numberOfCandlesToDisplay: number,
-    ) => {
-        if (scaleData) {
-            const xmin =
-                scaleData.xScale.domain()[0] -
-                period * 1000 * numberOfCandlesToDisplay;
-            const xmax =
-                scaleData.xScale.domain()[1] +
-                period * 1000 * numberOfCandlesToDisplay;
-
-            const filtered = unparsedCandleData.filter(
-                (data: CandleDataChart) =>
-                    data.time * 1000 >= xmin &&
-                    data.time * 1000 <= xmax &&
-                    (data.isShowData || !isCondensedModeEnabled),
-            );
-
-            return filtered;
-        }
-        return unparsedCandleData.filter(
-            (data: CandleDataChart) =>
-                data.isShowData || !isCondensedModeEnabled,
-        );
-    };
-
-    const minimum = (data: CandleDataIF[], mouseX: number) => {
-        const xScale = scaleData?.xScale;
-        if (xScale) {
-            const accessor = (d: CandleDataIF) =>
-                Math.abs(mouseX - xScale(d.time * 1000));
-
-            return data
-                .map(function (dataPoint: CandleDataIF) {
-                    return [accessor(dataPoint), dataPoint];
-                })
-                .reduce(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    function (accumulator: any, dataPoint: any) {
-                        return accumulator[0] > dataPoint[0]
-                            ? dataPoint
-                            : accumulator;
-                    },
-                    [Number.MAX_VALUE, null],
-                );
-        }
-    };
-
-    // finds candle closest to the mouse
-    const snapForCandle = (point: number, filtered: Array<CandleDataIF>) => {
-        if (scaleData) {
-            if (point == undefined) return [];
-            if (filtered.length > 1) {
-                const nearest = minimum(filtered, point)[1];
-                return nearest;
-            }
-        }
-
-        return filtered[0];
-    };
+    // Thin wrapper that binds the pure `snapForCandle` helper to the current
+    // `scaleData` for child canvases whose prop signature is
+    // `(point, filtered) => CandleDataIF`.
+    const snapForCandleData = (point: number, filtered: CandleDataIF[]) =>
+        snapForCandle(point, filtered, scaleData);
 
     const unparsedCandleData = useMemo(() => {
         const updatedZeroCandles = updateZeroPriceCandles(
@@ -642,6 +586,7 @@ export default function Chart(props: propsIF) {
             data,
             period,
             mobileView ? 300 : 100,
+            isCondensedModeEnabled,
         ) as CandleDataChart[];
     }, [
         diffHashSigChart(unparsedData.candles),
@@ -656,6 +601,7 @@ export default function Chart(props: propsIF) {
             unparsedCandleData,
             period,
             0,
+            isCondensedModeEnabled,
         ) as CandleDataChart[];
 
         const filtered = data.filter(
@@ -4330,7 +4276,7 @@ export default function Chart(props: propsIF) {
 
         longestValue = longestValue / 2;
 
-        const nearest = snapForCandle(mouseX, filtered);
+        const nearest = snapForCandle(mouseX, filtered, scaleData);
 
         const dateControl =
             nearest?.time * 1000 > startDate && nearest?.time * 1000 < lastDate;
@@ -5425,7 +5371,7 @@ export default function Chart(props: propsIF) {
                         addDrawActionStack={addDrawActionStack}
                         period={period}
                         crosshairData={crosshairData}
-                        snapForCandle={snapForCandle}
+                        snapForCandle={snapForCandleData}
                         visibleCandleData={
                             unparsedData.candles as Array<CandleDataChart>
                         }
@@ -5457,7 +5403,7 @@ export default function Chart(props: propsIF) {
                         setIsUpdatingShape={setIsUpdatingShape}
                         denomInBase={denomInBase}
                         addDrawActionStack={addDrawActionStack}
-                        snapForCandle={snapForCandle}
+                        snapForCandle={snapForCandleData}
                         visibleCandleData={visibleCandleData}
                         zoomBase={zoomBase}
                         setIsChartZoom={setIsChartZoom}

@@ -7,11 +7,11 @@ already been extracted into `ChartUtils/` (`shapeLocations.ts`,
 listener leak, drag `keydown` listener leak, `getCandleCount` `* 1000` unit
 mismatch). `Chart.tsx` went from ~7,378 to ~5,659 lines.
 
-Items 1, 2, 3, and the `diffHashSig` half of item 5 are now **done** (see each
-section). Item 4 and the rest of item 5 remain. Each item lists the rough
-scope, the risk level, and the suggested approach. Verify every change with
-`npx tsc --noEmit -p tsconfig.json` and `npx prettier --check` (the repo has no
-working ESLint flat config — do not rely on `npx eslint`).
+Items 1–4 are **done**, and item 5 is done to the extent worthwhile (the
+`diffHashSig` hoist; the two remaining bullets were investigated and
+intentionally deferred — see item 5). Each item below records the outcome. Verify
+every change with `npx tsc --noEmit -p tsconfig.json` and `npx prettier --check`
+(the repo has no working ESLint flat config — do not rely on `npx eslint`).
 
 ## 1. Extract hover-status logic — DONE
 
@@ -63,16 +63,28 @@ working ESLint flat config — do not rely on `npx eslint`).
   the call site sits inside the effect's `scaleData !== undefined` guard (the
   original code relied on that narrowing for the y-domain math in `.filter`).
 
-## 4. Consolidate the candle helpers
+## 4. Consolidate the candle helpers — DONE
 
 - **What:** `minimum`, `snapForCandle`, `calculateVisibleCandles`,
   `calculateDiscontinuityRange`.
-- **Risk:** Low, but low payoff (small functions, several call sites).
-- **Approach:** Move `minimum`/`snapForCandle` to `chartUtils.ts` as pure
-  functions taking `scaleData`; thread `isCondensedModeEnabled` into
-  `calculateVisibleCandles`. Only worthwhile when touching this area anyway.
+- **Outcome:** `minimum`, `snapForCandle` and `calculateVisibleCandles` were
+  moved to `chartUtils.ts` as exported pure functions — `minimum`/`snapForCandle`
+  now take `scaleData` as an explicit param, and `calculateVisibleCandles` takes
+  `isCondensedModeEnabled` as an explicit param. Call sites in `Chart.tsx` pass
+  these through. Two child canvases (`DrawCanvas`, `DragCanvas`) expect a
+  2-arg `snapForCandle` prop, so a thin `snapForCandleData(point, filtered)`
+  wrapper bound to the current `scaleData` is passed to them (matches the
+  previous per-render closure identity, no extra churn). `minimum` returns `any`
+  (the reduce uses an `any` accumulator), so `snapForCandle` keeps the original
+  `minimum(...)[1]` indexing (no `?.`) to preserve exact behavior.
+  `calculateDiscontinuityRange` was left in `Chart.tsx` — it is stateful (calls
+  `setTimeGaps`, reads `timeGaps`), not a pure-function candidate. `tsc` +
+  `prettier` clean.
 
-## 5. Memoize hot derived values / reduce re-render churn — PARTIALLY DONE
+## 5. Memoize hot derived values / reduce re-render churn — DONE (scoped)
+
+The valuable, low-risk part (the `diffHashSig` hoisting) is done. The other two
+bullets were investigated and intentionally left undone for the reasons below.
 
 - **Done:** `diffHashSig*` results are now hoisted into plain once-per-render
   locals (`scaleDataHashX`, `scaleDataHash`, `visibleCandleDataHash`,
@@ -81,12 +93,20 @@ working ESLint flat config — do not rely on `npx eslint`).
   intentionally plain consts, **not** `useMemo`d — the d3 scales mutate in place
   so object identity is unreliable; the hash must be recomputed every render
   (just once now, then reused) to keep the value-comparison semantics identical.
-- **Still TODO:** the big mousemove `useEffect` recreates handlers on most
-  renders. After the hover-status extraction (item 1), wrap the handler in
-  `useCallback` with a tight dep list to cut redundant work on each pointer move.
-- **Still TODO:** consider `useMemo` for the `liquidityMouseMoveCoordinate` /
-  scale objects passed down to child canvases so they don't re-render every
-  frame.
+- **Investigated, intentionally NOT done — mousemove `useCallback`:** `mousemove`
+  calls four sibling functions that are themselves recreated every render and are
+  **not** memoized (`candleOrVolumeDataHoverStatus`, `setCrossHairDataFunc`,
+  `orderHistoryHoverStatus`, `drawnShapesHoverStatus`). Wrapping `mousemove` in
+  `useCallback` would freeze stale references to them (stale-closure bugs) unless
+  its **entire call graph** is memoized first. That cascade is large, high-risk,
+  and unverifiable without runtime tests, for negligible benefit (it would only
+  avoid recreating one function object per render). Not worth it as-is. If
+  revisited: memoize the hover-status helpers (return them as `useCallback`s from
+  `useHoverStatus`) and `setCrossHairDataFunc` first, then `mousemove` last.
+- **Investigated, N/A — child-canvas scale-object memo:** there is no
+  `liquidityMouseMoveCoordinate` variable in the current code, so this bullet is
+  stale. Any future pass here should first confirm the target child canvases are
+  wrapped in `React.memo` (otherwise prop-object memoization yields no benefit).
 
 ## Recommended order
 
@@ -95,8 +115,13 @@ working ESLint flat config — do not rely on `npx eslint`).
 3. ~~Drag effects (item 2)~~ — DONE (`createRangeDragBehavior` /
    `createLimitDragBehavior` in `useChartDrag.ts`). Still benefits from a manual
    runtime check of drag / limit-drag interactions (no test coverage).
-4. Candle helpers (item 4) + remaining render-churn passes (item 5) —
-   opportunistic, **still TODO**.
+4. ~~Candle helpers (item 4)~~ — DONE. ~~Render-churn passes (item 5)~~ — the
+   `diffHashSig` hoist is DONE; the mousemove `useCallback` / child-canvas memo
+   bullets were investigated and intentionally deferred (see item 5).
+
+All planned items are now addressed. Remaining future work is optional and
+documented inline (notably the memoization cascade under item 5, which needs
+runtime verification).
 
 ## Guardrails
 

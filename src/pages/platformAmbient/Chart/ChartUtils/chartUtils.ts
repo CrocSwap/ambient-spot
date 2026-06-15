@@ -625,3 +625,80 @@ export const getLast15Minutes = (period: number) => {
     }
     return times;
 };
+
+// finds the candle whose x-pixel position is closest to `mouseX`. Pure version
+// of the former `Chart.tsx` closure; `scaleData` is passed in explicitly.
+export const minimum = (
+    data: CandleDataIF[],
+    mouseX: number,
+    scaleData: scaleData | undefined,
+) => {
+    const xScale = scaleData?.xScale;
+    if (xScale) {
+        const accessor = (d: CandleDataIF) =>
+            Math.abs(mouseX - xScale(d.time * 1000));
+
+        return data
+            .map(function (dataPoint: CandleDataIF) {
+                return [accessor(dataPoint), dataPoint];
+            })
+            .reduce(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                function (accumulator: any, dataPoint: any) {
+                    return accumulator[0] > dataPoint[0]
+                        ? dataPoint
+                        : accumulator;
+                },
+                [Number.MAX_VALUE, null],
+            );
+    }
+};
+
+// finds candle closest to the mouse
+export const snapForCandle = (
+    point: number,
+    filtered: Array<CandleDataIF>,
+    scaleData: scaleData | undefined,
+) => {
+    if (scaleData) {
+        if (point == undefined) return [];
+        if (filtered.length > 1) {
+            const nearest = minimum(filtered, point, scaleData)[1];
+            return nearest;
+        }
+    }
+
+    return filtered[0];
+};
+
+// filters the candle data to the candles currently visible (plus a buffer of
+// `numberOfCandlesToDisplay` candles on each side). Pure version of the former
+// `Chart.tsx` closure; `isCondensedModeEnabled` is passed in explicitly.
+export const calculateVisibleCandles = (
+    scaleData: scaleData | undefined,
+    unparsedCandleData: CandleDataChart[],
+    period: number,
+    numberOfCandlesToDisplay: number,
+    isCondensedModeEnabled: boolean,
+) => {
+    if (scaleData) {
+        const xmin =
+            scaleData.xScale.domain()[0] -
+            period * 1000 * numberOfCandlesToDisplay;
+        const xmax =
+            scaleData.xScale.domain()[1] +
+            period * 1000 * numberOfCandlesToDisplay;
+
+        const filtered = unparsedCandleData.filter(
+            (data: CandleDataChart) =>
+                data.time * 1000 >= xmin &&
+                data.time * 1000 <= xmax &&
+                (data.isShowData || !isCondensedModeEnabled),
+        );
+
+        return filtered;
+    }
+    return unparsedCandleData.filter(
+        (data: CandleDataChart) => data.isShowData || !isCondensedModeEnabled,
+    );
+};
