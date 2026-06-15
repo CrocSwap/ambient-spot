@@ -1,14 +1,14 @@
 # Chart.tsx — Remaining Optimizations
 
-Status notes for the ongoing `Chart.tsx` cleanup. Four cohesive units have
+Status notes for the ongoing `Chart.tsx` cleanup. Several cohesive units have
 already been extracted into `ChartUtils/` (`shapeLocations.ts`,
-`useChartScale.ts`, `useLimitNoGoZone.ts`, `useHoverStatus.ts`) and three bugs
-were fixed (swipe-back listener leak, drag `keydown` listener leak,
-`getCandleCount` `* 1000` unit mismatch). `Chart.tsx` went from ~7,378 to ~6,442
-lines.
+`useChartScale.ts`, `useLimitNoGoZone.ts`, `useHoverStatus.ts`,
+`useChartZoom.ts`, `useChartDrag.ts`) and three bugs were fixed (swipe-back
+listener leak, drag `keydown` listener leak, `getCandleCount` `* 1000` unit
+mismatch). `Chart.tsx` went from ~7,378 to ~5,659 lines.
 
-Items 1, 3, and the `diffHashSig` half of item 5 are now **done** (see each
-section). Items 2, 4 and the rest of item 5 remain. Each item lists the rough
+Items 1, 2, 3, and the `diffHashSig` half of item 5 are now **done** (see each
+section). Item 4 and the rest of item 5 remain. Each item lists the rough
 scope, the risk level, and the suggested approach. Verify every change with
 `npx tsc --noEmit -p tsconfig.json` and `npx prettier --check` (the repo has no
 working ESLint flat config — do not rely on `npx eslint`).
@@ -25,18 +25,25 @@ working ESLint flat config — do not rely on `npx eslint`).
   args object; `handleCardClick` stays in `Chart.tsx` and is passed through.
   Behavior unchanged; `tsc` + `prettier` clean.
 
-## 2. Extract the drag setup effects
+## 2. Extract the drag setup effects — DONE
 
-- **What:** the `dragRange` and `dragLimit` `useEffect`s (each ~250–350 lines)
+- **What:** the `dragRange` and `dragLimit` `useEffect`s (~400 and ~135 lines)
   that build d3 `.drag()` behaviors and attach them to the canvas.
-- **Risk:** High. Deeply coupled: they mutate `ranges`, call `calculateLimit`,
-  `setLimit`, `setMinTickForLimit`, URL helpers, `render`, and read live state
-  via closures. Easy to introduce stale-closure bugs.
-- **Approach:** Do this **after** items 1 and 3. Extract the inner d3 builder
-  (`createRangeDragBehavior(...)`) into a module that takes an explicit deps
-  object, and keep the `useEffect` wrapper (attach/detach + dep array) in
-  `Chart.tsx` so React semantics are unchanged. Confirm the new
-  `removeEventListener('keydown', …)` cleanup (bug fix #2) is preserved.
+- **Outcome:** The two `d3.drag()` constructions (including their shared mutable
+  locals, the `cancelDragEvent` keydown handler, and the canvas/`rectCanvas`
+  setup) were moved verbatim into `ChartUtils/useChartDrag.ts` as
+  `createRangeDragBehavior(deps)` and `createLimitDragBehavior(deps)`. Each
+  `useEffect` wrapper stays in `Chart.tsx` — keeping the `if (scaleData)` guard
+  (range), the dependency arrays, and the `setDragRange`/`setDragLimit` calls —
+  so React semantics are unchanged. The shared `filterDragEvent` helper remains
+  in `Chart.tsx` and is threaded in as a dep. The
+  `document.addEventListener/removeEventListener('keydown', cancelDragEvent)`
+  pairing (bug fix #2) is preserved inside the factories. `scaleData` is typed
+  non-optional in both deps (it is a non-optional prop). `tsc` + `prettier`
+  clean.
+- **Not runtime-verified:** there is still no test coverage; this is a pure
+  mechanical relocation, but the drag / limit-drag interactions should be
+  exercised manually in the app at some point.
 
 ## 3. Extract the zoom setup effect — DONE
 
@@ -85,14 +92,9 @@ working ESLint flat config — do not rely on `npx eslint`).
 
 1. ~~Hover-status hook (item 1)~~ — DONE.
 2. ~~Zoom effect (item 3)~~ — DONE.
-3. Drag effects (item 2) — highest risk; **still TODO**, do one drag handler at
-   a time. Now low-mechanical-risk thanks to the `createChartZoom` factory
-   pattern, but should be done in a session where drag / limit-drag interactions
-   can be **runtime-verified** (no test coverage). Reuse the same approach:
-   `createRangeDragBehavior(deps)` / `createLimitDragBehavior(deps)` in a new
-   module, keep the `useEffect` wrapper + `setDragRange`/`setDragLimit` and the
-   `document.removeEventListener('keydown', …)` cleanup in `Chart.tsx`. The
-   shared `filterDragEvent` helper can be threaded in as a dep.
+3. ~~Drag effects (item 2)~~ — DONE (`createRangeDragBehavior` /
+   `createLimitDragBehavior` in `useChartDrag.ts`). Still benefits from a manual
+   runtime check of drag / limit-drag interactions (no test coverage).
 4. Candle helpers (item 4) + remaining render-churn passes (item 5) —
    opportunistic, **still TODO**.
 
