@@ -123,6 +123,56 @@ All planned items are now addressed. Remaining future work is optional and
 documented inline (notably the memoization cascade under item 5, which needs
 runtime verification).
 
+## Fresh review — 2026-06-15
+
+A fresh pass over `Chart.tsx` (now ~5,615 lines) looking for perf issues, bugs,
+and cleanup. `tsc --noEmit` + `prettier --check` clean after every change below.
+
+### Fixed (safe, behavior-preserving)
+
+- **Sub-chart `.sort()` mutated a memoized array every render.** The `FeeRateChart`
+  / `TvlChart` props were `feeData={visibleCandleData.sort((a, b) => b.time - a.time)}`
+  (and the TVL equivalent). `Array.sort` mutates **in place**, so this re-sorted —
+  and mutated — the memoized `visibleCandleData` on every render. It happened to be
+  a no-op result-wise (`visibleCandleData` is a `.filter()` of the already
+  descending-sorted `unparsedCandleData`, and `filter` preserves order), but it is a
+  render-phase mutation of memoized state and an unnecessary per-render sort.
+  Replaced with a memoized `sortedVisibleCandleData` (`[...visibleCandleData].sort`,
+  keyed on `visibleCandleDataHash`) used by both sub-charts. Same output, no
+  mutation, sort only runs when the data changes.
+- **`JSON.stringify(drawnShapeHistory)` in a dep array** (the
+  `updateDrawnShapeHistoryonLocalStorage` effect) replaced with the already-hoisted
+  `drawnShapeHistoryHash` (`diffHashSig(drawnShapeHistory)`) — cheaper and matches
+  how `drawnShapeHistory` is hashed everywhere else in the file.
+- **`diffHashSig(cursorStyleTrigger)` in a dep array** where `cursorStyleTrigger` is
+  a plain boolean — replaced with the boolean directly (identical dependency
+  semantics, no hashing overhead).
+- **`timeGaps.sort(...)` mutated the `timeGaps` state array in place** inside the
+  discontinuity effect. Copied first (`[...timeGaps].sort(...)`) so the state array
+  is not reordered as a side effect.
+
+### Investigated, NOT changed (document only — risk > benefit without tests)
+
+- **`closestValue` / `closestLimitValue` duplication** (~50 lines each). They are
+  identical except for the accessor fields (`txTime`/`swapPrice*` vs
+  `crossTime`/`limitPrice*`). Could collapse into one generic helper taking an
+  accessor, but both are typed against different `*IF` shapes and live on the hot
+  hover path; not worth the churn without runtime coverage.
+- **Wheel effect has no cleanup** (the `d3.select(d3CanvasMain.current).on('wheel', …)`
+  block). The pending `wheelTimeout` is never cleared on re-run/unmount, and the
+  listener is never detached. In practice d3's default-namespace `.on` *replaces*
+  the prior handler (so no stacking leak) and the component is long-lived, so impact
+  is low — but a `return () => { clearTimeout(wheelTimeout); d3.select(...).on('wheel', null); }`
+  would be more correct.
+- **`calculateDiscontinuityRange(data)` is called inside the `unparsedCandleData`
+  `useMemo`** (it calls `setTimeGaps`). That is a side effect during render; it is
+  async so the `setState` lands in a later microtask, but it is still an
+  anti-pattern. Left as-is because it's load-bearing for the discontinuity scale and
+  the note (item 4) already flags it as stateful.
+- **`useEffect(() => useHandleSwipeBack(...), [d3Container === null])`** — the dep
+  `d3Container === null` is always `false` (a ref object is never `null`), so the
+  effect runs once. Harmless but misleading; `[]` would express the intent.
+
 ## Guardrails
 
 - Behavior must stay identical; these are mechanical relocations, not rewrites.

@@ -616,6 +616,17 @@ export default function Chart(props: propsIF) {
     const visibleCandleDataHash = diffHashSigChart(visibleCandleData);
     const drawnShapeHistoryHash = diffHashSig(drawnShapeHistory);
 
+    // Sub-charts (fee/TVL) expect newest-first candle data. visibleCandleData
+    // is already sorted descending by time, but sub-chart props previously
+    // called visibleCandleData.sort(...) inline in JSX, which mutates the
+    // memoized array in place and re-sorts on every render. Memoize a sorted
+    // copy instead so the mutation is gone and the sort only runs when the
+    // underlying data changes.
+    const sortedVisibleCandleData = useMemo(
+        () => [...visibleCandleData].sort((a, b) => b.time - a.time),
+        [visibleCandleDataHash],
+    );
+
     const closestValue = (
         data: Array<{
             order: TransactionIF;
@@ -1421,7 +1432,7 @@ export default function Chart(props: propsIF) {
                 scaleData.xScale.range([0, width]);
                 scaleData.drawingLinearxScale.range([0, width]);
 
-                const lastDateArray = timeGaps
+                const lastDateArray = [...timeGaps]
                     .sort((a, b) => b.range[1] - a.range[1])
                     .filter((i) => i.isAddedPixel);
                 let lastDate: undefined | number = undefined;
@@ -1488,7 +1499,7 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         updateDrawnShapeHistoryonLocalStorage();
-    }, [JSON.stringify(drawnShapeHistory), isToolbarOpen]);
+    }, [drawnShapeHistoryHash, isToolbarOpen]);
 
     useEffect(() => {
         if (cursorStyleTrigger && chartZoomEvent !== 'wheel') {
@@ -1510,11 +1521,7 @@ export default function Chart(props: propsIF) {
                 );
             }
         }
-    }, [
-        chartZoomEvent,
-        diffHashSig(cursorStyleTrigger),
-        isOnCandleOrVolumeMouseLocation,
-    ]);
+    }, [chartZoomEvent, cursorStyleTrigger, isOnCandleOrVolumeMouseLocation]);
 
     useEffect(() => {
         if (isLineDrag) {
@@ -5422,9 +5429,7 @@ export default function Chart(props: propsIF) {
                     <>
                         <hr />
                         <FeeRateChart
-                            feeData={visibleCandleData.sort(
-                                (a, b) => b.time - a.time,
-                            )}
+                            feeData={sortedVisibleCandleData}
                             period={period}
                             crosshairForSubChart={crosshairData}
                             setCrosshairData={setCrosshairData}
@@ -5456,9 +5461,7 @@ export default function Chart(props: propsIF) {
                     <>
                         <hr />
                         <TvlChart
-                            tvlData={visibleCandleData.sort(
-                                (a, b) => b.time - a.time,
-                            )}
+                            tvlData={sortedVisibleCandleData}
                             period={period}
                             crosshairForSubChart={crosshairData}
                             setCrosshairData={setCrosshairData}
