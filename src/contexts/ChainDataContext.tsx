@@ -56,6 +56,7 @@ import {
     UserDataContext,
     UserXpDataIF,
 } from './UserDataContext';
+import { fallbackVaultsList } from '../pages/platformAmbient/Vaults/fallbackVaultsList';
 
 export interface ChainDataContextIF {
     gasPriceInGwei: number | undefined;
@@ -265,7 +266,7 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
             setAllVaultsData(sorted ?? undefined);
         } catch (error) {
             console.error('Error fetching vault data:', error);
-            setAllVaultsData(undefined);
+            setAllVaultsData(fallbackVaultsList);
         }
     }
 

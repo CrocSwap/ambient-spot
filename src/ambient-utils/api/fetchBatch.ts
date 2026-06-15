@@ -163,6 +163,9 @@ class AnalyticsBatchRequestManager {
                 request.timestamp &&
                 Date.now() - request.timestamp > request.expiry
             ) {
+                if (request.reject) {
+                    request.reject(new Error(`Request ${nonce} expired`));
+                }
                 delete requests[nonce];
             }
         });
@@ -223,17 +226,27 @@ export async function fetchBatch<K extends keyof RequestResponseMap>(
     const nonce = options?.nonce || simpleHash(requestBody);
     const expiry = options?.expiry || BATCH_ENS_CACHE_EXPIRY;
     const request = AnalyticsBatchRequestManager.pendingRequests[nonce];
+    let promise;
     if (
         request &&
         request.timestamp &&
         Date.now() - request.timestamp <= request.expiry
     ) {
-        return request.promise as Promise<RequestResponseMap[K]['response']>;
+        promise = request.promise as Promise<RequestResponseMap[K]['response']>;
+    } else {
+        promise = AnalyticsBatchRequestManager.register<K>(requestBody, {
+            nonce,
+            expiry,
+        });
     }
-    return AnalyticsBatchRequestManager.register<K>(requestBody, {
-        nonce,
-        expiry,
+
+    const timeoutPromise: Promise<any> = new Promise((_, reject) => {
+        setTimeout(() => {
+            reject(new Error('Request timed out'));
+        }, 10000);
     });
+
+    return await Promise.race([promise, timeoutPromise]);
 }
 // TODO - move to a test in ambient-utils
 export async function testBatchSystem() {
