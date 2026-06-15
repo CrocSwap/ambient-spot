@@ -90,7 +90,6 @@ import {
     getInitialDisplayCandleCount,
     getXandYLocationForChart,
     getXandYLocationForChartDrag,
-    lineData,
     lineValue,
     liquidityChartData,
     renderCanvasArray,
@@ -101,10 +100,12 @@ import {
     setCanvasResolution,
     timeGapsValue,
 } from './ChartUtils/chartUtils';
-import { checkCircleLocation, createCircle } from './ChartUtils/circle';
+import { createCircle } from './ChartUtils/circle';
 import useDollarPrice from './ChartUtils/getDollarPrice';
 import { createShapeLocationCheckers } from './ChartUtils/shapeLocations';
 import { useChartScale } from './ChartUtils/useChartScale';
+import { createChartZoom } from './ChartUtils/useChartZoom';
+import { useHoverStatus } from './ChartUtils/useHoverStatus';
 import { useLimitNoGoZone } from './ChartUtils/useLimitNoGoZone';
 import { Zoom } from './ChartUtils/zoom';
 import {
@@ -474,9 +475,16 @@ export default function Chart(props: propsIF) {
         }
     };
 
+    // Hoisted once-per-render hashes reused across many dependency arrays below.
+    // diffHashSig* hashes scaleData by value (the d3 scales mutate in place, so
+    // object identity is not a reliable dependency); computing each variant a
+    // single time avoids recomputing the same hash on every dependency array.
+    const scaleDataHashX = diffHashSigScaleData(scaleData, 'x');
+    const scaleDataHash = diffHashSigScaleData(scaleData);
+
     const isShowLatestCandle = useMemo(() => {
         return checkShowLatestCandle(period, scaleData?.xScale);
-    }, [period, diffHashSigScaleData(scaleData, 'x')]);
+    }, [period, scaleDataHashX]);
 
     /**
      * This function processes a given data array to calculate discontinuities in time intervals and updates them.
@@ -637,7 +645,7 @@ export default function Chart(props: propsIF) {
         poolPriceWithoutDenom,
         isShowLatestCandle,
         isCondensedModeEnabled,
-        diffHashSigScaleData(scaleData, 'x'),
+        scaleDataHashX,
     ]);
     const visibleCandleData = useMemo(() => {
         const data = calculateVisibleCandles(
@@ -652,11 +660,12 @@ export default function Chart(props: propsIF) {
         );
 
         return filtered;
-    }, [
-        diffHashSigScaleData(scaleData),
-        unparsedCandleData,
-        isCondensedModeEnabled,
-    ]);
+    }, [scaleDataHash, unparsedCandleData, isCondensedModeEnabled]);
+
+    // Once-per-render hashes reused across several dependency arrays below
+    // (see the scaleData hashes above for rationale).
+    const visibleCandleDataHash = diffHashSigChart(visibleCandleData);
+    const drawnShapeHistoryHash = diffHashSig(drawnShapeHistory);
 
     const closestValue = (
         data: Array<{
@@ -960,12 +969,7 @@ export default function Chart(props: propsIF) {
         }
 
         return undefined;
-    }, [
-        userTransactionData,
-        diffHashSigScaleData(scaleData, 'x'),
-        showSwap,
-        denomInBase,
-    ]);
+    }, [userTransactionData, scaleDataHashX, showSwap, denomInBase]);
 
     const filteredLimitTxData = useMemo(() => {
         if (
@@ -1118,12 +1122,7 @@ export default function Chart(props: propsIF) {
 
             return mergedBuyArray.concat(mergedSellArray);
         }
-    }, [
-        userTransactionData,
-        diffHashSigScaleData(scaleData, 'x'),
-        showSwap,
-        denomInBase,
-    ]);
+    }, [userTransactionData, scaleDataHashX, showSwap, denomInBase]);
 
     const lastCandleData = unparsedData.candles?.reduce(
         function (prev, current) {
@@ -1246,7 +1245,7 @@ export default function Chart(props: propsIF) {
     }, [
         lastCandleData.invMaxPriceDecimalCorrected,
         lastCandleData.priceCloseDecimalCorrected,
-        diffHashSigScaleData(scaleData, 'x'),
+        scaleDataHashX,
         poolPriceDisplay,
         isDenomBase,
     ]);
@@ -1536,11 +1535,7 @@ export default function Chart(props: propsIF) {
                 render();
             }
         });
-    }, [
-        diffHashSig(timeGaps),
-        diffHashSigScaleData(scaleData, 'x'),
-        isCondensedModeEnabled,
-    ]);
+    }, [diffHashSig(timeGaps), scaleDataHashX, isCondensedModeEnabled]);
 
     useEffect(() => {
         updateDrawnShapeHistoryonLocalStorage();
@@ -1638,7 +1633,7 @@ export default function Chart(props: propsIF) {
                 };
             });
         }
-    }, [diffHashSigScaleData(scaleData, 'x'), period, isChartZoom]);
+    }, [scaleDataHashX, period, isChartZoom]);
 
     useEffect(() => {
         if (scaleData) {
@@ -1652,7 +1647,7 @@ export default function Chart(props: propsIF) {
             );
             setPrevCandleCount(showCandleCount);
         }
-    }, [diffHashSigScaleData(scaleData, 'x')]);
+    }, [scaleDataHashX]);
 
     useEffect(() => {
         if (isCondensedModeEnabled) {
@@ -1680,14 +1675,6 @@ export default function Chart(props: propsIF) {
             unparsedCandleData !== undefined &&
             !isChartZoom
         ) {
-            let clickedForLine = false;
-            let zoomTimeout: number | undefined = undefined;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            let previousTouch: any | undefined = undefined; // event
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            let startTouch: any | undefined = undefined;
-            let previousDeltaTouch: number | undefined = undefined;
-            let previousDeltaTouchLocation: number | undefined = undefined;
             const lastCandleDate = lastCandleData?.time * 1000;
             const firstCandleDate = firstCandleData?.time * 1000;
 
@@ -1730,309 +1717,43 @@ export default function Chart(props: propsIF) {
                     { passive: true },
                 );
 
-                const zoom = d3
-                    .zoom()
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    .on('start', (event: any) => {
-                        setIsChartZoom(true);
-
-                        if (event.sourceEvent.type.includes('touch')) {
-                            // mobile
-                            previousTouch = event.sourceEvent.touches[0];
-                            startTouch = event.sourceEvent.touches[0];
-
-                            if (event.sourceEvent.touches.length > 1) {
-                                previousDeltaTouch = Math.hypot(
-                                    event.sourceEvent.touches[0].pageX -
-                                        event.sourceEvent.touches[1].pageX,
-                                    event.sourceEvent.touches[0].pageY -
-                                        event.sourceEvent.touches[1].pageY,
-                                );
-                                previousDeltaTouchLocation =
-                                    event.sourceEvent.touches[0].pageX;
-                            }
-                        }
-                        zoomTimeout = event.sourceEvent.timeStamp;
-                        if (
-                            event.sourceEvent &&
-                            event.sourceEvent.type !== 'dblclick'
-                        ) {
-                            clickedForLine = false;
-                            setChartZoomEvent(event.sourceEvent.type);
-                        }
-                    })
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    .on('zoom', (event: any) => {
-                        setContextmenu(false);
-
-                        async function newDomains() {
-                            if (
-                                event.sourceEvent &&
-                                event.sourceEvent.type !== 'dblclick' &&
-                                scaleData?.xScale
-                            ) {
-                                if (event.sourceEvent.type === 'touchmove') {
-                                    if (event.sourceEvent.touches.length > 1) {
-                                        // if a second finger touches after one finger touches it
-                                        if (
-                                            !previousDeltaTouch ||
-                                            !previousDeltaTouchLocation
-                                        ) {
-                                            previousDeltaTouch = Math.hypot(
-                                                event.sourceEvent.touches[0]
-                                                    .pageX -
-                                                    event.sourceEvent.touches[1]
-                                                        .pageX,
-                                                event.sourceEvent.touches[0]
-                                                    .pageY -
-                                                    event.sourceEvent.touches[1]
-                                                        .pageY,
-                                            );
-
-                                            previousDeltaTouchLocation =
-                                                event.sourceEvent.touches[0]
-                                                    .pageX;
-                                        }
-
-                                        if (
-                                            previousDeltaTouch &&
-                                            previousDeltaTouchLocation
-                                        ) {
-                                            zoomBase.handlePanningMultiTouch(
-                                                event.sourceEvent,
-                                                scaleData,
-                                                previousDeltaTouch,
-                                                previousDeltaTouchLocation,
-                                            );
-                                        }
-                                    } else {
-                                        zoomBase.handlePanningOneTouch(
-                                            event.sourceEvent,
-                                            scaleData,
-                                            previousTouch,
-                                            bandwidth,
-                                            firstCandleDate,
-                                            lastCandleDate,
-                                        );
-                                    }
-                                } else {
-                                    zoomBase.handlePanning(
-                                        event.sourceEvent,
-                                        scaleData,
-                                        firstCandleDate,
-                                        lastCandleDate,
-                                    );
-                                }
-
-                                render();
-                                setCursorStyleTrigger(true);
-
-                                if (rescale) {
-                                    if (!isCondensedModeEnabled) {
-                                        changeScale(true);
-                                    }
-                                    render();
-                                } else {
-                                    let domain = undefined;
-                                    if (
-                                        event.sourceEvent.type === 'touchmove'
-                                    ) {
-                                        domain = zoomBase.handlePanningYMobile(
-                                            event.sourceEvent,
-                                            scaleData,
-                                            previousTouch,
-                                        );
-                                    } else {
-                                        domain = zoomBase.handlePanningY(
-                                            event.sourceEvent,
-                                            scaleData,
-                                        );
-                                    }
-
-                                    if (domain) {
-                                        setYaxisDomain(domain[0], domain[1]);
-                                    }
-                                }
-
-                                clickedForLine = true;
-                                setPrevLastCandleTime(lastCandleData.time);
-
-                                render();
-                            }
-                        }
-
-                        newDomains().then(() => {
-                            // mobile
-                            if (event.sourceEvent.type.includes('touch')) {
-                                previousTouch =
-                                    event.sourceEvent.changedTouches[0];
-                                if (event.sourceEvent.touches.length > 1) {
-                                    previousDeltaTouch = Math.hypot(
-                                        event.sourceEvent.touches[0].pageX -
-                                            event.sourceEvent.touches[1].pageX,
-                                        event.sourceEvent.touches[0].pageY -
-                                            event.sourceEvent.touches[1].pageY,
-                                    );
-                                }
-                            }
-                        });
-                    })
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    .on('end', (event: any) => {
-                        setShouldResetBuffer(false);
-                        if (event.sourceEvent.type !== 'wheel') {
-                            setIsChartZoom(false);
-                            setCursorStyleTrigger(false);
-                            setChartZoomEvent('');
-
-                            if (
-                                event.sourceEvent.type.includes('touch') &&
-                                zoomTimeout &&
-                                event.sourceEvent.timeStamp - zoomTimeout >
-                                    100 &&
-                                startTouch.clientX ===
-                                    event.sourceEvent.changedTouches[0]
-                                        .clientX &&
-                                startTouch.clientY ===
-                                    event.sourceEvent.changedTouches[0].clientY
-                            ) {
-                                if (tabletView) {
-                                    setContextmenu(true);
-
-                                    const screenHeight = window.innerHeight;
-
-                                    const diff =
-                                        screenHeight - startTouch.clientY;
-
-                                    setContextMenuPlacement(() => {
-                                        return {
-                                            top: startTouch.clientY,
-                                            left: startTouch.clientX,
-                                            isReversed: diff < 350,
-                                        };
-                                    });
-
-                                    event.preventDefault();
-                                } else {
-                                    setSelectedDrawnShape(undefined);
-                                    setIsShowFloatingToolbar(false);
-                                    // openMobileSettingsModal();
-                                }
-                            }
-
-                            if (
-                                event.sourceEvent.type.includes('touch') &&
-                                contextmenu
-                            ) {
-                                setContextmenu(false);
-                            }
-
-                            if (clickedForLine) {
-                                // fires click event when zoom takes too short
-                                if (
-                                    zoomTimeout &&
-                                    event.sourceEvent.timeStamp - zoomTimeout <
-                                        1
-                                ) {
-                                    const {
-                                        isHoverCandleOrVolumeData,
-                                        nearest,
-                                    } = candleOrVolumeDataHoverStatus(
-                                        event.sourceEvent.offsetX,
-                                        event.sourceEvent.offsetY,
-                                    );
-                                    selectedDateEvent(
-                                        isHoverCandleOrVolumeData,
-                                        nearest,
-                                    );
-                                }
-                            }
-
-                            showLatestActive();
-
-                            props.setShowTooltip(true);
-                        }
-                    })
-                    .filter((event) => {
-                        if (tabletView && mainCanvasBoundingClientRect) {
-                            const { offsetX, offsetY } =
-                                getXandYLocationForChart(
-                                    event,
-                                    mainCanvasBoundingClientRect,
-                                );
-
-                            drawnShapesHoverStatus(offsetX, offsetY);
-                        } else {
-                            setSelectedDrawnShape(undefined);
-                        }
-
-                        if (event.type.includes('touch')) {
-                            const canvas = d3
-                                .select(d3CanvasMain.current)
-                                .select('canvas')
-                                .node() as HTMLCanvasElement;
-
-                            const rectCanvas = canvas.getBoundingClientRect();
-
-                            const lineBuffer =
-                                (scaleData?.yScale.domain()[1] -
-                                    scaleData?.yScale.domain()[0]) /
-                                15;
-
-                            const eventPoint =
-                                event.targetTouches[0].clientY -
-                                rectCanvas?.top;
-
-                            const eventPointX =
-                                event.targetTouches[0].clientX -
-                                rectCanvas.left;
-
-                            const mousePlacement =
-                                scaleData?.yScale.invert(eventPoint);
-
-                            const maxLiqPixelPercent = mobileView
-                                ? 80 / 100
-                                : 92 / 100;
-                            const isHoverLiquidity =
-                                rectCanvas.width * maxLiqPixelPercent >=
-                                eventPointX;
-
-                            const limitLineValue = limit;
-
-                            const minRangeValue = ranges.filter(
-                                (target: lineValue) => target.name === 'Min',
-                            )[0].value;
-                            const maxRangeValue = ranges.filter(
-                                (target: lineValue) => target.name === 'Max',
-                            )[0].value;
-
-                            const isOnLimit =
-                                location.pathname.includes('/limit') &&
-                                mousePlacement < limitLineValue + lineBuffer &&
-                                mousePlacement > limitLineValue - lineBuffer;
-
-                            const isOnRangeMin =
-                                (location.pathname.includes('pool') ||
-                                    location.pathname.includes('reposition')) &&
-                                mousePlacement < minRangeValue + lineBuffer &&
-                                mousePlacement > minRangeValue - lineBuffer;
-
-                            const isOnRangeMax =
-                                (location.pathname.includes('pool') ||
-                                    location.pathname.includes('reposition')) &&
-                                mousePlacement < maxRangeValue + lineBuffer &&
-                                mousePlacement > maxRangeValue - lineBuffer;
-
-                            return (
-                                !isOnLimit &&
-                                !isOnRangeMin &&
-                                !isOnRangeMax &&
-                                isHoverLiquidity
-                            );
-                        } else {
-                            return !canUserDragRange && !canUserDragLimit;
-                        }
-                    });
+                const zoom = createChartZoom({
+                    scaleData,
+                    zoomBase,
+                    bandwidth,
+                    firstCandleDate,
+                    lastCandleDate,
+                    lastCandleData,
+                    rescale,
+                    isCondensedModeEnabled,
+                    contextmenu,
+                    tabletView,
+                    mobileView,
+                    limit,
+                    ranges,
+                    location,
+                    canUserDragRange,
+                    canUserDragLimit,
+                    mainCanvasBoundingClientRect,
+                    d3CanvasMain,
+                    render,
+                    changeScale,
+                    setYaxisDomain,
+                    showLatestActive,
+                    drawnShapesHoverStatus,
+                    candleOrVolumeDataHoverStatus,
+                    selectedDateEvent,
+                    setIsChartZoom,
+                    setChartZoomEvent,
+                    setContextmenu,
+                    setCursorStyleTrigger,
+                    setShouldResetBuffer,
+                    setPrevLastCandleTime,
+                    setContextMenuPlacement,
+                    setSelectedDrawnShape,
+                    setIsShowFloatingToolbar,
+                    setShowTooltip: props.setShowTooltip,
+                });
 
                 setMainZoom(() => zoom);
             }
@@ -2042,7 +1763,7 @@ export default function Chart(props: propsIF) {
         lastCandleData,
         rescale,
         location,
-        diffHashSigScaleData(scaleData),
+        scaleDataHash,
         showLatest,
         liquidityData,
         simpleRangeWidth,
@@ -2065,7 +1786,7 @@ export default function Chart(props: propsIF) {
         if (!isChartZoom) {
             render();
         }
-    }, [diffHashSigScaleData(scaleData)]);
+    }, [scaleDataHash]);
 
     useEffect(() => {
         renderCanvasArray([d3CanvasMain]);
@@ -4438,7 +4159,7 @@ export default function Chart(props: propsIF) {
             render();
         }
     }, [
-        diffHashSig(drawnShapeHistory),
+        drawnShapeHistoryHash,
         lineSeries,
         annotationLineSeries,
         hoveredDrawnShape,
@@ -4615,7 +4336,7 @@ export default function Chart(props: propsIF) {
         }
     }, [
         period,
-        diffHashSigChart(visibleCandleData),
+        visibleCandleDataHash,
         prevPeriod === period,
         candleTimeInSeconds === period,
         denomInBase,
@@ -4681,13 +4402,13 @@ export default function Chart(props: propsIF) {
             );
         }
     }, [
-        diffHashSigChart(visibleCandleData),
+        visibleCandleDataHash,
         lastCandleData,
         mainCanvasBoundingClientRect,
         selectedDate,
         bandwidth,
         isChartZoom,
-        diffHashSig(drawnShapeHistory),
+        drawnShapeHistoryHash,
         isLineDrag,
         period,
         tokenA,
@@ -4963,164 +4684,6 @@ export default function Chart(props: propsIF) {
         [scaleData, denomInBase, circleScale],
     );
 
-    const drawnShapesHoverStatus = (mouseX: number, mouseY: number) => {
-        let resElement = undefined;
-
-        drawnShapeHistory.forEach((element) => {
-            const isShapeInCurrentPool =
-                tokenA.address ===
-                    (isTokenABase === element.pool.isTokenABase
-                        ? element.pool.tokenA
-                        : element.pool.tokenB) &&
-                tokenB.address ===
-                    (isTokenABase === element.pool.isTokenABase
-                        ? element.pool.tokenB
-                        : element.pool.tokenA);
-
-            if (isShapeInCurrentPool) {
-                if (element.type === 'FibRetracement') {
-                    const data = structuredClone(element.data);
-
-                    if (element.reverse) {
-                        [data[0], data[1]] = [data[1], data[0]];
-                    }
-
-                    if (
-                        checkFibonacciLocation(
-                            data,
-                            element.extraData,
-                            mouseX,
-                            mouseY,
-                            denomInBase,
-                            element.extendLeft,
-                            element.extendRight,
-                        )
-                    ) {
-                        resElement = element;
-                    }
-                }
-
-                if (element.type === 'Brush' || element.type === 'Angle') {
-                    const lineData: Array<lineData[]> = [];
-                    lineData.push(element.data);
-
-                    lineData.forEach((line) => {
-                        if (
-                            checkLineLocation(line, mouseX, mouseY, denomInBase)
-                        ) {
-                            resElement = element;
-                        }
-                    });
-                }
-
-                if (element.type === 'Rect' || element.type === 'DPRange') {
-                    if (element.type === 'DPRange' && scaleData) {
-                        const endY =
-                            element.data[1].denomInBase === denomInBase
-                                ? element.data[1].y
-                                : 1 / element.data[1].y;
-                        const startY =
-                            element.data[0].denomInBase === denomInBase
-                                ? element.data[0].y
-                                : 1 / element.data[0].y;
-
-                        const dpRangeTooltipData: lineData[] = [
-                            {
-                                x: scaleData.drawingLinearxScale.invert(
-                                    scaleData.drawingLinearxScale(
-                                        Math.min(
-                                            element.data[0].x,
-                                            element.data[1].x,
-                                        ) +
-                                            Math.abs(
-                                                element.data[0].x -
-                                                    element.data[1].x,
-                                            ) /
-                                                2,
-                                    ) - 90,
-                                ),
-                                y: scaleData.yScale.invert(
-                                    scaleData.yScale(endY) +
-                                        (endY > startY ? -15 : 15),
-                                ),
-                                denomInBase: element.data[0].denomInBase,
-                            },
-                            {
-                                x: scaleData.drawingLinearxScale.invert(
-                                    scaleData.drawingLinearxScale(
-                                        Math.min(
-                                            element.data[0].x,
-                                            element.data[1].x,
-                                        ) +
-                                            Math.abs(
-                                                element.data[0].x -
-                                                    element.data[1].x,
-                                            ) /
-                                                2,
-                                    ) + 90,
-                                ),
-                                y: scaleData.yScale.invert(
-                                    scaleData.yScale(endY) +
-                                        (endY > startY ? -80 : 80),
-                                ),
-                                denomInBase: element.data[1].denomInBase,
-                            },
-                        ];
-
-                        if (
-                            checkRectLocation(
-                                dpRangeTooltipData,
-                                mouseX,
-                                mouseY,
-                                true,
-                            )
-                        ) {
-                            resElement = element;
-                        }
-                    }
-                    if (
-                        checkRectLocation(element.data, mouseX, mouseY, false)
-                    ) {
-                        resElement = element;
-                    }
-                }
-
-                if (element.type === 'Ray') {
-                    if (
-                        checkRayLineLocation(
-                            element.data,
-                            mouseX,
-                            mouseY,
-                            denomInBase,
-                        )
-                    ) {
-                        resElement = element;
-                    }
-                }
-            }
-        });
-
-        if (resElement && scaleData) {
-            const selectedCircle = checkCircleLocation(
-                resElement,
-                mouseX,
-                mouseY,
-                scaleData,
-                denomInBase,
-            );
-
-            setHoveredDrawnShape({
-                data: resElement,
-                selectedCircle: selectedCircle,
-            });
-
-            setIsDragActive(true);
-        } else {
-            setIsDragActive(false);
-            setHoveredDrawnShape(undefined);
-        }
-    };
-
     useEffect(() => {
         if (userTransactionData) {
             const domainRight = d3.max(
@@ -5190,286 +4753,40 @@ export default function Chart(props: propsIF) {
         }
     }, [hoverOHTooltip]);
 
-    const orderHistoryHoverStatus = (
-        mouseX: number,
-        mouseY: number,
-        onClick: boolean,
-    ) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let resElement: any = undefined;
-
-        if (scaleData) {
-            if (userPositionsByPool) {
-                userPositionsByPool.positions.forEach((position) => {
-                    if (
-                        (position.positionLiq === 0 && showHistorical) ||
-                        (position.positionLiq > 0 && showLiquidity)
-                    ) {
-                        const rectLocation = [
-                            {
-                                x: position?.timeFirstMint * 1000,
-                                y: denomInBase
-                                    ? position.bidTickInvPriceDecimalCorrected
-                                    : position.bidTickPriceDecimalCorrected,
-                                denomInBase: denomInBase,
-                            },
-                            {
-                                x:
-                                    position.positionLiq > 0
-                                        ? new Date().getTime() +
-                                          5 * 86400 * 1000
-                                        : position?.latestUpdateTime * 1000,
-                                y: denomInBase
-                                    ? position.askTickInvPriceDecimalCorrected
-                                    : position.askTickPriceDecimalCorrected,
-                                denomInBase: denomInBase,
-                            },
-                        ];
-
-                        if (
-                            checkRectLocation(
-                                rectLocation,
-                                mouseX,
-                                mouseY,
-                                denomInBase,
-                            )
-                        ) {
-                            resElement = {
-                                id: position.positionId,
-                                type:
-                                    position.positionLiq === 0
-                                        ? 'historical'
-                                        : 'historicalLiq',
-                                order: position,
-                                totalValueUSD: position.totalValueUSD,
-                                tokenFlowDecimalCorrected: 0,
-                                mergedIds: [
-                                    {
-                                        hash: position.positionId,
-                                        type: 'historical',
-                                    },
-                                ],
-                            };
-                        }
-                    }
-                });
-            }
-
-            if (userLimitOrdersByPool && showLiquidity && userTransactionData) {
-                const userLimitOrderHistory = userTransactionData.filter(
-                    (transaction) =>
-                        transaction.entityType === 'limitOrder' &&
-                        transaction.changeType === 'mint',
-                );
-
-                const processLimitOrder = (entity: LimitOrderIF) => {
-                    const mintedInTick = userLimitOrderHistory.filter(
-                        (his) =>
-                            his.isBuy === entity.isBid &&
-                            his.bidTick === entity.bidTick &&
-                            his.askTick === entity.askTick,
-                    );
-
-                    if (mintedInTick?.length > 0) {
-                        return mintedInTick;
-                    }
-                };
-
-                userLimitOrdersByPool.limitOrders.forEach((limitOrder) => {
-                    if (limitOrder.claimableLiq === 0) {
-                        const mergedIds: Array<{ hash: string; type: string }> =
-                            [];
-
-                        const mintedInTick = processLimitOrder(limitOrder);
-
-                        mintedInTick?.forEach((mint) => {
-                            const isIn = mergedIds.find(
-                                (id) => id.hash === mint.txHash,
-                            );
-
-                            if (isIn === undefined) {
-                                mergedIds.push({
-                                    hash: mint.txHash,
-                                    type: mint.entityType,
-                                });
-                            }
-                        });
-
-                        const tokenFlowDecimalCorrected = limitOrder.isBid
-                            ? denomInBase
-                                ? limitOrder.originalPositionLiqBaseDecimalCorrected
-                                : limitOrder.expectedPositionLiqQuoteDecimalCorrected
-                            : denomInBase
-                              ? limitOrder.expectedPositionLiqBaseDecimalCorrected
-                              : limitOrder.originalPositionLiqQuoteDecimalCorrected;
-
-                        const swapOrderData = [
-                            {
-                                x: limitOrder.timeFirstMint * 1000,
-                                y: denomInBase
-                                    ? limitOrder.invLimitPriceDecimalCorrected
-                                    : limitOrder.limitPriceDecimalCorrected,
-                                denomInBase: denomInBase,
-                            },
-                        ];
-
-                        if (
-                            checkSwapLoation(
-                                swapOrderData,
-                                mouseX,
-                                mouseY,
-                                limitOrder.totalValueUSD,
-                                true,
-                            )
-                        ) {
-                            resElement = {
-                                id: limitOrder.limitOrderId,
-                                type: 'limitSwapLine',
-                                order: limitOrder,
-                                totalValueUSD: limitOrder.totalValueUSD,
-                                tokenFlowDecimalCorrected:
-                                    tokenFlowDecimalCorrected,
-                                mergedIds: mergedIds,
-                            };
-                        }
-
-                        const line = [
-                            ...swapOrderData,
-                            {
-                                x: new Date().getTime() + 5 * 86400 * 1000,
-                                y: denomInBase
-                                    ? limitOrder.invLimitPriceDecimalCorrected
-                                    : limitOrder.limitPriceDecimalCorrected,
-                                denomInBase: denomInBase,
-                            },
-                        ];
-
-                        if (
-                            checkLineLocation(line, mouseX, mouseY, denomInBase)
-                        ) {
-                            resElement = {
-                                id: limitOrder.limitOrderId,
-                                type: 'limitSwapLine',
-                                order: limitOrder,
-                                totalValueUSD: limitOrder.totalValueUSD,
-                                tokenFlowDecimalCorrected:
-                                    tokenFlowDecimalCorrected,
-                                mergedIds: mergedIds,
-                            };
-                        }
-                    }
-                });
-            }
-
-            if (filteredTransactionalData && showSwap && userTransactionData) {
-                filteredTransactionalData.forEach((element) => {
-                    if (showSwap) {
-                        const swapOrderData = [
-                            {
-                                x: element.order.txTime * 1000,
-                                y: denomInBase
-                                    ? element.order.swapInvPriceDecimalCorrected
-                                    : element.order.swapPriceDecimalCorrected,
-                                denomInBase: denomInBase,
-                            },
-                        ];
-
-                        if (
-                            checkSwapLoation(
-                                swapOrderData,
-                                mouseX,
-                                mouseY,
-                                element.totalValueUSD,
-                            )
-                        ) {
-                            resElement = {
-                                id: element.order.txId,
-                                type: element.order.entityType,
-                                order: element,
-                                totalValueUSD: element.totalValueUSD,
-                                tokenFlowDecimalCorrected:
-                                    element.tokenFlowDecimalCorrected,
-                                mergedIds: element.mergedIds,
-                            };
-                        }
-                    }
-                });
-            }
-
-            if (filteredLimitTxData && userTransactionData && showSwap) {
-                filteredLimitTxData.forEach((element) => {
-                    const swapOrderData = [
-                        {
-                            x: element.order.crossTime * 1000,
-                            y: denomInBase
-                                ? element.order.invLimitPriceDecimalCorrected
-                                : element.order.limitPriceDecimalCorrected,
-                            denomInBase: denomInBase,
-                        },
-                    ];
-
-                    if (
-                        checkSwapLoation(
-                            swapOrderData,
-                            mouseX,
-                            mouseY,
-                            element.totalValueUSD,
-                        )
-                    ) {
-                        resElement = {
-                            id: element.order.limitOrderId,
-                            type: 'claimableLimit',
-                            order: element,
-                            totalValueUSD: element.totalValueUSD,
-                            tokenFlowDecimalCorrected:
-                                element.tokenFlowDecimalCorrected,
-                            mergedIds: element.mergedIds,
-                        };
-                    }
-                });
-            }
-
-            if (resElement && scaleData) {
-                setHoveredOrderHistory(() => {
-                    return resElement;
-                });
-                setIsHoveredOrderHistory(true);
-                setHoverOHTooltip(true);
-            } else {
-                setHoveredOrderTooltipPlacement(() => undefined);
-                setHoveredOrderHistory(() => undefined);
-                setIsHoveredOrderHistory(false);
-                setHoverOHTooltip(false);
-            }
-
-            if (onClick && scaleData) {
-                if (resElement) {
-                    const shouldSelect = selectedOrderHistory
-                        ? resElement.id !== selectedOrderHistory?.id
-                        : true;
-
-                    shouldSelect &&
-                        handleCardClick(resElement.id, resElement.type);
-
-                    setSelectedOrderHistory(() => {
-                        return shouldSelect ? resElement : undefined;
-                    });
-
-                    setIsSelectedOrderHistory(() => {
-                        !shouldSelect && setCurrentTxActiveInTransactions('');
-                        return shouldSelect;
-                    });
-                } else {
-                    setCurrentTxActiveInTransactions('');
-                    setSelectedOrderHistory(undefined);
-                    setIsSelectedOrderHistory(false);
-                }
-            }
-
-            return { order: resElement, isClicked: onClick };
-        }
-        return undefined;
-    };
+    const { drawnShapesHoverStatus, orderHistoryHoverStatus } = useHoverStatus({
+        scaleData,
+        denomInBase,
+        isTokenABase,
+        tokenA,
+        tokenB,
+        drawnShapeHistory,
+        checkers: {
+            checkLineLocation,
+            checkRectLocation,
+            checkRayLineLocation,
+            checkSwapLoation,
+            checkFibonacciLocation,
+        },
+        setHoveredDrawnShape,
+        setIsDragActive,
+        showSwap,
+        showHistorical,
+        showLiquidity,
+        userPositionsByPool,
+        userLimitOrdersByPool,
+        userTransactionData,
+        filteredTransactionalData,
+        filteredLimitTxData,
+        selectedOrderHistory,
+        setHoveredOrderHistory,
+        setIsHoveredOrderHistory,
+        setHoverOHTooltip,
+        setHoveredOrderTooltipPlacement,
+        setSelectedOrderHistory,
+        setIsSelectedOrderHistory,
+        setCurrentTxActiveInTransactions,
+        handleCardClick,
+    });
 
     const candleOrVolumeDataHoverStatus = (mouseX: number, mouseY: number) => {
         const lastDate = scaleData?.xScale.invert(
@@ -5788,12 +5105,7 @@ export default function Chart(props: propsIF) {
                 scaleData?.volumeScale.domain(domain);
             }
         }
-    }, [
-        diffHashSigScaleData(scaleData, 'x'),
-        diffHashSigChart(visibleCandleData),
-        reset,
-        latest,
-    ]);
+    }, [scaleDataHashX, visibleCandleDataHash, reset, latest]);
 
     // Candle transactions
     useEffect(() => {
@@ -6455,7 +5767,7 @@ export default function Chart(props: propsIF) {
         isHoveredOrderHistory,
         diffHashSig(selectedOrderHistory),
         diffHashSig(hoveredOrderHistory),
-        diffHashSigScaleData(scaleData),
+        scaleDataHash,
         reset,
         denomInBase,
         showHistorical,
