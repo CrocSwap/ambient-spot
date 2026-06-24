@@ -316,6 +316,25 @@ input[type='number'] {
 scrollbar-color: transparent;
       } */
 }
+
+/* Stand-in for off-window rows in virtualized lists; height is set inline.
+   Must not flex so the preserved scroll range stays exact. The repeating
+   gradient paints faint row dividers at the real row pitch so that when a fast
+   fling outruns the rendered window, the exposed spacer reads as not-yet-drawn
+   rows instead of a blank flash. The --virtual-row-height variable should be
+   set on the scrollable container. */
+.virtual-list-spacer {
+    flex: 0 0 auto;
+    width: 100%;
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--virtual-row-height) - 1px),
+        var(--dark3) calc(var(--virtual-row-height) - 1px),
+        var(--dark3) var(--virtual-row-height)
+    );
+}
+
 @media only screen and (min-width: 1280px) {
     .content-container {
         overflow-y: auto;
