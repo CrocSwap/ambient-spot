@@ -128,6 +128,13 @@ function Transactions(props: propsIF) {
     const txDataToDisplay: TransactionIF[] = isCandleSelected
         ? candleTransactionData
         : transactionData;
+    const indexedTransactionHashSet = useMemo(
+        () =>
+            new Set(
+                txDataToDisplay.map((tx) => tx.txHash.trim().toLowerCase()),
+            ),
+        [txDataToDisplay],
+    );
 
     const [infiniteScrollLock, setInfiniteScrollLock] =
         useState<boolean>(false);
@@ -193,7 +200,12 @@ function Transactions(props: propsIF) {
     const unindexedNonFailedTransactions = transactionsByType.filter(
         (tx) =>
             !tx.isRemoved &&
-            unindexedNonFailedSessionTransactionHashes.includes(tx.txHash) &&
+            !indexedTransactionHashSet.has(tx.txHash.trim().toLowerCase()) &&
+            unindexedNonFailedSessionTransactionHashes.some(
+                (hash) =>
+                    hash.trim().toLowerCase() ===
+                    tx.txHash.trim().toLowerCase(),
+            ) &&
             tx.txDetails?.baseAddress.toLowerCase() ===
                 baseToken.address.toLowerCase() &&
             tx.txDetails?.quoteAddress.toLowerCase() ===
