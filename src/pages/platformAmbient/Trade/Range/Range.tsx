@@ -151,6 +151,12 @@ function Range() {
     const [tokenBInputQty, setTokenBInputQty] = useState<string>(
         !isTokenAPrimary ? primaryQuantity : '',
     );
+    const [twoTokenInputSnapshot, setTwoTokenInputSnapshot] = useState<{
+        tokenAInputQty: string;
+        tokenBInputQty: string;
+        primaryQuantity: string;
+        isTokenAPrimary: boolean;
+    } | null>(null);
 
     const tokenAInputQtyNoExponentString = useMemo(() => {
         try {
@@ -491,6 +497,8 @@ function Range() {
         userHasTokenB &&
         topUpHasSingleDeficit &&
         topUpAffordable;
+    const canSwitchToTopUp =
+        canOfferTopUp || (isZapMode && twoTokenInputSnapshot !== null);
 
     const topUpDeficientToken = topUpDeficientIsA ? tokenA : tokenB;
     const topUpSurplusToken = topUpDeficientIsA ? tokenB : tokenA;
@@ -1571,24 +1579,43 @@ function Range() {
         return s;
     };
 
-    const depositModeButtonStyle: React.CSSProperties = {
-        background: 'transparent',
-        border: 'none',
-        color: 'var(--accent1)',
-        cursor: 'pointer',
+    const depositModeButtonStyle = (
+        isActive: boolean,
+    ): React.CSSProperties => ({
+        background: isActive ? 'var(--accent1)' : 'transparent',
+        border: `1px solid ${isActive ? 'var(--accent1)' : 'var(--dark3)'}`,
+        borderRadius: 'var(--border-radius)',
+        color: isActive ? 'var(--text1)' : 'var(--text2)',
+        cursor: isActive ? 'default' : 'pointer',
         fontSize: 'var(--body-size)',
-        padding: '2px 8px',
-    };
+        fontWeight: isActive ? 500 : 400,
+        padding: '5px 8px',
+        transition: 'var(--transition)',
+    });
 
     // switch between the normal, single-token, and top-up deposit modes. The
     // two-token entry is preserved for 'balanced'/'topup' (top-up uses it
     // directly); entering 'single' seeds the zap input from it and clears the
     // two-token fields the single UI replaces.
     const switchDepositMode = (mode: 'balanced' | 'single' | 'topup') => {
+        if (mode === depositMode) return;
         if (mode === 'single') {
+            setTwoTokenInputSnapshot({
+                tokenAInputQty,
+                tokenBInputQty,
+                primaryQuantity,
+                isTokenAPrimary,
+            });
             setZapInputQty(deriveZapQtyFromTwoTokenEntry());
             clearTokenInputs();
         } else {
+            if (mode === 'topup' && twoTokenInputSnapshot) {
+                setTokenAInputQty(twoTokenInputSnapshot.tokenAInputQty);
+                setTokenBInputQty(twoTokenInputSnapshot.tokenBInputQty);
+                setPrimaryQuantity(twoTokenInputSnapshot.primaryQuantity);
+                setIsTokenAPrimary(twoTokenInputSnapshot.isTokenAPrimary);
+                setTwoTokenInputSnapshot(null);
+            }
             setZapInputQty('');
         }
         setDepositMode(mode);
@@ -1704,45 +1731,41 @@ function Range() {
             }
             input={
                 <>
-                    {(canOfferZap || canOfferTopUp) && (
+                    {(canOfferZap || canSwitchToTopUp) && (
                         <div
+                            role='group'
+                            aria-label='Deposit method'
                             style={{
                                 display: 'flex',
                                 justifyContent: 'center',
                                 flexWrap: 'wrap',
-                                gap: 8,
+                                gap: 6,
+                                padding: 4,
+                                border: '1px solid var(--dark3)',
+                                borderRadius: 'var(--border-radius)',
+                                background: 'var(--dark2)',
                             }}
                         >
                             {/* top-up: keep both tokens, swap only the shortfall */}
-                            {depositMode !== 'topup' && canOfferTopUp && (
+                            {canSwitchToTopUp && (
                                 <button
                                     type='button'
+                                    aria-pressed={isTopUpMode}
                                     onClick={() => switchDepositMode('topup')}
-                                    style={depositModeButtonStyle}
+                                    style={depositModeButtonStyle(isTopUpMode)}
                                 >
                                     Swap the difference
                                 </button>
                             )}
                             {/* single-token deposit */}
-                            {depositMode !== 'single' && canOfferZap && (
+                            {canOfferZap && (
                                 <button
                                     type='button'
+                                    aria-pressed={isZapMode}
                                     onClick={() => switchDepositMode('single')}
-                                    style={depositModeButtonStyle}
+                                    style={depositModeButtonStyle(isZapMode)}
                                 >
                                     Deposit with one token
-                                </button>
-                            )}
-                            {/* back to the normal two-token deposit */}
-                            {depositMode !== 'balanced' && (
-                                <button
-                                    type='button'
-                                    onClick={() =>
-                                        switchDepositMode('balanced')
-                                    }
-                                    style={depositModeButtonStyle}
-                                >
-                                    Use both tokens
                                 </button>
                             )}
                         </div>
