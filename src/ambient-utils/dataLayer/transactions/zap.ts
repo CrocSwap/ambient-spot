@@ -6,6 +6,12 @@ import {
     toDisplayQty,
 } from '@crocswap-libs/sdk';
 
+// Default over-swap buffer (percent) so the minted counterpart side is fully
+// covered despite swap fee/price impact; any excess returns as dust. Exported
+// so the pre-flight display estimate can apply the same buffer and stay in
+// sync with what the transaction actually does.
+export const ZAP_BUFFER_PERCENT = 0.5;
+
 export interface ZapSplitParams {
     crocEnv: CrocEnv;
     // the two pool tokens, in any order, used to resolve base/quote
@@ -51,7 +57,7 @@ export async function computeZapSplit(
         inputTokenQty,
         isAmbient,
         tick,
-        bufferPercent = 0.5,
+        bufferPercent = ZAP_BUFFER_PERCENT,
     } = params;
 
     const pool = crocEnv.pool(tokenA, tokenB);

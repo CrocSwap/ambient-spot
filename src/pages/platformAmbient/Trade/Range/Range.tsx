@@ -21,6 +21,7 @@ import ZapStepper, {
     ZapStep,
     ZapStepStatus,
 } from '../../../../components/Trade/Range/RangeTokenInput/ZapStepper';
+import { ZAP_BUFFER_PERCENT } from '../../../../ambient-utils/dataLayer/transactions/zap';
 import SubmitTransaction from '../../../../components/Trade/TradeModules/SubmitTransaction/SubmitTransaction';
 import TradeModuleHeader from '../../../../components/Trade/TradeModules/TradeModuleHeader';
 import { TradeModuleSkeleton } from '../../../../components/Trade/TradeModules/TradeModuleSkeleton';
@@ -496,11 +497,29 @@ function Range() {
         const swapValueFraction = zapInputIsBase
             ? 1 - baseValueFraction
             : baseValueFraction;
+        // apply the same over-swap buffer the tx builder uses so the estimate
+        // matches what actually gets minted (excess counterpart returns as dust)
+        const swapFraction = Math.min(
+            swapValueFraction + ZAP_BUFFER_PERCENT / 100,
+            1,
+        );
 
-        const inputStayingAmount = (1 - swapValueFraction) * inputQtyNum;
-        const swappedInputAmount = swapValueFraction * inputQtyNum;
+        const inputStayingAmount = (1 - swapFraction) * inputQtyNum;
+        const swappedInputAmount = swapFraction * inputQtyNum;
+        // the position mints a BALANCED amount against the primary side, not the
+        // full bought counterpart — derive the counterpart from the primary
+        // using the pool's value split so both sides are consistent
+        const primaryValueFraction = zapInputIsBase
+            ? baseValueFraction
+            : 1 - baseValueFraction;
+        const counterpartValueFraction = 1 - primaryValueFraction;
         const counterpartAmount =
-            (swappedInputAmount * inputUsd) / counterpartUsd;
+            primaryValueFraction > 0
+                ? (inputStayingAmount *
+                      inputUsd *
+                      (counterpartValueFraction / primaryValueFraction)) /
+                  counterpartUsd
+                : 0;
 
         return {
             inputStayingAmount,

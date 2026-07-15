@@ -164,7 +164,9 @@ function ConfirmRangeModal(props: propsIF) {
                         </FlexContainer>
                         <Text fontSize='body'>
                             {memoTokenAQty !== ''
-                                ? tokenACharacter + memoTokenAQty
+                                ? (zapDescription ? '≈ ' : '') +
+                                  tokenACharacter +
+                                  memoTokenAQty
                                 : '0'}
                         </Text>
                     </FlexContainer>
@@ -180,7 +182,9 @@ function ConfirmRangeModal(props: propsIF) {
                         </FlexContainer>
                         <Text fontSize='body'>
                             {memoTokenBQty
-                                ? tokenBCharacter + memoTokenBQty
+                                ? (zapDescription ? '≈ ' : '') +
+                                  tokenBCharacter +
+                                  memoTokenBQty
                                 : '0'}
                         </Text>
                     </FlexContainer>
