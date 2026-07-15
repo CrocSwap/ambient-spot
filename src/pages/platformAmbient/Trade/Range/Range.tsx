@@ -1,6 +1,8 @@
 import {
+    concDepositBalance,
     concDepositSkew,
     fromDisplayQty,
+    tickToPrice,
     toDisplayQty,
 } from '@crocswap-libs/sdk';
 import { memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -8,11 +10,17 @@ import Button from '../../../../components/Form/Button';
 import { useModal } from '../../../../components/Global/Modal/useModal';
 
 import { useCreateRangePosition } from '../../../../App/hooks/useCreateRangePosition';
+import { useCreateZapPosition } from '../../../../App/hooks/useCreateZapPosition';
 import { useSimulatedIsPoolInitialized } from '../../../../App/hooks/useSimulatedIsPoolInitialized';
 import RangeBounds from '../../../../components/Global/RangeBounds/RangeBounds';
 import ConfirmRangeModal from '../../../../components/Trade/Range/ConfirmRangeModal/ConfirmRangeModal';
 import RangeExtraInfo from '../../../../components/Trade/Range/RangeExtraInfo/RangeExtraInfo';
 import RangeTokenInput from '../../../../components/Trade/Range/RangeTokenInput/RangeTokenInput';
+import RangeZapTokenInput from '../../../../components/Trade/Range/RangeTokenInput/RangeZapTokenInput';
+import ZapStepper, {
+    ZapStep,
+    ZapStepStatus,
+} from '../../../../components/Trade/Range/RangeTokenInput/ZapStepper';
 import SubmitTransaction from '../../../../components/Trade/TradeModules/SubmitTransaction/SubmitTransaction';
 import TradeModuleHeader from '../../../../components/Trade/TradeModules/TradeModuleHeader';
 import { TradeModuleSkeleton } from '../../../../components/Trade/TradeModules/TradeModuleSkeleton';
@@ -76,7 +84,7 @@ function Range() {
     const {
         poolPriceDisplay,
         dailyVol,
-        poolData: { poolAmbientAprEstimate },
+        poolData: { poolAmbientAprEstimate, basePrice, quotePrice },
     } = useContext(PoolContext);
     const {
         advancedHighTick,
@@ -107,6 +115,8 @@ function Range() {
         tokenADexBalance,
         tokenBDexBalance,
         isTokenABase,
+        isTokenAEth,
+        isTokenBEth,
         baseToken: { decimals: baseTokenDecimals },
         quoteToken: { decimals: quoteTokenDecimals },
     } = useContext(TradeTokenContext);
@@ -379,6 +389,209 @@ function Range() {
         ? false
         : rangeSpanAboveCurrentPrice < 0 || rangeSpanBelowCurrentPrice < 0;
     const isInvalidRange = !isAmbient && defaultHighTick <= defaultLowTick;
+
+    // --- Single-token ("zap") deposit ---------------------------------------
+    // When a range needs both tokens but the user holds only one, offer a
+    // single-token deposit that swaps the correct portion and mints a balanced
+    // position atomically (see useCreateZapPosition / createZapPositionTx).
+    const [isZapMode, setIsZapMode] = useState(false);
+    const [zapInputQty, setZapInputQty] = useState('');
+    // two-step ("zap") submission progress for the stepper UI
+    const [zapStep, setZapStep] = useState<'swap' | 'mint' | null>(null);
+    const [isZapComplete, setIsZapComplete] = useState(false);
+    // which pool token is being deposited (null = default to the held token)
+    const [zapInputSideAOverride, setZapInputSideAOverride] = useState<
+        boolean | null
+    >(null);
+
+    // a token counts as "held" if the user has it in their wallet OR their
+    // exchange (surplus) balance — either can fund the deposit
+    const userHasTokenA =
+        fromDisplayQty(tokenABalance || '0', tokenA.decimals) +
+            fromDisplayQty(tokenADexBalance || '0', tokenA.decimals) >
+        0n;
+    const userHasTokenB =
+        fromDisplayQty(tokenBBalance || '0', tokenB.decimals) +
+            fromDisplayQty(tokenBDexBalance || '0', tokenB.decimals) >
+        0n;
+    // both inputs enabled => the range straddles the current price and needs
+    // both tokens (covers in-range concentrated and ambient positions)
+    const rangeNeedsBothTokens =
+        !isTokenAInputDisabled && !isTokenBInputDisabled;
+    const canOfferZap =
+        isPoolInitialized &&
+        !isInvalidRange &&
+        rangeNeedsBothTokens &&
+        userHasTokenA !== userHasTokenB;
+
+    // input token defaults to whichever token the user holds
+    const zapInputIsTokenA = zapInputSideAOverride ?? userHasTokenA;
+    const zapInputToken = zapInputIsTokenA ? tokenA : tokenB;
+    const zapCounterpartToken = zapInputIsTokenA ? tokenB : tokenA;
+    const zapInputBalance = zapInputIsTokenA ? tokenABalance : tokenBBalance;
+    const zapInputDexBalance = zapInputIsTokenA
+        ? tokenADexBalance
+        : tokenBDexBalance;
+    const isWithdrawZapFromDexChecked = zapInputIsTokenA
+        ? isWithdrawTokenAFromDexChecked
+        : isWithdrawTokenBFromDexChecked;
+    const zapInputIsBase =
+        (zapInputIsTokenA && isTokenABase) ||
+        (!zapInputIsTokenA && !isTokenABase);
+    const zapInputUsdValue = zapInputIsBase ? basePrice : quotePrice;
+
+    const zapInputQtyNoExponentString = useMemo(() => {
+        try {
+            return zapInputQty.includes('e')
+                ? toDisplayQty(
+                      fromDisplayQty(
+                          zapInputQty || '0',
+                          zapInputToken.decimals,
+                      ),
+                      zapInputToken.decimals,
+                  )
+                : zapInputQty;
+        } catch (error) {
+            console.log({ error });
+            return '0';
+        }
+    }, [zapInputQty, zapInputToken.decimals]);
+
+    // leave zap mode whenever it is no longer applicable, but never mid-flow:
+    // once the swap step confirms the wallet holds both tokens (so canOfferZap
+    // flips false), and tearing down zap mode there would hide the stepper and
+    // abort the pending mint. Stay in zap mode until the flow is reset.
+    useEffect(() => {
+        if (!canOfferZap && isZapMode && !showConfirmation) {
+            setIsZapMode(false);
+            setZapInputQty('');
+        }
+    }, [canOfferZap, isZapMode, showConfirmation]);
+
+    // Estimated result of a zap deposit: how much of the input is swapped into
+    // the counterpart, and the resulting position amounts. Uses the same
+    // base/quote balance the tx builder targets (concDepositBalance) and USD
+    // prices to value the swapped portion. Estimate only — excludes swap fees
+    // and price impact.
+    const zapSplit = useMemo(() => {
+        const inputQtyNum = parseFloat(zapInputQtyNoExponentString);
+        if (
+            !isZapMode ||
+            poolPriceNonDisplay === undefined ||
+            !(inputQtyNum > 0)
+        )
+            return null;
+        const inputUsd = zapInputUsdValue;
+        const counterpartUsd = zapInputIsBase ? quotePrice : basePrice;
+        if (!inputUsd || !counterpartUsd) return null;
+
+        const baseValueFraction = isAmbient
+            ? 0.5
+            : concDepositBalance(
+                  poolPriceNonDisplay,
+                  tickToPrice(defaultLowTick),
+                  tickToPrice(defaultHighTick),
+              );
+        // fraction of the input's value that must be swapped to the counterpart
+        const swapValueFraction = zapInputIsBase
+            ? 1 - baseValueFraction
+            : baseValueFraction;
+
+        const inputStayingAmount = (1 - swapValueFraction) * inputQtyNum;
+        const swappedInputAmount = swapValueFraction * inputQtyNum;
+        const counterpartAmount =
+            (swappedInputAmount * inputUsd) / counterpartUsd;
+
+        return {
+            inputStayingAmount,
+            swappedInputAmount,
+            counterpartAmount,
+        };
+    }, [
+        isZapMode,
+        zapInputQtyNoExponentString,
+        poolPriceNonDisplay,
+        zapInputUsdValue,
+        zapInputIsBase,
+        basePrice,
+        quotePrice,
+        isAmbient,
+        defaultLowTick,
+        defaultHighTick,
+    ]);
+
+    // display strings for the confirmation modal / token rows
+    const zapPositionTokenAQty = zapSplit
+        ? getFormattedNumber({
+              value: zapInputIsTokenA
+                  ? zapSplit.inputStayingAmount
+                  : zapSplit.counterpartAmount,
+              isInput: true,
+          })
+        : zapInputIsTokenA
+          ? zapInputQtyNoExponentString
+          : '';
+    const zapPositionTokenBQty = zapSplit
+        ? getFormattedNumber({
+              value: zapInputIsTokenA
+                  ? zapSplit.counterpartAmount
+                  : zapSplit.inputStayingAmount,
+              isInput: true,
+          })
+        : !zapInputIsTokenA
+          ? zapInputQtyNoExponentString
+          : '';
+    const zapSwapDescription = zapSplit
+        ? `≈ ${getFormattedNumber({
+              value: zapSplit.swappedInputAmount,
+              isInput: true,
+          })} ${zapInputToken.symbol} will first be swapped to ${
+              zapCounterpartToken.symbol
+          }, then this position is minted with:`
+        : undefined;
+
+    // Two-step ("zap") progress for the stepper UI: swap, then mint. Renders as
+    // a plan preview before submission and a live progress indicator during the
+    // two transactions.
+    const zapSteps: ZapStep[] = useMemo(() => {
+        const swapStatus: ZapStepStatus =
+            txError && zapStep === 'swap'
+                ? 'error'
+                : zapStep === 'mint' || isZapComplete
+                  ? 'complete'
+                  : zapStep === 'swap'
+                    ? 'active'
+                    : 'upcoming';
+        const mintStatus: ZapStepStatus =
+            txError && zapStep === 'mint'
+                ? 'error'
+                : isZapComplete
+                  ? 'complete'
+                  : zapStep === 'mint'
+                    ? 'active'
+                    : 'upcoming';
+        return [
+            {
+                label: `Swap ${zapInputToken.symbol} → ${zapCounterpartToken.symbol}`,
+                status: swapStatus,
+            },
+            {
+                label: `Mint ${tokenA.symbol} / ${tokenB.symbol} position`,
+                status: mintStatus,
+            },
+        ];
+    }, [
+        zapStep,
+        isZapComplete,
+        txError,
+        zapInputToken.symbol,
+        zapCounterpartToken.symbol,
+        tokenA.symbol,
+        tokenB.symbol,
+    ]);
+    const zapStepperElement = isZapMode ? (
+        <ZapStepper steps={zapSteps} />
+    ) : null;
 
     const depositSkew = useMemo(
         () =>
@@ -984,11 +1197,34 @@ function Range() {
         setShowConfirmation(false);
         setTxError(undefined);
         setNewRangeTransactionHash('');
+        setZapStep(null);
+        setIsZapComplete(false);
     };
     const { createRangePosition } = useCreateRangePosition();
+    const { createZapPosition } = useCreateZapPosition();
     const sendTransaction = async () => {
         if (!crocEnv) return;
         setShowConfirmation(true);
+
+        if (isZapMode) {
+            createZapPosition({
+                slippageTolerancePercentage,
+                isAmbient,
+                inputTokenAddress: zapInputToken.address,
+                inputTokenQty: zapInputQtyNoExponentString,
+                isWithdrawFromDexChecked: isWithdrawZapFromDexChecked,
+                defaultLowTick,
+                defaultHighTick,
+                isAdd,
+                setNewRangeTransactionHash,
+                setTxError,
+                resetConfirmation,
+                activeRangeTxHash,
+                setZapStep,
+                setIsTxCompletedRange: setIsZapComplete,
+            });
+            return;
+        }
 
         createRangePosition({
             slippageTolerancePercentage,
@@ -1066,6 +1302,48 @@ function Range() {
         activeRangeTxHash,
         clearTokenInputs,
     );
+
+    // validation for the single-token (zap) input: only the deposited token is
+    // checked against its own balance, so a missing counterpart no longer
+    // blocks the mint.
+    const zapSurplusMinusRemainderNum =
+        fromDisplayQty(zapInputDexBalance || '0', zapInputToken.decimals) -
+        fromDisplayQty(
+            zapInputQtyNoExponentString || '0',
+            zapInputToken.decimals,
+        );
+    const zapQtyCoveredByWalletBalance = isWithdrawZapFromDexChecked
+        ? zapSurplusMinusRemainderNum < 0
+            ? zapSurplusMinusRemainderNum * -1n
+            : 0n
+        : fromDisplayQty(
+              zapInputQtyNoExponentString || '0',
+              zapInputToken.decimals,
+          );
+    const {
+        tokenAllowed: zapTokenAllowed,
+        rangeButtonErrorMessage: zapButtonErrorMessage,
+    } = useHandleRangeButtonMessage(
+        zapInputToken,
+        zapInputQtyNoExponentString,
+        zapInputBalance,
+        zapInputDexBalance,
+        false,
+        isWithdrawZapFromDexChecked,
+        isPoolInitialized,
+        zapQtyCoveredByWalletBalance,
+        amountToReduceNativeTokenQty,
+        activeRangeTxHash,
+        () => setZapInputQty(''),
+    );
+
+    // effective button state, accounting for zap vs two-token mode
+    const effectiveTokenAllowed = isZapMode
+        ? zapTokenAllowed
+        : tokenAAllowed && tokenBAllowed;
+    const effectiveButtonErrorMessage = isZapMode
+        ? zapButtonErrorMessage
+        : rangeButtonErrorMessageTokenA || rangeButtonErrorMessageTokenB;
 
     const { approve, isApprovalPending } = useApprove();
 
@@ -1163,30 +1441,88 @@ function Range() {
                 />
             }
             input={
-                <RangeTokenInput
-                    isAmbient={isAmbient}
-                    depositSkew={depositSkew}
-                    poolPriceNonDisplay={poolPriceNonDisplay}
-                    isWithdrawFromDexChecked={{
-                        tokenA: isWithdrawTokenAFromDexChecked,
-                        tokenB: isWithdrawTokenBFromDexChecked,
-                    }}
-                    isOutOfRange={isOutOfRange}
-                    tokenAInputQty={{
-                        value: tokenAInputQty,
-                        set: setTokenAInputQty,
-                    }}
-                    tokenBInputQty={{
-                        value: tokenBInputQty,
-                        set: setTokenBInputQty,
-                    }}
-                    toggleDexSelection={toggleDexSelection}
-                    isInputDisabled={{
-                        tokenA: isTokenAInputDisabled,
-                        tokenB: isTokenBInputDisabled,
-                    }}
-                    amountToReduceNativeTokenQty={amountToReduceNativeTokenQty}
-                />
+                <>
+                    {canOfferZap && (
+                        <button
+                            type='button'
+                            onClick={() => {
+                                setIsZapMode((prev) => !prev);
+                                clearTokenInputs();
+                                setZapInputQty('');
+                            }}
+                            style={{
+                                alignSelf: 'center',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--accent1)',
+                                cursor: 'pointer',
+                                fontSize: 'var(--body-size)',
+                                padding: '2px 8px',
+                            }}
+                        >
+                            {isZapMode
+                                ? 'Use both tokens'
+                                : 'Deposit with one token'}
+                        </button>
+                    )}
+                    {isZapMode ? (
+                        <RangeZapTokenInput
+                            token={zapInputToken}
+                            counterpartToken={zapCounterpartToken}
+                            tokenBalance={zapInputBalance}
+                            tokenDexBalance={zapInputDexBalance}
+                            isTokenEth={
+                                zapInputIsTokenA ? isTokenAEth : isTokenBEth
+                            }
+                            isDexSelected={isWithdrawZapFromDexChecked}
+                            toggleDexSelection={() =>
+                                toggleDexSelection(zapInputIsTokenA ? 'A' : 'B')
+                            }
+                            qty={{
+                                value: zapInputQty,
+                                set: setZapInputQty,
+                            }}
+                            reverseTokens={() => {
+                                setZapInputQty('');
+                                setZapInputSideAOverride(!zapInputIsTokenA);
+                            }}
+                            usdValue={zapInputUsdValue}
+                            amountToReduceNativeTokenQty={
+                                amountToReduceNativeTokenQty
+                            }
+                            estimatedCounterpartQty={
+                                zapSplit?.counterpartAmount ?? null
+                            }
+                        />
+                    ) : (
+                        <RangeTokenInput
+                            isAmbient={isAmbient}
+                            depositSkew={depositSkew}
+                            poolPriceNonDisplay={poolPriceNonDisplay}
+                            isWithdrawFromDexChecked={{
+                                tokenA: isWithdrawTokenAFromDexChecked,
+                                tokenB: isWithdrawTokenBFromDexChecked,
+                            }}
+                            isOutOfRange={isOutOfRange}
+                            tokenAInputQty={{
+                                value: tokenAInputQty,
+                                set: setTokenAInputQty,
+                            }}
+                            tokenBInputQty={{
+                                value: tokenBInputQty,
+                                set: setTokenBInputQty,
+                            }}
+                            toggleDexSelection={toggleDexSelection}
+                            isInputDisabled={{
+                                tokenA: isTokenAInputDisabled,
+                                tokenB: isTokenBInputDisabled,
+                            }}
+                            amountToReduceNativeTokenQty={
+                                amountToReduceNativeTokenQty
+                            }
+                        />
+                    )}
+                </>
             }
             inputOptions={
                 <RangeBounds
@@ -1201,15 +1537,23 @@ function Range() {
                 isOpen ? (
                     <ConfirmRangeModal
                         tokenAQty={
-                            isTokenAInputDisabled
-                                ? ''
-                                : tokenAInputQtyNoExponentString
+                            isZapMode
+                                ? zapPositionTokenAQty
+                                : isTokenAInputDisabled
+                                  ? ''
+                                  : tokenAInputQtyNoExponentString
                         }
                         tokenBQty={
-                            isTokenBInputDisabled
-                                ? ''
-                                : tokenBInputQtyNoExponentString
+                            isZapMode
+                                ? zapPositionTokenBQty
+                                : isTokenBInputDisabled
+                                  ? ''
+                                  : tokenBInputQtyNoExponentString
                         }
+                        zapDescription={
+                            isZapMode ? zapSwapDescription : undefined
+                        }
+                        zapStepper={isZapMode ? zapStepperElement : undefined}
                         spotPriceDisplay={getFormattedNumber({
                             value: displayPriceWithDenom,
                         })}
@@ -1249,7 +1593,7 @@ function Range() {
                     style={{ textTransform: 'none' }}
                     title={
                         areBothAckd
-                            ? tokenAAllowed && tokenBAllowed
+                            ? effectiveTokenAllowed
                                 ? bypassConfirmRange.isEnabled
                                     ? isAdd
                                         ? `Add ${
@@ -1259,8 +1603,7 @@ function Range() {
                                               isAmbient ? 'Ambient' : ''
                                           } Liquidity`
                                     : 'Confirm'
-                                : rangeButtonErrorMessageTokenA ||
-                                  rangeButtonErrorMessageTokenB
+                                : effectiveButtonErrorMessage
                             : 'Acknowledge'
                     }
                     action={
@@ -1272,7 +1615,7 @@ function Range() {
                     }
                     disabled={
                         (!isPoolInitialized ||
-                            !(tokenAAllowed && tokenBAllowed) ||
+                            !effectiveTokenAllowed ||
                             isInvalidRange) &&
                         areBothAckd
                     }
@@ -1281,32 +1624,43 @@ function Range() {
             }
             bypassConfirm={
                 showConfirmation && bypassConfirmRange.isEnabled ? (
-                    <SubmitTransaction
-                        type='Range'
-                        newTransactionHash={newRangeTransactionHash}
-                        txError={txError}
-                        resetConfirmation={resetConfirmation}
-                        sendTransaction={sendTransaction}
-                        transactionPendingDisplayString={
-                            isAdd
-                                ? `Adding ${tokenA.symbol} and ${tokenB.symbol}`
-                                : `Minting a Position with ${
-                                      !isTokenAInputDisabled
-                                          ? tokenA.symbol
-                                          : ''
-                                  } ${
-                                      !isTokenAInputDisabled &&
-                                      !isTokenBInputDisabled
-                                          ? 'and'
-                                          : ''
-                                  } ${
-                                      !isTokenBInputDisabled
-                                          ? tokenB.symbol
-                                          : ''
-                                  }
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8,
+                        }}
+                    >
+                        {zapStepperElement}
+                        <SubmitTransaction
+                            type='Range'
+                            newTransactionHash={newRangeTransactionHash}
+                            txError={txError}
+                            resetConfirmation={resetConfirmation}
+                            sendTransaction={sendTransaction}
+                            transactionPendingDisplayString={
+                                isZapMode
+                                    ? `Swapping ${zapInputToken.symbol}, then minting your ${tokenA.symbol} / ${tokenB.symbol} position`
+                                    : isAdd
+                                      ? `Adding ${tokenA.symbol} and ${tokenB.symbol}`
+                                      : `Minting a Position with ${
+                                            !isTokenAInputDisabled
+                                                ? tokenA.symbol
+                                                : ''
+                                        } ${
+                                            !isTokenAInputDisabled &&
+                                            !isTokenBInputDisabled
+                                                ? 'and'
+                                                : ''
+                                        } ${
+                                            !isTokenBInputDisabled
+                                                ? tokenB.symbol
+                                                : ''
+                                        }
                                      `
-                        }
-                    />
+                            }
+                        />
+                    </div>
                 ) : undefined
             }
             approveButton={

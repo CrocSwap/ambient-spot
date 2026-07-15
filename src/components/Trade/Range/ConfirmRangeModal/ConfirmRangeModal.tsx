@@ -34,6 +34,10 @@ interface propsIF {
     tokenBQty: string;
     onClose: () => void;
     slippageTolerance: number;
+    // for single-token ("zap") deposits: explains the preliminary swap
+    zapDescription?: string;
+    // for single-token ("zap") deposits: two-step swap→mint progress stepper
+    zapStepper?: React.ReactNode;
 }
 
 function ConfirmRangeModal(props: propsIF) {
@@ -55,6 +59,8 @@ function ConfirmRangeModal(props: propsIF) {
         tokenBQty,
         onClose = () => null,
         slippageTolerance,
+        zapDescription,
+        zapStepper,
     } = props;
 
     const { tokenA, tokenB, isDenomBase } = useContext(TradeDataContext);
@@ -135,6 +141,15 @@ function ConfirmRangeModal(props: propsIF) {
                     isAmbient={isAmbient}
                 />
             </FlexContainer>
+            {zapDescription && (
+                <Text
+                    fontSize='body'
+                    color='text2'
+                    style={{ padding: '4px 0' }}
+                >
+                    {zapDescription}
+                </Text>
+            )}
             <FeeTierDisplay>
                 <GridContainer gap={12}>
                     <FlexContainer justifyContent='space-between'>
@@ -217,6 +232,7 @@ function ConfirmRangeModal(props: propsIF) {
             initiate={sendTransaction}
             resetConfirmation={resetConfirmation}
             onClose={onClose}
+            extraNotes={showConfirmation ? zapStepper : undefined}
         />
     );
 }
