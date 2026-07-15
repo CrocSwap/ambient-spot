@@ -391,11 +391,20 @@ function Range() {
         : rangeSpanAboveCurrentPrice < 0 || rangeSpanBelowCurrentPrice < 0;
     const isInvalidRange = !isAmbient && defaultHighTick <= defaultLowTick;
 
-    // --- Single-token ("zap") deposit ---------------------------------------
-    // When a range needs both tokens but the user holds only one, offer a
-    // single-token deposit that swaps the correct portion and mints a balanced
-    // position atomically (see useCreateZapPosition / createZapPositionTx).
-    const [isZapMode, setIsZapMode] = useState(false);
+    // --- Swap-assisted deposits ---------------------------------------------
+    // Two ways to fund an in-range position that needs both tokens when the
+    // user's balances don't already cover a balanced entry:
+    //   'single' — deposit ONE token; a swap converts the correct portion and
+    //              the position mints balanced from it (see useCreateZapPosition)
+    //   'topup'  — keep the two-token entry, use the balances the user already
+    //              holds of BOTH tokens, and swap only the shortfall on the
+    //              deficient side (see createTopUpPosition)
+    // 'balanced' is the normal two-token deposit with no swap.
+    const [depositMode, setDepositMode] = useState<
+        'balanced' | 'single' | 'topup'
+    >('balanced');
+    const isZapMode = depositMode === 'single';
+    const isTopUpMode = depositMode === 'topup';
     const [zapInputQty, setZapInputQty] = useState('');
     // two-step ("zap") submission progress for the stepper UI
     const [zapStep, setZapStep] = useState<'swap' | 'mint' | null>(null);
@@ -419,14 +428,89 @@ function Range() {
     // both tokens (covers in-range concentrated and ambient positions)
     const rangeNeedsBothTokens =
         !isTokenAInputDisabled && !isTokenBInputDisabled;
-    const canOfferZap =
+    // the user holds exactly one of the two tokens (the other balance is zero)
+    const userHoldsExactlyOneToken = userHasTokenA !== userHasTokenB;
+    // a zap is possible whenever the range needs both tokens and the user holds
+    // at least one of them to fund the deposit. Whether the toggle is actually
+    // offered (canOfferZap) additionally requires either a single-token wallet
+    // or a two-token entry that overflows a balance — computed below, once the
+    // per-token button messages are available.
+    const zapEligible =
         isPoolInitialized &&
         !isInvalidRange &&
         rangeNeedsBothTokens &&
-        userHasTokenA !== userHasTokenB;
+        (userHasTokenA || userHasTokenB);
 
-    // input token defaults to whichever token the user holds
-    const zapInputIsTokenA = zapInputSideAOverride ?? userHasTokenA;
+    // --- Top-up deposit -----------------------------------------------------
+    // If the user's balanced two-token entry overflows ONE side's balance but
+    // they hold some of that token, we can complete the deposit by swapping
+    // just the shortfall from the other (surplus) side, then minting using the
+    // balances they already hold of both tokens. Amounts are combined
+    // wallet+exchange (the mint sources both via the surplus flag).
+    const combinedAvailANum =
+        parseFloat(tokenABalance || '0') + parseFloat(tokenADexBalance || '0');
+    const combinedAvailBNum =
+        parseFloat(tokenBBalance || '0') + parseFloat(tokenBDexBalance || '0');
+    const neededTokenANum = parseFloat(tokenAInputQtyNoExponentString || '0');
+    const neededTokenBNum = parseFloat(tokenBInputQtyNoExponentString || '0');
+    const deficitANum = neededTokenANum - combinedAvailANum;
+    const deficitBNum = neededTokenBNum - combinedAvailBNum;
+    // a top-up applies only when exactly one side is short (you can't swap your
+    // way out of being short on both)
+    const topUpDeficientIsA = deficitANum > 0 && deficitBNum <= 0;
+    const topUpDeficientIsB = deficitBNum > 0 && deficitANum <= 0;
+    const topUpHasSingleDeficit = topUpDeficientIsA || topUpDeficientIsB;
+
+    const usdTokenA = isTokenABase ? basePrice : quotePrice;
+    const usdTokenB = isTokenABase ? quotePrice : basePrice;
+    // shortfall to buy (deficient-token units) + the over-swap buffer
+    const topUpBuyDeficientNum =
+        (topUpDeficientIsA ? deficitANum : deficitBNum) *
+        (1 + ZAP_BUFFER_PERCENT / 100);
+    const topUpDeficientUsd = topUpDeficientIsA ? usdTokenA : usdTokenB;
+    const topUpSurplusUsd = topUpDeficientIsA ? usdTokenB : usdTokenA;
+    // amount of the surplus token the swap will consume (value of the shortfall)
+    const topUpSwapSurplusNum =
+        topUpDeficientUsd && topUpSurplusUsd
+            ? (topUpBuyDeficientNum * topUpDeficientUsd) / topUpSurplusUsd
+            : NaN;
+    const topUpNeededSurplusNum = topUpDeficientIsA
+        ? neededTokenBNum
+        : neededTokenANum;
+    const topUpAvailSurplusNum = topUpDeficientIsA
+        ? combinedAvailBNum
+        : combinedAvailANum;
+    // affordable only if the surplus side still covers its own position amount
+    // after funding the swap
+    const topUpAffordable =
+        isFinite(topUpSwapSurplusNum) &&
+        topUpAvailSurplusNum >= topUpNeededSurplusNum + topUpSwapSurplusNum;
+    const canOfferTopUp =
+        zapEligible &&
+        userHasTokenA &&
+        userHasTokenB &&
+        topUpHasSingleDeficit &&
+        topUpAffordable;
+
+    const topUpDeficientToken = topUpDeficientIsA ? tokenA : tokenB;
+    const topUpSurplusToken = topUpDeficientIsA ? tokenB : tokenA;
+
+    // input token defaults to whichever token the user holds; when the user
+    // holds both (zap offered because a two-token entry overflows a balance),
+    // default to the token they hold the most USD value of so the deposit is
+    // funded by their larger holding rather than the insufficient side.
+    const zapHeldValueA =
+        (parseFloat(tokenABalance || '0') +
+            parseFloat(tokenADexBalance || '0')) *
+        (isTokenABase ? basePrice || 0 : quotePrice || 0);
+    const zapHeldValueB =
+        (parseFloat(tokenBBalance || '0') +
+            parseFloat(tokenBDexBalance || '0')) *
+        (isTokenABase ? quotePrice || 0 : basePrice || 0);
+    const zapDefaultInputIsTokenA = userHoldsExactlyOneToken
+        ? userHasTokenA
+        : zapHeldValueA >= zapHeldValueB;
+    const zapInputIsTokenA = zapInputSideAOverride ?? zapDefaultInputIsTokenA;
     const zapInputToken = zapInputIsTokenA ? tokenA : tokenB;
     const zapCounterpartToken = zapInputIsTokenA ? tokenB : tokenA;
     const zapInputBalance = zapInputIsTokenA ? tokenABalance : tokenBBalance;
@@ -458,34 +542,43 @@ function Range() {
         }
     }, [zapInputQty, zapInputToken.decimals]);
 
-    // leave zap mode whenever it is no longer applicable, but never mid-flow:
-    // once the swap step confirms the wallet holds both tokens (so canOfferZap
-    // flips false), and tearing down zap mode there would hide the stepper and
-    // abort the pending mint. Stay in zap mode until the flow is reset.
+    // return to the normal two-token deposit when the chosen swap-assisted mode
+    // is no longer applicable, but never mid-flow: after the swap step the
+    // balances shift, and tearing the mode down there would hide the stepper and
+    // abort the pending mint. Stay put until the flow is reset.
     useEffect(() => {
-        if (!canOfferZap && isZapMode && !showConfirmation) {
-            setIsZapMode(false);
+        if (showConfirmation) return;
+        if (isZapMode && !zapEligible) {
+            setDepositMode('balanced');
             setZapInputQty('');
+        } else if (isTopUpMode && !canOfferTopUp) {
+            setDepositMode('balanced');
         }
-    }, [canOfferZap, isZapMode, showConfirmation]);
+    }, [zapEligible, canOfferTopUp, isZapMode, isTopUpMode, showConfirmation]);
 
-    // Estimated result of a zap deposit: how much of the input is swapped into
-    // the counterpart, and the resulting position amounts. Uses the same
-    // base/quote balance the tx builder targets (concDepositBalance) and USD
-    // prices to value the swapped portion. Estimate only — excludes swap fees
-    // and price impact.
-    const zapSplit = useMemo(() => {
-        const inputQtyNum = parseFloat(zapInputQtyNoExponentString);
-        if (
-            !isZapMode ||
-            poolPriceNonDisplay === undefined ||
-            !(inputQtyNum > 0)
-        )
-            return null;
-        const inputUsd = zapInputUsdValue;
-        const counterpartUsd = zapInputIsBase ? quotePrice : basePrice;
-        if (!inputUsd || !counterpartUsd) return null;
+    // when the user holds only one of the two tokens (the other balance is
+    // zero), default into single-token deposit mode. The latch ensures we only
+    // auto-enable once per single-token episode, so the user is free to switch
+    // back to two-token mode without being flipped back.
+    const autoZapAppliedRef = useRef(false);
+    useEffect(() => {
+        if (zapEligible && userHoldsExactlyOneToken) {
+            if (!autoZapAppliedRef.current) {
+                autoZapAppliedRef.current = true;
+                setDepositMode('single');
+            }
+        } else if (!showConfirmation) {
+            autoZapAppliedRef.current = false;
+        }
+    }, [zapEligible, userHoldsExactlyOneToken, showConfirmation]);
 
+    // The pool-derived value split for a zap, independent of the entered qty:
+    // what fraction of the input token is swapped to the counterpart, and what
+    // fraction of the position's value sits on the input (primary) side. Shared
+    // by the deposit estimate and the two-token→one-token conversion so both
+    // stay consistent with the tx builder (includes the over-swap buffer).
+    const zapValueSplit = useMemo(() => {
+        if (poolPriceNonDisplay === undefined) return null;
         const baseValueFraction = isAmbient
             ? 0.5
             : concDepositBalance(
@@ -503,15 +596,38 @@ function Range() {
             swapValueFraction + ZAP_BUFFER_PERCENT / 100,
             1,
         );
+        // fraction of the position's value on the input (primary) side
+        const primaryValueFraction = zapInputIsBase
+            ? baseValueFraction
+            : 1 - baseValueFraction;
+        return { swapFraction, primaryValueFraction };
+    }, [
+        poolPriceNonDisplay,
+        zapInputIsBase,
+        isAmbient,
+        defaultLowTick,
+        defaultHighTick,
+    ]);
+
+    // Estimated result of a zap deposit: how much of the input is swapped into
+    // the counterpart, and the resulting position amounts. Uses the same
+    // base/quote balance the tx builder targets (concDepositBalance) and USD
+    // prices to value the swapped portion. Estimate only — excludes swap fees
+    // and price impact.
+    const zapSplit = useMemo(() => {
+        const inputQtyNum = parseFloat(zapInputQtyNoExponentString);
+        if (!isZapMode || !zapValueSplit || !(inputQtyNum > 0)) return null;
+        const inputUsd = zapInputUsdValue;
+        const counterpartUsd = zapInputIsBase ? quotePrice : basePrice;
+        if (!inputUsd || !counterpartUsd) return null;
+
+        const { swapFraction, primaryValueFraction } = zapValueSplit;
 
         const inputStayingAmount = (1 - swapFraction) * inputQtyNum;
         const swappedInputAmount = swapFraction * inputQtyNum;
         // the position mints a BALANCED amount against the primary side, not the
         // full bought counterpart — derive the counterpart from the primary
         // using the pool's value split so both sides are consistent
-        const primaryValueFraction = zapInputIsBase
-            ? baseValueFraction
-            : 1 - baseValueFraction;
         const counterpartValueFraction = 1 - primaryValueFraction;
         const counterpartAmount =
             primaryValueFraction > 0
@@ -529,14 +645,11 @@ function Range() {
     }, [
         isZapMode,
         zapInputQtyNoExponentString,
-        poolPriceNonDisplay,
+        zapValueSplit,
         zapInputUsdValue,
         zapInputIsBase,
         basePrice,
         quotePrice,
-        isAmbient,
-        defaultLowTick,
-        defaultHighTick,
     ]);
 
     // display strings for the confirmation modal / token rows
@@ -589,9 +702,17 @@ function Range() {
                   : zapStep === 'mint'
                     ? 'active'
                     : 'upcoming';
+        // the swap leg differs by mode: single-token sells the deposited token,
+        // top-up sells the surplus token to cover the deficient side
+        const swapFromSymbol = isTopUpMode
+            ? topUpSurplusToken.symbol
+            : zapInputToken.symbol;
+        const swapToSymbol = isTopUpMode
+            ? topUpDeficientToken.symbol
+            : zapCounterpartToken.symbol;
         return [
             {
-                label: `Swap ${zapInputToken.symbol} → ${zapCounterpartToken.symbol}`,
+                label: `Swap ${swapFromSymbol} → ${swapToSymbol}`,
                 status: swapStatus,
             },
             {
@@ -603,14 +724,16 @@ function Range() {
         zapStep,
         isZapComplete,
         txError,
+        isTopUpMode,
+        topUpSurplusToken.symbol,
+        topUpDeficientToken.symbol,
         zapInputToken.symbol,
         zapCounterpartToken.symbol,
         tokenA.symbol,
         tokenB.symbol,
     ]);
-    const zapStepperElement = isZapMode ? (
-        <ZapStepper steps={zapSteps} />
-    ) : null;
+    const zapStepperElement =
+        isZapMode || isTopUpMode ? <ZapStepper steps={zapSteps} /> : null;
 
     const depositSkew = useMemo(
         () =>
@@ -1220,7 +1343,14 @@ function Range() {
         setIsZapComplete(false);
     };
     const { createRangePosition } = useCreateRangePosition();
-    const { createZapPosition } = useCreateZapPosition();
+    const { createZapPosition, createTopUpPosition } = useCreateZapPosition();
+    // format a float to a token's precision as a plain (non-exponential) string
+    const toTokenQtyString = (value: number, decimals: number): string => {
+        if (!(value > 0) || !isFinite(value)) return '0';
+        let s = value.toFixed(decimals);
+        if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '');
+        return s;
+    };
     const sendTransaction = async () => {
         if (!crocEnv) return;
         setShowConfirmation(true);
@@ -1232,6 +1362,35 @@ function Range() {
                 inputTokenAddress: zapInputToken.address,
                 inputTokenQty: zapInputQtyNoExponentString,
                 isWithdrawFromDexChecked: isWithdrawZapFromDexChecked,
+                defaultLowTick,
+                defaultHighTick,
+                isAdd,
+                setNewRangeTransactionHash,
+                setTxError,
+                resetConfirmation,
+                activeRangeTxHash,
+                setZapStep,
+                setIsTxCompletedRange: setIsZapComplete,
+            });
+            return;
+        }
+
+        if (isTopUpMode) {
+            createTopUpPosition({
+                slippageTolerancePercentage,
+                isAmbient,
+                // buy the shortfall of the deficient side by selling the surplus
+                buyTokenAddress: topUpDeficientToken.address,
+                buyTokenQty: toTokenQtyString(
+                    topUpBuyDeficientNum,
+                    topUpDeficientToken.decimals,
+                ),
+                sellTokenAddress: topUpSurplusToken.address,
+                // mint the entered two-token position from the topped-up balances
+                deficientTokenQty: topUpDeficientIsA
+                    ? tokenAInputQtyNoExponentString
+                    : tokenBInputQtyNoExponentString,
+                deficientIsTokenA: topUpDeficientIsA,
                 defaultLowTick,
                 defaultHighTick,
                 isAdd,
@@ -1356,13 +1515,97 @@ function Range() {
         () => setZapInputQty(''),
     );
 
-    // effective button state, accounting for zap vs two-token mode
+    // effective button state, accounting for the active deposit mode. In
+    // top-up mode the two-token entry deliberately overflows one side (the swap
+    // covers it), so ignore that "exceeds" error and gate on affordability.
     const effectiveTokenAllowed = isZapMode
         ? zapTokenAllowed
-        : tokenAAllowed && tokenBAllowed;
+        : isTopUpMode
+          ? topUpAffordable
+          : tokenAAllowed && tokenBAllowed;
     const effectiveButtonErrorMessage = isZapMode
         ? zapButtonErrorMessage
-        : rangeButtonErrorMessageTokenA || rangeButtonErrorMessageTokenB;
+        : isTopUpMode
+          ? topUpAffordable
+              ? ''
+              : `${topUpSurplusToken.symbol} Balance Insufficient to Cover Swap`
+          : rangeButtonErrorMessageTokenA || rangeButtonErrorMessageTokenB;
+
+    // a balanced two-token entry that overflows one side's combined wallet +
+    // exchange balance — the user can instead deposit with the single token
+    // they hold enough of
+    const twoTokenAmountExceedsBalance =
+        rangeButtonErrorMessageTokenA.includes('Exceeds') ||
+        rangeButtonErrorMessageTokenB.includes('Exceeds');
+    // offer the single-token deposit toggle when the user holds exactly one of
+    // the pool's tokens, or when their balanced entry exceeds a balance
+    const canOfferZap =
+        zapEligible &&
+        (userHoldsExactlyOneToken || twoTokenAmountExceedsBalance || isZapMode);
+
+    // When switching from two-token to single-token deposit, seed the zap input
+    // with the quantity that mints the SAME position the user already entered.
+    // The two-token entry is already balanced by the pool, so the input token's
+    // side becomes the position's staying amount; the total input to enter is
+    // that staying amount grossed up by the swapped fraction. Returns '' when
+    // there is nothing to convert.
+    const deriveZapQtyFromTwoTokenEntry = (): string => {
+        const inputStayingTarget = parseFloat(
+            (zapInputIsTokenA
+                ? tokenAInputQtyNoExponentString
+                : tokenBInputQtyNoExponentString) || '0',
+        );
+        const swapFraction = zapValueSplit?.swapFraction;
+        if (
+            !(inputStayingTarget > 0) ||
+            swapFraction === undefined ||
+            swapFraction >= 1
+        )
+            return '';
+        const qty = inputStayingTarget / (1 - swapFraction);
+        if (!(qty > 0) || !isFinite(qty)) return '';
+        // clamp to the input token's precision so fromDisplayQty accepts it,
+        // then trim trailing zeros for a clean field value
+        let s = qty.toFixed(zapInputToken.decimals);
+        if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '');
+        return s;
+    };
+
+    const depositModeButtonStyle: React.CSSProperties = {
+        background: 'transparent',
+        border: 'none',
+        color: 'var(--accent1)',
+        cursor: 'pointer',
+        fontSize: 'var(--body-size)',
+        padding: '2px 8px',
+    };
+
+    // switch between the normal, single-token, and top-up deposit modes. The
+    // two-token entry is preserved for 'balanced'/'topup' (top-up uses it
+    // directly); entering 'single' seeds the zap input from it and clears the
+    // two-token fields the single UI replaces.
+    const switchDepositMode = (mode: 'balanced' | 'single' | 'topup') => {
+        if (mode === 'single') {
+            setZapInputQty(deriveZapQtyFromTwoTokenEntry());
+            clearTokenInputs();
+        } else {
+            setZapInputQty('');
+        }
+        setDepositMode(mode);
+    };
+
+    // human-readable estimate of the top-up swap for the confirmation modal
+    const topUpSwapDescription =
+        (canOfferTopUp || isTopUpMode) && isFinite(topUpSwapSurplusNum)
+            ? `≈ ${getFormattedNumber({
+                  value: topUpSwapSurplusNum,
+                  isInput: true,
+              })} ${topUpSurplusToken.symbol} will first be swapped to ${
+                  topUpDeficientToken.symbol
+              } to cover the shortfall, then this position is minted using your existing ${
+                  tokenA.symbol
+              } and ${tokenB.symbol} balances.`
+            : undefined;
 
     const { approve, isApprovalPending } = useApprove();
 
@@ -1461,28 +1704,48 @@ function Range() {
             }
             input={
                 <>
-                    {canOfferZap && (
-                        <button
-                            type='button'
-                            onClick={() => {
-                                setIsZapMode((prev) => !prev);
-                                clearTokenInputs();
-                                setZapInputQty('');
-                            }}
+                    {(canOfferZap || canOfferTopUp) && (
+                        <div
                             style={{
-                                alignSelf: 'center',
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--accent1)',
-                                cursor: 'pointer',
-                                fontSize: 'var(--body-size)',
-                                padding: '2px 8px',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                flexWrap: 'wrap',
+                                gap: 8,
                             }}
                         >
-                            {isZapMode
-                                ? 'Use both tokens'
-                                : 'Deposit with one token'}
-                        </button>
+                            {/* top-up: keep both tokens, swap only the shortfall */}
+                            {depositMode !== 'topup' && canOfferTopUp && (
+                                <button
+                                    type='button'
+                                    onClick={() => switchDepositMode('topup')}
+                                    style={depositModeButtonStyle}
+                                >
+                                    Swap the difference
+                                </button>
+                            )}
+                            {/* single-token deposit */}
+                            {depositMode !== 'single' && canOfferZap && (
+                                <button
+                                    type='button'
+                                    onClick={() => switchDepositMode('single')}
+                                    style={depositModeButtonStyle}
+                                >
+                                    Deposit with one token
+                                </button>
+                            )}
+                            {/* back to the normal two-token deposit */}
+                            {depositMode !== 'balanced' && (
+                                <button
+                                    type='button'
+                                    onClick={() =>
+                                        switchDepositMode('balanced')
+                                    }
+                                    style={depositModeButtonStyle}
+                                >
+                                    Use both tokens
+                                </button>
+                            )}
+                        </div>
                     )}
                     {isZapMode ? (
                         <RangeZapTokenInput
@@ -1570,9 +1833,17 @@ function Range() {
                                   : tokenBInputQtyNoExponentString
                         }
                         zapDescription={
-                            isZapMode ? zapSwapDescription : undefined
+                            isZapMode
+                                ? zapSwapDescription
+                                : isTopUpMode
+                                  ? topUpSwapDescription
+                                  : undefined
                         }
-                        zapStepper={isZapMode ? zapStepperElement : undefined}
+                        zapStepper={
+                            isZapMode || isTopUpMode
+                                ? zapStepperElement
+                                : undefined
+                        }
                         spotPriceDisplay={getFormattedNumber({
                             value: displayPriceWithDenom,
                         })}
@@ -1660,22 +1931,24 @@ function Range() {
                             transactionPendingDisplayString={
                                 isZapMode
                                     ? `Swapping ${zapInputToken.symbol}, then minting your ${tokenA.symbol} / ${tokenB.symbol} position`
-                                    : isAdd
-                                      ? `Adding ${tokenA.symbol} and ${tokenB.symbol}`
-                                      : `Minting a Position with ${
-                                            !isTokenAInputDisabled
-                                                ? tokenA.symbol
-                                                : ''
-                                        } ${
-                                            !isTokenAInputDisabled &&
-                                            !isTokenBInputDisabled
-                                                ? 'and'
-                                                : ''
-                                        } ${
-                                            !isTokenBInputDisabled
-                                                ? tokenB.symbol
-                                                : ''
-                                        }
+                                    : isTopUpMode
+                                      ? `Swapping ${topUpSurplusToken.symbol} for ${topUpDeficientToken.symbol}, then minting your ${tokenA.symbol} / ${tokenB.symbol} position`
+                                      : isAdd
+                                        ? `Adding ${tokenA.symbol} and ${tokenB.symbol}`
+                                        : `Minting a Position with ${
+                                              !isTokenAInputDisabled
+                                                  ? tokenA.symbol
+                                                  : ''
+                                          } ${
+                                              !isTokenAInputDisabled &&
+                                              !isTokenBInputDisabled
+                                                  ? 'and'
+                                                  : ''
+                                          } ${
+                                              !isTokenBInputDisabled
+                                                  ? tokenB.symbol
+                                                  : ''
+                                          }
                                      `
                             }
                         />

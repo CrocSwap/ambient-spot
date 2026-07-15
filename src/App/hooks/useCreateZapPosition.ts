@@ -297,5 +297,241 @@ export function useCreateZapPosition() {
         }
     };
 
-    return { createZapPosition };
+    // "Top-up" deposit: the user holds SOME of both tokens but their balanced
+    // entry overflows one side. Instead of swapping the full counterpart (which
+    // ignores what they already hold), buy ONLY the shortfall of the deficient
+    // token by selling the surplus token, then mint the entered two-token
+    // position from their combined wallet+exchange balances.
+    //
+    //   1. buy `buyTokenQty` of the deficient token with the surplus token
+    //      (output saved to the exchange balance), then
+    //   2. mint the position with the deficient token as the primary side and
+    //      both sides sourced from surplus+wallet (surplus flag on), so the
+    //      pool pulls the existing balances plus the freshly-bought shortfall.
+    const createTopUpPosition = async (params: {
+        slippageTolerancePercentage: number;
+        isAmbient: boolean;
+        // deficient token to buy, and the shortfall amount to buy (display)
+        buyTokenAddress: string;
+        buyTokenQty: string;
+        // surplus token sold to fund the swap
+        sellTokenAddress: string;
+        // the position's deficient-side amount, minted as the primary
+        deficientTokenQty: string;
+        deficientIsTokenA: boolean;
+        defaultLowTick: number;
+        defaultHighTick: number;
+        isAdd: boolean;
+        setNewRangeTransactionHash: (
+            value: React.SetStateAction<string>,
+        ) => void;
+        setTxError: (s: Error) => void;
+        resetConfirmation: () => void;
+        setIsTxCompletedRange?: React.Dispatch<React.SetStateAction<boolean>>;
+        activeRangeTxHash: MutableRefObject<string>;
+        setZapStep?: (step: 'swap' | 'mint') => void;
+    }) => {
+        const {
+            slippageTolerancePercentage,
+            isAmbient,
+            buyTokenAddress,
+            buyTokenQty,
+            sellTokenAddress,
+            deficientTokenQty,
+            deficientIsTokenA,
+            defaultLowTick,
+            defaultHighTick,
+            isAdd,
+            setNewRangeTransactionHash,
+            setTxError,
+            setIsTxCompletedRange,
+            activeRangeTxHash,
+            setZapStep,
+        } = params;
+
+        if (!crocEnv) return;
+
+        try {
+            // ----- Transaction 1: buy just the shortfall of the deficient token
+            setZapStep?.('swap');
+            const swapTx = await performSwap({
+                crocEnv,
+                // buy an exact quantity of the deficient token
+                isQtySell: false,
+                qty: buyTokenQty,
+                sellTokenAddress,
+                buyTokenAddress,
+                slippageTolerancePercentage,
+                // sell the surplus token from wallet+exchange
+                isWithdrawFromDexChecked: true,
+                // keep the bought token in the exchange balance so the mint can
+                // consume it without an extra wallet approval
+                isSaveAsDexSurplusChecked: true,
+            });
+            activeRangeTxHash.current = swapTx?.hash;
+            if (swapTx?.hash) {
+                addPendingTx(swapTx.hash);
+                addTransactionByType({
+                    chainId,
+                    userAddress: userAddress || '',
+                    txHash: swapTx.hash,
+                    txAction:
+                        buyTokenAddress.toLowerCase() ===
+                        quoteToken.address.toLowerCase()
+                            ? 'Buy'
+                            : 'Sell',
+                    txType: 'Market',
+                    txDescription: `Swap for ${tokenA.symbol}/${tokenB.symbol} Top-Up`,
+                    txDetails: {
+                        baseAddress: baseToken.address,
+                        quoteAddress: quoteToken.address,
+                        poolIdx: poolIndex,
+                        baseSymbol: baseToken.symbol,
+                        quoteSymbol: quoteToken.symbol,
+                        isBid: isTokenABase,
+                    },
+                });
+            }
+
+            let swapReceipt;
+            try {
+                swapReceipt = await provider?.waitForTransaction(swapTx.hash);
+            } catch (e) {
+                const err = e as TransactionError;
+                if (isTransactionReplacedError(err)) {
+                    removePendingTx(err.hash);
+                    addPendingTx(err.replacement.hash);
+                    swapReceipt = err.receipt;
+                } else {
+                    throw e;
+                }
+            }
+            if (swapReceipt) {
+                addReceipt(swapReceipt);
+                removePendingTx(swapReceipt.hash);
+            }
+
+            // ----- Transaction 2: mint the two-token position ----------------
+            setZapStep?.('mint');
+            const posHash = getPositionHash(undefined, {
+                isPositionTypeAmbient: isAmbient,
+                user: userAddress ?? '',
+                baseAddress: baseToken.address,
+                quoteAddress: quoteToken.address,
+                poolIdx: poolIndex,
+                bidTick: defaultLowTick,
+                askTick: defaultHighTick,
+            });
+
+            // deficient side is the primary (its qty drives the position); the
+            // surplus side is derived by the pool. Both draw from surplus+wallet
+            // (surplus flag on) so existing balances + the swapped shortfall fund
+            // the mint.
+            const deficientSide = {
+                address: buyTokenAddress,
+                qty: deficientTokenQty,
+                isWithdrawFromDexChecked: true,
+            };
+            const surplusSide = {
+                address: sellTokenAddress,
+                qty: '0',
+                isWithdrawFromDexChecked: true,
+            };
+
+            const mintTx = await createRangePositionTx({
+                crocEnv,
+                isAmbient,
+                slippageTolerancePercentage,
+                tokenA: deficientIsTokenA ? deficientSide : surplusSide,
+                tokenB: deficientIsTokenA ? surplusSide : deficientSide,
+                isTokenAPrimary: deficientIsTokenA,
+                tick: { low: defaultLowTick, high: defaultHighTick },
+            });
+
+            setNewRangeTransactionHash(mintTx?.hash);
+            addPendingTx(mintTx?.hash);
+            activeRangeTxHash.current = mintTx?.hash;
+
+            if (mintTx?.hash)
+                addTransactionByType({
+                    chainId,
+                    userAddress: userAddress || '',
+                    txHash: mintTx.hash,
+                    txAction: 'Add',
+                    txType: 'Range',
+                    txDescription: isAdd
+                        ? `Add to Range ${tokenA.symbol}+${tokenB.symbol}`
+                        : `Create Range ${tokenA.symbol}+${tokenB.symbol}`,
+                    txDetails: {
+                        baseAddress: baseToken.address,
+                        quoteAddress: quoteToken.address,
+                        poolIdx: poolIndex,
+                        baseSymbol: baseToken.symbol,
+                        quoteSymbol: quoteToken.symbol,
+                        baseTokenDecimals: baseTokenDecimals,
+                        quoteTokenDecimals: quoteTokenDecimals,
+                        isAmbient: isAmbient,
+                        lowTick: defaultLowTick,
+                        highTick: defaultHighTick,
+                        gridSize: gridSize,
+                        initialTokenQty: deficientTokenQty,
+                        secondaryTokenQty: '',
+                    },
+                });
+
+            addPositionUpdate({
+                txHash: mintTx.hash,
+                positionID: posHash,
+                isLimit: false,
+                unixTimeAdded: Math.floor(Date.now() / 1000),
+            });
+
+            let mintReceipt;
+            try {
+                mintReceipt = await waitForTransaction(
+                    provider,
+                    mintTx.hash,
+                    removePendingTx,
+                    addPendingTx,
+                    updateTransactionHash,
+                    setNewRangeTransactionHash,
+                    posHash,
+                    addPositionUpdate,
+                );
+            } catch (e) {
+                const error = e as TransactionError;
+                console.error({ error });
+                if (isTransactionReplacedError(error)) {
+                    IS_LOCAL_ENV && console.debug('repriced');
+                    removePendingTx(error.hash);
+                    const newTransactionHash = error.replacement.hash;
+                    addPendingTx(newTransactionHash);
+                    activeRangeTxHash.current = newTransactionHash;
+                    addPositionUpdate({
+                        txHash: newTransactionHash,
+                        positionID: posHash,
+                        isLimit: false,
+                        unixTimeAdded: Math.floor(Date.now() / 1000),
+                    });
+                    updateTransactionHash(error.hash, error.replacement.hash);
+                    setNewRangeTransactionHash(newTransactionHash);
+                } else if (isTransactionFailedError(error)) {
+                    activeRangeTxHash.current = '';
+                    mintReceipt = error.receipt;
+                }
+            }
+            if (mintReceipt) {
+                addReceipt(mintReceipt);
+                removePendingTx(mintReceipt.hash);
+                if (setIsTxCompletedRange) {
+                    setIsTxCompletedRange(true);
+                }
+            }
+        } catch (error) {
+            console.error({ error });
+            setTxError(error as Error);
+        }
+    };
+
+    return { createZapPosition, createTopUpPosition };
 }
