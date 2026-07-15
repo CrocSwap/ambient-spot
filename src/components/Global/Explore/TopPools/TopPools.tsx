@@ -1,6 +1,14 @@
-import { Dispatch, memo, SetStateAction } from 'react';
+import {
+    Dispatch,
+    memo,
+    SetStateAction,
+    useEffect,
+    useMemo,
+    useRef,
+} from 'react';
 import { PoolIF } from '../../../../ambient-utils/types';
 import useIsPWA from '../../../../utils/hooks/useIsPWA';
+import { useVirtualRowWindow } from '../../../../utils/hooks/useVirtualRowWindow';
 import useMediaQuery from '../../../../utils/hooks/useMediaQuery';
 import TooltipComponent from '../../TooltipComponent/TooltipComponent';
 import AssignSort from '../AssignSort';
@@ -48,6 +56,47 @@ function TopPools(props: propsIF) {
     // logic to take raw pool list and sort them based on user input
     const sortedPools: SortedPoolMethodsIF = useSortedPools(allPools);
     const desktopView = useMediaQuery('(min-width: 768px)');
+
+    const ROW_HEIGHT_PX = 50;
+    const LIST_OVERSCAN_ROWS = 24;
+
+    const contentContainerRef = useRef<HTMLDivElement | null>(null);
+
+    const filteredPools = useMemo(() => {
+        if (searchQuery.length < 2) return sortedPools.pools;
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        return sortedPools.pools.filter(
+            (pool: PoolIF) =>
+                pool.baseToken.name.toLowerCase().includes(lowerCaseQuery) ||
+                pool.baseToken.symbol.toLowerCase().includes(lowerCaseQuery) ||
+                pool.quoteToken.name.toLowerCase().includes(lowerCaseQuery) ||
+                pool.quoteToken.symbol.toLowerCase().includes(lowerCaseQuery),
+        );
+    }, [sortedPools.pools, searchQuery]);
+
+    const { startIndex, endIndex, topSpacerPx, bottomSpacerPx, syncWindow } =
+        useVirtualRowWindow({
+            containerRef: contentContainerRef,
+            rowCount: filteredPools.length,
+            rowHeightPx: ROW_HEIGHT_PX,
+            overscanRows: LIST_OVERSCAN_ROWS,
+            remeasureKey: filteredPools.length,
+        });
+
+    // Keep the virtual window aligned when the user clears the search query
+    // from a non-top position.
+    const prevSearchQueryRef = useRef(searchQuery);
+    useEffect(() => {
+        if (
+            prevSearchQueryRef.current.length >= 2 &&
+            searchQuery.length < 2 &&
+            contentContainerRef.current
+        ) {
+            contentContainerRef.current.scrollTop = 0;
+            syncWindow();
+        }
+        prevSearchQueryRef.current = searchQuery;
+    }, [searchQuery, syncWindow]);
 
     // !important:  any changes to `sortable` values must be accompanied by an update
     // !important:  ... to the type definition `sortType` in `useSortedPools.ts`
@@ -169,20 +218,46 @@ function TopPools(props: propsIF) {
         >
             <ExploreToggle view={view} handleToggle={handleToggle} />
             {headerDisplay}
-            <div className={`${styles.contentContainer} custom_scroll_ambient`}>
+            <div
+                ref={contentContainerRef}
+                className={`${styles.contentContainer} custom_scroll_ambient`}
+                style={
+                    {
+                        '--virtual-row-height': `${ROW_HEIGHT_PX}px`,
+                    } as React.CSSProperties
+                }
+            >
                 <div className={styles.borderRight} />
 
-                {sortedPools.pools.length ? (
-                    sortedPools.pools.map((pool: PoolIF, idx: number) => (
-                        <PoolRow
-                            key={idx}
-                            pool={pool}
-                            goToMarket={goToMarket}
-                            isExploreDollarizationEnabled={
-                                isExploreDollarizationEnabled
-                            }
-                        />
-                    ))
+                {filteredPools.length ? (
+                    <>
+                        {topSpacerPx > 0 && (
+                            <div
+                                className='virtual-list-spacer'
+                                style={{ height: topSpacerPx }}
+                                aria-hidden='true'
+                            />
+                        )}
+                        {filteredPools
+                            .slice(startIndex, endIndex)
+                            .map((pool: PoolIF) => (
+                                <PoolRow
+                                    key={`${pool.base}-${pool.quote}`}
+                                    pool={pool}
+                                    goToMarket={goToMarket}
+                                    isExploreDollarizationEnabled={
+                                        isExploreDollarizationEnabled
+                                    }
+                                />
+                            ))}
+                        {bottomSpacerPx > 0 && (
+                            <div
+                                className='virtual-list-spacer'
+                                style={{ height: bottomSpacerPx }}
+                                aria-hidden='true'
+                            />
+                        )}
+                    </>
                 ) : searchQuery ? (
                     <div className={styles.no_results}>
                         No pools match the search query: {searchQuery}

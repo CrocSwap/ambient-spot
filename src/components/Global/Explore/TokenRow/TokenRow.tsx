@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { uriToHttp } from '../../../../ambient-utils/dataLayer';
 import TokenIcon from '../../TokenIcon/TokenIcon';
 
@@ -13,7 +14,7 @@ interface propsIF {
     goToMarket: (tknA: string, tknB: string) => void;
 }
 
-export default function TokenRow(props: propsIF) {
+const TokenRow = memo(function TokenRow(props: propsIF) {
     const { token, tokenMeta, matchingPool, goToMarket } = props;
 
     const desktopView = useMediaQuery('(min-width: 768px)');
@@ -111,4 +112,6 @@ export default function TokenRow(props: propsIF) {
                 ))}
         </div>
     );
-}
+});
+
+export default TokenRow;
