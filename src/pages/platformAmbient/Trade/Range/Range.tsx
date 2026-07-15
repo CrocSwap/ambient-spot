@@ -45,6 +45,7 @@ import { TokenContext } from '../../../../contexts/TokenContext';
 import { TradeTokenContext } from '../../../../contexts/TradeTokenContext';
 import { UserPreferenceContext } from '../../../../contexts/UserPreferenceContext';
 
+import { track } from '@plausible-analytics/tracker';
 import { ethers } from 'ethers';
 import {
     estimateBalancedRangeAprFromPoolApr,
@@ -57,6 +58,7 @@ import {
     NUM_GWEI_IN_WEI,
     RANGE_BUFFER_MULTIPLIER_L2,
     RANGE_BUFFER_MULTIPLIER_MAINNET,
+    SHOULD_LOG_ANALYTICS,
 } from '../../../../ambient-utils/constants';
 import { MAINNET_TOKENS } from '../../../../ambient-utils/constants/networks/ethereumMainnet';
 import { useApprove } from '../../../../App/functions/approve';
@@ -1362,6 +1364,19 @@ function Range() {
     const sendTransaction = async () => {
         if (!crocEnv) return;
         setShowConfirmation(true);
+        if (SHOULD_LOG_ANALYTICS) {
+            track('Range Order Submitted', {
+                props: {
+                    oneSided: String(isOutOfRange || isZapMode),
+                    type: isZapMode
+                        ? 'single-token'
+                        : isTopUpMode
+                          ? 'swap-difference'
+                          : 'standard',
+                    positionType: isAmbient ? 'ambient' : 'concentrated',
+                },
+            });
+        }
 
         if (isZapMode) {
             createZapPosition({
