@@ -5,7 +5,7 @@ import {
 import { PoolIF, TokenIF } from '../../../../ambient-utils/types';
 import TokenIcon from '../../TokenIcon/TokenIcon';
 
-import { useContext } from 'react';
+import { memo, useContext } from 'react';
 import { GrLineChart } from 'react-icons/gr';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import { FlexContainer } from '../../../../styled/Common';
@@ -17,8 +17,7 @@ interface propsIF {
     isExploreDollarizationEnabled: boolean;
 }
 
-0;
-export default function PoolRow(props: propsIF) {
+const PoolRow = memo(function PoolRow(props: propsIF) {
     const { pool, goToMarket, isExploreDollarizationEnabled } = props;
 
     const { tokenA, tokenB } = useContext(TradeDataContext);
@@ -215,4 +214,6 @@ export default function PoolRow(props: propsIF) {
                 ))}
         </div>
     );
-}
+});
+
+export default PoolRow;

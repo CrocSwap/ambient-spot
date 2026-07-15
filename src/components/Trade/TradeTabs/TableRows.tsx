@@ -163,7 +163,7 @@ function TableRows({
             <>
                 {(data as PositionIF[]).map((position, idx) => (
                     <RangesRow
-                        key={idx}
+                        key={position.positionId}
                         position={position}
                         observedRowRef={
                             idx === 0
@@ -212,8 +212,8 @@ function TableRows({
             <>
                 {(txDataToDisplay as TransactionIF[]).map((tx, idx) => (
                     <TransactionRow
-                        key={idx}
-                        idForDOM={`tx_row_${idx}`}
+                        key={tx.txId || tx.txHash}
+                        idForDOM={`tx_row_${tx.txId || tx.txHash}`}
                         observedRowRef={
                             idx === 0
                                 ? firstRowRef
@@ -246,7 +246,7 @@ function TableRows({
             <>
                 {(data as LimitOrderIF[]).map((order, idx) => (
                     <OrderRow
-                        key={idx}
+                        key={order.limitOrderId}
                         limitOrder={order}
                         tableView={tableView}
                         isAccountView={isAccountView}

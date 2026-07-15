@@ -1,9 +1,19 @@
-import { Dispatch, memo, SetStateAction, useContext } from 'react';
+import {
+    Dispatch,
+    memo,
+    SetStateAction,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+} from 'react';
+import { hiddenTokens } from '../../../../ambient-utils/constants';
 import { isWrappedNativeToken } from '../../../../ambient-utils/dataLayer';
-import { PoolIF } from '../../../../ambient-utils/types';
+import { PoolIF, TokenIF } from '../../../../ambient-utils/types';
 import { ChainDataContext } from '../../../../contexts';
 import { dexTokenData } from '../../../../pages/platformAmbient/Explore/useTokenStats';
 import useIsPWA from '../../../../utils/hooks/useIsPWA';
+import { useVirtualRowWindow } from '../../../../utils/hooks/useVirtualRowWindow';
 import useMediaQuery from '../../../../utils/hooks/useMediaQuery';
 import TooltipComponent from '../../TooltipComponent/TooltipComponent';
 import AssignSort from '../AssignSort';
@@ -58,6 +68,81 @@ function DexTokens(props: propsIF) {
     const sortedTokens: sortedDexTokensIF = useSortedDexTokens(dexTokens);
 
     const desktopView = useMediaQuery('(min-width: 768px)');
+
+    const ROW_HEIGHT_PX = 40;
+    const LIST_OVERSCAN_ROWS = 24;
+
+    const contentContainerRef = useRef<HTMLDivElement | null>(null);
+
+    const filteredTokenItems = useMemo(() => {
+        const lowerCaseQuery =
+            searchQuery.length >= 2 ? searchQuery.toLowerCase() : '';
+        return sortedTokens.data.reduce<
+            Array<{
+                token: dexTokenData;
+                tokenMeta: TokenIF;
+                matchingPool: PoolIF;
+            }>
+        >((acc, token: dexTokenData) => {
+            if (
+                hiddenTokens.some(
+                    (excluded) =>
+                        excluded.address.toLowerCase() ===
+                            token.tokenAddr.toLowerCase() &&
+                        excluded.chainId === token.tokenMeta?.chainId,
+                )
+            ) {
+                return acc;
+            }
+            if (!token.tokenMeta) return acc;
+            const matchingPool = (activePoolList || []).find(
+                (p: PoolIF) =>
+                    (p.base.toLowerCase() === token.tokenAddr.toLowerCase() &&
+                        !isWrappedNativeToken(p.quote)) ||
+                    (p.quote.toLowerCase() === token.tokenAddr.toLowerCase() &&
+                        !isWrappedNativeToken(p.base)),
+            );
+            if (!matchingPool) return acc;
+            if (
+                lowerCaseQuery.length > 0 &&
+                !token.tokenMeta.name.toLowerCase().includes(lowerCaseQuery) &&
+                !token.tokenMeta.symbol.toLowerCase().includes(lowerCaseQuery)
+            ) {
+                return acc;
+            }
+            acc.push({
+                token,
+                tokenMeta: token.tokenMeta as TokenIF,
+                matchingPool,
+            });
+            return acc;
+        }, []);
+    }, [sortedTokens.data, searchQuery, activePoolList]);
+
+    const { startIndex, endIndex, topSpacerPx, bottomSpacerPx, syncWindow } =
+        useVirtualRowWindow({
+            containerRef: contentContainerRef,
+            rowCount: filteredTokenItems.length,
+            rowHeightPx: ROW_HEIGHT_PX,
+            overscanRows: LIST_OVERSCAN_ROWS,
+            remeasureKey: filteredTokenItems.length,
+        });
+
+    // Keep the virtual window aligned when the user clears the search query
+    // from a non-top position.
+    const prevSearchQueryRef = useRef(searchQuery);
+    useEffect(() => {
+        if (
+            prevSearchQueryRef.current.length >= 2 &&
+            searchQuery.length < 2 &&
+            contentContainerRef.current
+        ) {
+            contentContainerRef.current.scrollTop = 0;
+            syncWindow();
+        }
+        prevSearchQueryRef.current = searchQuery;
+    }, [searchQuery, syncWindow]);
+
     // this logic is here to patch cases where existing logic to identify a token pool fails,
     // ... this is not an optimal location but works as a stopgap that minimizes needing to
     // ... alter existing logic or type annotation in the component tree
@@ -169,38 +254,60 @@ function DexTokens(props: propsIF) {
             <ExploreToggle view={view} handleToggle={handleToggle} />
 
             {headerDisplay}
-            <div className={`${styles.contentContainer} custom_scroll_ambient`}>
+            <div
+                ref={contentContainerRef}
+                className={`${styles.contentContainer} custom_scroll_ambient`}
+                style={
+                    {
+                        '--virtual-row-height': `${ROW_HEIGHT_PX}px`,
+                    } as React.CSSProperties
+                }
+            >
                 <div className={styles.borderRight} />
 
-                {sortedTokens.data.length
-                    ? sortedTokens.data.map((token: dexTokenData) => {
-                          const matchingPool: PoolIF | undefined = (
-                              activePoolList || []
-                          ).find(
-                              (p: PoolIF) =>
-                                  (p.base.toLowerCase() ===
-                                      token.tokenAddr.toLowerCase() &&
-                                      !isWrappedNativeToken(p.quote)) ||
-                                  (p.quote.toLowerCase() ===
-                                      token.tokenAddr.toLowerCase() &&
-                                      !isWrappedNativeToken(p.base)),
-                          );
-
-                          if (!token.tokenMeta || !matchingPool) return null;
-
-                          return (
-                              <TokenRow
-                                  key={token.tokenAddr}
-                                  token={token}
-                                  tokenMeta={token.tokenMeta}
-                                  matchingPool={matchingPool}
-                                  goToMarket={goToMarket}
-                              />
-                          );
-                      })
-                    : searchQuery
-                      ? noResults
-                      : skeletonDisplay}
+                {filteredTokenItems.length ? (
+                    <>
+                        {topSpacerPx > 0 && (
+                            <div
+                                className='virtual-list-spacer'
+                                style={{ height: topSpacerPx }}
+                                aria-hidden='true'
+                            />
+                        )}
+                        {filteredTokenItems
+                            .slice(startIndex, endIndex)
+                            .map(
+                                ({
+                                    token,
+                                    tokenMeta,
+                                    matchingPool,
+                                }: {
+                                    token: dexTokenData;
+                                    tokenMeta: TokenIF;
+                                    matchingPool: PoolIF;
+                                }) => (
+                                    <TokenRow
+                                        key={token.tokenAddr}
+                                        token={token}
+                                        tokenMeta={tokenMeta}
+                                        matchingPool={matchingPool}
+                                        goToMarket={goToMarket}
+                                    />
+                                ),
+                            )}
+                        {bottomSpacerPx > 0 && (
+                            <div
+                                className='virtual-list-spacer'
+                                style={{ height: bottomSpacerPx }}
+                                aria-hidden='true'
+                            />
+                        )}
+                    </>
+                ) : searchQuery ? (
+                    noResults
+                ) : (
+                    skeletonDisplay
+                )}
             </div>
         </div>
     );
