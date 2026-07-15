@@ -10,8 +10,8 @@ import { TopPool } from './TopPool';
 import { GcgoProvider } from '../../../utils/gcgoProvider';
 
 const RPC_URLS = {
-    PUBLIC: 'https://rpc.blast.io',
-    SECONDARY_PUBLIC: 'https://blastl2-mainnet.public.blastapi.io',
+    PUBLIC: 'https://blast-rpc.publicnode.com',
+    SECONDARY_PUBLIC: 'https://rpc.blast.io',
     RESTRICTED: import.meta.env.VITE_BLAST_RPC_URL,
 };
 
