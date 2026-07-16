@@ -25,6 +25,7 @@ import { ZAP_BUFFER_PERCENT } from '../../../../ambient-utils/dataLayer/transact
 import SubmitTransaction from '../../../../components/Trade/TradeModules/SubmitTransaction/SubmitTransaction';
 import TradeModuleHeader from '../../../../components/Trade/TradeModules/TradeModuleHeader';
 import { TradeModuleSkeleton } from '../../../../components/Trade/TradeModules/TradeModuleSkeleton';
+import depositModeStyles from './DepositModeToggle.module.css';
 
 import {
     getFormattedNumber,
@@ -1594,20 +1595,6 @@ function Range() {
         return s;
     };
 
-    const depositModeButtonStyle = (
-        isActive: boolean,
-    ): React.CSSProperties => ({
-        background: isActive ? 'var(--accent1)' : 'transparent',
-        border: `1px solid ${isActive ? 'var(--accent1)' : 'var(--dark3)'}`,
-        borderRadius: 'var(--border-radius)',
-        color: isActive ? 'var(--text1)' : 'var(--text2)',
-        cursor: isActive ? 'default' : 'pointer',
-        fontSize: 'var(--body-size)',
-        fontWeight: isActive ? 500 : 400,
-        padding: '5px 8px',
-        transition: 'var(--transition)',
-    });
-
     // switch between the normal, single-token, and top-up deposit modes. The
     // two-token entry is preserved for 'balanced'/'topup' (top-up uses it
     // directly); entering 'single' seeds the zap input from it and clears the
@@ -1750,16 +1737,7 @@ function Range() {
                         <div
                             role='group'
                             aria-label='Deposit method'
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'center',
-                                flexWrap: 'wrap',
-                                gap: 6,
-                                padding: 4,
-                                border: '1px solid var(--dark3)',
-                                borderRadius: 'var(--border-radius)',
-                                background: 'var(--dark2)',
-                            }}
+                            className={depositModeStyles.container}
                         >
                             {/* top-up: keep both tokens, swap only the shortfall */}
                             {canSwitchToTopUp && (
@@ -1767,7 +1745,7 @@ function Range() {
                                     type='button'
                                     aria-pressed={isTopUpMode}
                                     onClick={() => switchDepositMode('topup')}
-                                    style={depositModeButtonStyle(isTopUpMode)}
+                                    className={`${depositModeStyles.button} ${isTopUpMode ? depositModeStyles.buttonActive : ''}`}
                                 >
                                     Swap the difference
                                 </button>
@@ -1778,7 +1756,7 @@ function Range() {
                                     type='button'
                                     aria-pressed={isZapMode}
                                     onClick={() => switchDepositMode('single')}
-                                    style={depositModeButtonStyle(isZapMode)}
+                                    className={`${depositModeStyles.button} ${isZapMode ? depositModeStyles.buttonActive : ''}`}
                                 >
                                     Deposit with one token
                                 </button>
