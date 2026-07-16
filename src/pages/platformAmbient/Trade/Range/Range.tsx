@@ -908,6 +908,16 @@ function Range() {
     useEffect(() => {
         resetConfirmation();
         setPinnedDisplayPrices(undefined);
+        // reset swap-assisted deposit state on a pool change so a stale
+        // token-side override (a boolean that would otherwise point at the new
+        // pool's tokens) or a carried-over entry/snapshot from the previous
+        // pool doesn't leak into the new pool's deposit UI. The auto-zap latch
+        // is released so single-token mode can re-engage for the new pool.
+        setDepositMode('balanced');
+        setZapInputQty('');
+        setZapInputSideAOverride(null);
+        setTwoTokenInputSnapshot(null);
+        autoZapAppliedRef.current = false;
     }, [baseToken.address + quoteToken.address]);
 
     useEffect(() => {
