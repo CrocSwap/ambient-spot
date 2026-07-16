@@ -3,6 +3,7 @@ import {
     concDepositSkew,
     fromDisplayQty,
     tickToPrice,
+    toDisplayPrice,
     toDisplayQty,
 } from '@crocswap-libs/sdk';
 import { memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -470,18 +471,31 @@ function Range() {
     const topUpDeficientIsB = deficitBNum > 0 && deficitANum <= 0;
     const topUpHasSingleDeficit = topUpDeficientIsA || topUpDeficientIsB;
 
-    const usdTokenA = isTokenABase ? basePrice : quotePrice;
-    const usdTokenB = isTokenABase ? quotePrice : basePrice;
     // shortfall to buy (deficient-token units) + the over-swap buffer
     const topUpBuyDeficientNum =
         (topUpDeficientIsA ? deficitANum : deficitBNum) *
         (1 + ZAP_BUFFER_PERCENT / 100);
-    const topUpDeficientUsd = topUpDeficientIsA ? usdTokenA : usdTokenB;
-    const topUpSurplusUsd = topUpDeficientIsA ? usdTokenB : usdTokenA;
-    // amount of the surplus token the swap will consume (value of the shortfall)
+    // amount of the surplus token the swap will consume to buy that shortfall.
+    // Derive it from the POOL spot price (what the swap actually trades at)
+    // rather than the two external USD feeds, whose relative drift on volatile
+    // pairs could otherwise under- or over-estimate the surplus consumed and
+    // mis-gate affordability. poolDisplayPrice is base-per-quote, so a base
+    // deficient converts to quote surplus by dividing, a quote deficient to
+    // base surplus by multiplying (mirrors calculateSecondaryDepositQty).
+    const poolDisplayPrice =
+        poolPriceNonDisplay !== undefined
+            ? toDisplayPrice(
+                  poolPriceNonDisplay,
+                  baseTokenDecimals,
+                  quoteTokenDecimals,
+              )
+            : undefined;
+    const topUpDeficientIsBase = topUpDeficientIsA === isTokenABase;
     const topUpSwapSurplusNum =
-        topUpDeficientUsd && topUpSurplusUsd
-            ? (topUpBuyDeficientNum * topUpDeficientUsd) / topUpSurplusUsd
+        poolDisplayPrice && poolDisplayPrice > 0
+            ? topUpDeficientIsBase
+                ? topUpBuyDeficientNum / poolDisplayPrice
+                : topUpBuyDeficientNum * poolDisplayPrice
             : NaN;
     const topUpNeededSurplusNum = topUpDeficientIsA
         ? neededTokenBNum
@@ -1549,6 +1563,70 @@ function Range() {
         () => setZapInputQty(''),
     );
 
+    // Approval for the single-token (zap) input. Only the portion pulled from
+    // the WALLET needs an ERC-20 allowance — when the input is funded from the
+    // exchange (surplus) balance the DEX already custodies it and the swap's
+    // sellDexSurplus path needs no approval, so zapQtyCoveredByWalletBalance is
+    // 0n and the checks below report "sufficient" (no approve button shown).
+    // Both zap legs (the swap of swapQty and the mint of mintPrimaryQty) pull
+    // the input token, but each is covered by an unlimited (MaxUint256)
+    // approval; on Plume, where approvals are exact, we approve the full
+    // wallet-covered qty (+1% for rounding) since across the two txs the total
+    // pulled equals that amount.
+    const zapInputAllowance = zapInputIsTokenA
+        ? tokenAAllowance
+        : tokenBAllowance;
+    const isZapInputWalletBalanceSufficient =
+        fromDisplayQty(zapInputBalance || '0', zapInputToken.decimals) >=
+        zapQtyCoveredByWalletBalance;
+    const isZapInputAllowanceSufficient =
+        zapInputAllowance === undefined
+            ? true
+            : zapInputAllowance >= zapQtyCoveredByWalletBalance;
+    const isUsdtResetRequiredZap =
+        zapInputToken.address.toLowerCase() ===
+            MAINNET_TOKENS.USDT.address.toLowerCase() &&
+        !!zapInputAllowance &&
+        zapInputAllowance < zapQtyCoveredByWalletBalance;
+
+    // Approval for the top-up deficient token. In top-up mode the swap (tx1)
+    // only buys the shortfall into the exchange balance; the mint (tx2) then
+    // pulls the user's EXISTING deficient-token balance too, and its WALLET
+    // portion needs an ERC-20 allowance. The normal per-token approve button
+    // doesn't surface this because it's gated on wallet-balance sufficiency,
+    // which is false here (the entered amount deliberately exceeds the wallet
+    // balance — that's the whole reason a top-up is needed). Approval is keyed
+    // on the deficient token's wallet balance, since essentially all of it is
+    // consumed by the mint (native tokens need no approval).
+    const topUpDeficientWalletBalance = topUpDeficientIsA
+        ? tokenABalance
+        : tokenBBalance;
+    const topUpDeficientAllowance = topUpDeficientIsA
+        ? tokenAAllowance
+        : tokenBAllowance;
+    const topUpDeficientIsEth = topUpDeficientIsA ? isTokenAEth : isTokenBEth;
+    const topUpDeficientWalletWei = fromDisplayQty(
+        topUpDeficientWalletBalance || '0',
+        topUpDeficientToken.decimals,
+    );
+    const isTopUpDeficientAllowanceSufficient =
+        topUpDeficientAllowance === undefined
+            ? true
+            : topUpDeficientAllowance >= topUpDeficientWalletWei;
+    const isUsdtResetRequiredTopUpDeficient =
+        topUpDeficientToken.address.toLowerCase() ===
+            MAINNET_TOKENS.USDT.address.toLowerCase() &&
+        !!topUpDeficientAllowance &&
+        topUpDeficientAllowance < topUpDeficientWalletWei;
+    // shown only after the surplus-token approval (needed for tx1) is satisfied,
+    // since the normal chain surfaces that one first and this is a fallback
+    const topUpDeficientNeedsApproval =
+        isTopUpMode &&
+        isPoolInitialized &&
+        !topUpDeficientIsEth &&
+        topUpDeficientWalletWei > 0n &&
+        !isTopUpDeficientAllowanceSufficient;
+
     // effective button state, accounting for the active deposit mode. In
     // top-up mode the two-token entry deliberately overflows one side (the swap
     // covers it), so ignore that "exceeds" error and gate on affordability.
@@ -1982,10 +2060,47 @@ function Range() {
                 ) : undefined
             }
             approveButton={
-                isPoolInitialized &&
-                parseFloat(tokenAInputQty) > 0 &&
-                isTokenAWalletBalanceSufficient &&
-                !isTokenAAllowanceSufficient ? (
+                isZapMode ? (
+                    isPoolInitialized &&
+                    parseFloat(zapInputQty) > 0 &&
+                    isZapInputWalletBalanceSufficient &&
+                    !isZapInputAllowanceSufficient ? (
+                        <Button
+                            idForDOM='approve_token_for_range'
+                            style={{ textTransform: 'none' }}
+                            title={
+                                !isApprovalPending
+                                    ? isUsdtResetRequiredZap
+                                        ? 'Reset USDT Approval (Step 1/2)'
+                                        : `Approve ${zapInputToken.symbol}`
+                                    : isUsdtResetRequiredZap
+                                      ? 'USDT Approval Reset Pending...'
+                                      : `${zapInputToken.symbol} Approval Pending...`
+                            }
+                            disabled={isApprovalPending}
+                            action={async () => {
+                                await approve(
+                                    zapInputToken.address,
+                                    zapInputToken.symbol,
+                                    undefined,
+                                    isUsdtResetRequiredZap
+                                        ? 0n
+                                        : isActiveNetworkPlume
+                                          ? // add 1% buffer to avoid rounding
+                                            // errors across the swap + mint legs
+                                            (zapQtyCoveredByWalletBalance *
+                                                101n) /
+                                            100n
+                                          : ethers.MaxUint256,
+                                );
+                            }}
+                            flat={true}
+                        />
+                    ) : undefined
+                ) : isPoolInitialized &&
+                  parseFloat(tokenAInputQty) > 0 &&
+                  isTokenAWalletBalanceSufficient &&
+                  !isTokenAAllowanceSufficient ? (
                     <Button
                         idForDOM='approve_token_for_range'
                         style={{ textTransform: 'none' }}
@@ -2062,6 +2177,35 @@ function Range() {
                                 //         tokenB.decimals,
                                 //     )
                                 //   : undefined,
+                            );
+                        }}
+                        flat={true}
+                    />
+                ) : topUpDeficientNeedsApproval ? (
+                    <Button
+                        idForDOM='approve_token_for_range'
+                        style={{ textTransform: 'none' }}
+                        title={
+                            !isApprovalPending
+                                ? isUsdtResetRequiredTopUpDeficient
+                                    ? 'Reset USDT Approval (Step 1/2)'
+                                    : `Approve ${topUpDeficientToken.symbol}`
+                                : isUsdtResetRequiredTopUpDeficient
+                                  ? 'USDT Approval Reset Pending...'
+                                  : `${topUpDeficientToken.symbol} Approval Pending...`
+                        }
+                        disabled={isApprovalPending}
+                        action={async () => {
+                            await approve(
+                                topUpDeficientToken.address,
+                                topUpDeficientToken.symbol,
+                                undefined,
+                                isUsdtResetRequiredTopUpDeficient
+                                    ? 0n
+                                    : isActiveNetworkPlume
+                                      ? // add 1% buffer to avoid rounding errors
+                                        (topUpDeficientWalletWei * 101n) / 100n
+                                      : ethers.MaxUint256,
                             );
                         }}
                         flat={true}
