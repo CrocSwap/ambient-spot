@@ -6,7 +6,15 @@ import {
     toDisplayPrice,
     toDisplayQty,
 } from '@crocswap-libs/sdk';
-import { memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    memo,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import Button from '../../../../components/Form/Button';
 import { useModal } from '../../../../components/Global/Modal/useModal';
 
@@ -72,6 +80,14 @@ import { useRangeInputDisable } from './useRangeInputDisable';
 
 export const DEFAULT_MIN_PRICE_DIFF_PERCENTAGE = -10;
 export const DEFAULT_MAX_PRICE_DIFF_PERCENTAGE = 10;
+
+// format a float to a token's precision as a plain (non-exponential) string
+const toTokenQtyString = (value: number, decimals: number): string => {
+    if (!(value > 0) || !isFinite(value)) return '0';
+    let s = value.toFixed(decimals);
+    if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    return s;
+};
 
 function Range() {
     const { crocEnv } = useContext(CrocEnvContext);
@@ -160,6 +176,7 @@ function Range() {
         tokenBInputQty: string;
         primaryQuantity: string;
         isTokenAPrimary: boolean;
+        canOfferTopUp: boolean;
     } | null>(null);
 
     const tokenAInputQtyNoExponentString = useMemo(() => {
@@ -385,13 +402,6 @@ function Range() {
             )
           : 0n;
 
-    const isQtyEntered =
-        tokenAInputQtyNoExponentString !== '' &&
-        tokenBInputQtyNoExponentString !== '';
-    const showExtraInfoDropdown =
-        tokenAInputQtyNoExponentString !== '' ||
-        tokenBInputQtyNoExponentString !== '';
-
     const rangeSpanAboveCurrentPrice =
         defaultHighTick - (currentPoolPriceTick || 0);
     const rangeSpanBelowCurrentPrice =
@@ -457,24 +467,46 @@ function Range() {
     // just the shortfall from the other (surplus) side, then minting using the
     // balances they already hold of both tokens. Amounts are combined
     // wallet+exchange (the mint sources both via the surplus flag).
-    const combinedAvailANum =
-        parseFloat(tokenABalance || '0') + parseFloat(tokenADexBalance || '0');
-    const combinedAvailBNum =
-        parseFloat(tokenBBalance || '0') + parseFloat(tokenBDexBalance || '0');
     const neededTokenANum = parseFloat(tokenAInputQtyNoExponentString || '0');
     const neededTokenBNum = parseFloat(tokenBInputQtyNoExponentString || '0');
-    const deficitANum = neededTokenANum - combinedAvailANum;
-    const deficitBNum = neededTokenBNum - combinedAvailBNum;
+    const combinedAvailAWei =
+        fromDisplayQty(tokenABalance || '0', tokenA.decimals) +
+        fromDisplayQty(tokenADexBalance || '0', tokenA.decimals);
+    const combinedAvailBWei =
+        fromDisplayQty(tokenBBalance || '0', tokenB.decimals) +
+        fromDisplayQty(tokenBDexBalance || '0', tokenB.decimals);
+    const neededTokenAWei = fromDisplayQty(
+        tokenAInputQtyNoExponentString || '0',
+        tokenA.decimals,
+    );
+    const neededTokenBWei = fromDisplayQty(
+        tokenBInputQtyNoExponentString || '0',
+        tokenB.decimals,
+    );
+    const deficitAWei =
+        neededTokenAWei > combinedAvailAWei
+            ? neededTokenAWei - combinedAvailAWei
+            : 0n;
+    const deficitBWei =
+        neededTokenBWei > combinedAvailBWei
+            ? neededTokenBWei - combinedAvailBWei
+            : 0n;
     // a top-up applies only when exactly one side is short (you can't swap your
     // way out of being short on both)
-    const topUpDeficientIsA = deficitANum > 0 && deficitBNum <= 0;
-    const topUpDeficientIsB = deficitBNum > 0 && deficitANum <= 0;
+    const topUpDeficientIsA = deficitAWei > 0n && deficitBWei === 0n;
+    const topUpDeficientIsB = deficitBWei > 0n && deficitAWei === 0n;
     const topUpHasSingleDeficit = topUpDeficientIsA || topUpDeficientIsB;
 
     // shortfall to buy (deficient-token units) + the over-swap buffer
-    const topUpBuyDeficientNum =
-        (topUpDeficientIsA ? deficitANum : deficitBNum) *
-        (1 + ZAP_BUFFER_PERCENT / 100);
+    const topUpDeficitWei = topUpDeficientIsA ? deficitAWei : deficitBWei;
+    const zapBufferBps = BigInt(Math.round(ZAP_BUFFER_PERCENT * 100));
+    const topUpBuyDeficientWei =
+        (topUpDeficitWei * (10000n + zapBufferBps) + 9999n) / 10000n;
+    const topUpBuyDeficientQty = toDisplayQty(
+        topUpBuyDeficientWei,
+        topUpDeficientIsA ? tokenA.decimals : tokenB.decimals,
+    );
+    const topUpBuyDeficientNum = parseFloat(topUpBuyDeficientQty);
     // amount of the surplus token the swap will consume to buy that shortfall.
     // Derive it from the POOL spot price (what the swap actually trades at)
     // rather than the two external USD feeds, whose relative drift on volatile
@@ -500,14 +532,26 @@ function Range() {
     const topUpNeededSurplusNum = topUpDeficientIsA
         ? neededTokenBNum
         : neededTokenANum;
-    const topUpAvailSurplusNum = topUpDeficientIsA
-        ? combinedAvailBNum
-        : combinedAvailANum;
+    const topUpMaxSwapSurplusNum =
+        topUpSwapSurplusNum * (1 + slippageTolerancePercentage / 100);
+    const topUpSurplusDecimals = topUpDeficientIsA
+        ? tokenB.decimals
+        : tokenA.decimals;
+    const topUpSurplusRequiredWei = fromDisplayQty(
+        toTokenQtyString(
+            topUpNeededSurplusNum + topUpMaxSwapSurplusNum,
+            topUpSurplusDecimals,
+        ),
+        topUpSurplusDecimals,
+    );
+    const topUpAvailSurplusWei = topUpDeficientIsA
+        ? combinedAvailBWei
+        : combinedAvailAWei;
     // affordable only if the surplus side still covers its own position amount
     // after funding the swap
     const topUpAffordable =
-        isFinite(topUpSwapSurplusNum) &&
-        topUpAvailSurplusNum >= topUpNeededSurplusNum + topUpSwapSurplusNum;
+        isFinite(topUpMaxSwapSurplusNum) &&
+        topUpAvailSurplusWei >= topUpSurplusRequiredWei;
     const canOfferTopUp =
         zapEligible &&
         userHasTokenA &&
@@ -515,7 +559,8 @@ function Range() {
         topUpHasSingleDeficit &&
         topUpAffordable;
     const canSwitchToTopUp =
-        canOfferTopUp || (isZapMode && twoTokenInputSnapshot !== null);
+        canOfferTopUp ||
+        (isZapMode && twoTokenInputSnapshot?.canOfferTopUp === true);
 
     const topUpDeficientToken = topUpDeficientIsA ? tokenA : tokenB;
     const topUpSurplusToken = topUpDeficientIsA ? tokenB : tokenA;
@@ -548,7 +593,7 @@ function Range() {
     const zapInputIsBase =
         (zapInputIsTokenA && isTokenABase) ||
         (!zapInputIsTokenA && !isTokenABase);
-    const zapInputUsdValue = zapInputIsBase ? basePrice : quotePrice;
+    const zapInputTokenUsdPrice = zapInputIsBase ? basePrice : quotePrice;
 
     const zapInputQtyNoExponentString = useMemo(() => {
         try {
@@ -567,6 +612,15 @@ function Range() {
         }
     }, [zapInputQty, zapInputToken.decimals]);
 
+    const isQtyEntered = isZapMode
+        ? zapInputQtyNoExponentString !== ''
+        : tokenAInputQtyNoExponentString !== '' &&
+          tokenBInputQtyNoExponentString !== '';
+    const showExtraInfoDropdown = isZapMode
+        ? zapInputQtyNoExponentString !== ''
+        : tokenAInputQtyNoExponentString !== '' ||
+          tokenBInputQtyNoExponentString !== '';
+
     // return to the normal two-token deposit when the chosen swap-assisted mode
     // is no longer applicable, but never mid-flow: after the swap step the
     // balances shift, and tearing the mode down there would hide the stepper and
@@ -576,6 +630,7 @@ function Range() {
         if (isZapMode && !zapEligible) {
             setDepositMode('balanced');
             setZapInputQty('');
+            setTwoTokenInputSnapshot(null);
         } else if (isTopUpMode && !canOfferTopUp) {
             setDepositMode('balanced');
         }
@@ -642,7 +697,7 @@ function Range() {
     const zapSplit = useMemo(() => {
         const inputQtyNum = parseFloat(zapInputQtyNoExponentString);
         if (!isZapMode || !zapValueSplit || !(inputQtyNum > 0)) return null;
-        const inputUsd = zapInputUsdValue;
+        const inputUsd = zapInputTokenUsdPrice;
         const counterpartUsd = zapInputIsBase ? quotePrice : basePrice;
         if (!inputUsd || !counterpartUsd) return null;
 
@@ -671,7 +726,7 @@ function Range() {
         isZapMode,
         zapInputQtyNoExponentString,
         zapValueSplit,
-        zapInputUsdValue,
+        zapInputTokenUsdPrice,
         zapInputIsBase,
         basePrice,
         quotePrice,
@@ -932,7 +987,7 @@ function Range() {
         setZapInputSideAOverride(null);
         setTwoTokenInputSnapshot(null);
         autoZapAppliedRef.current = false;
-    }, [baseToken.address + quoteToken.address]);
+    }, [baseToken.address, quoteToken.address]);
 
     useEffect(() => {
         if (!isAdd) {
@@ -996,7 +1051,8 @@ function Range() {
         advancedMode,
         isDenomBase,
         currentPoolPriceTick,
-        baseToken.address + quoteToken.address,
+        baseToken.address,
+        quoteToken.address,
         baseTokenDecimals,
         quoteTokenDecimals,
     ]);
@@ -1312,22 +1368,19 @@ function Range() {
     const [amountToReduceNativeTokenQtyL2, setAmountToReduceNativeTokenQtyL2] =
         useState<number>(0.0005);
 
-    const [l1GasFeePoolInGwei] = useState<number>(
-        isActiveNetworkL2 ? 10000 : 0,
-    );
-    const [extraL1GasFeePool] = useState(isActiveNetworkL2 ? 0.01 : 0);
+    const l1GasFeePoolInGwei = isActiveNetworkL2 ? 10000 : 0;
+    const extraL1GasFeePool = isActiveNetworkL2 ? 0.01 : 0;
 
-    const amountToReduceNativeTokenQty =
-        chainId === '0x82750' || chainId === '0x8274f' || chainId === '0x13e31'
-            ? amountToReduceNativeTokenQtyL2
-            : amountToReduceNativeTokenQtyMainnet;
+    const amountToReduceNativeTokenQty = isActiveNetworkL2
+        ? amountToReduceNativeTokenQtyL2
+        : amountToReduceNativeTokenQtyMainnet;
 
     const activeRangeTxHash = useRef<string>('');
 
     // reset activeTxHash when the pair changes or user updates quantity
     useEffect(() => {
         activeRangeTxHash.current = '';
-    }, [tokenA.address + tokenB.address, primaryQuantity]);
+    }, [tokenA.address, tokenB.address, primaryQuantity, zapInputQty]);
 
     useEffect(() => {
         if (gasPriceInGwei && nativeTokenUsdPrice) {
@@ -1379,13 +1432,6 @@ function Range() {
     };
     const { createRangePosition } = useCreateRangePosition();
     const { createZapPosition, createTopUpPosition } = useCreateZapPosition();
-    // format a float to a token's precision as a plain (non-exponential) string
-    const toTokenQtyString = (value: number, decimals: number): string => {
-        if (!(value > 0) || !isFinite(value)) return '0';
-        let s = value.toFixed(decimals);
-        if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '');
-        return s;
-    };
     const sendTransaction = async () => {
         if (!crocEnv) return;
         setShowConfirmation(true);
@@ -1429,10 +1475,7 @@ function Range() {
                 isAmbient,
                 // buy the shortfall of the deficient side by selling the surplus
                 buyTokenAddress: topUpDeficientToken.address,
-                buyTokenQty: toTokenQtyString(
-                    topUpBuyDeficientNum,
-                    topUpDeficientToken.decimals,
-                ),
+                buyTokenQty: topUpBuyDeficientQty,
                 sellTokenAddress: topUpSurplusToken.address,
                 // mint the entered two-token position from the topped-up balances
                 deficientTokenQty: topUpDeficientIsA
@@ -1491,11 +1534,12 @@ function Range() {
         }
     };
 
-    const clearTokenInputs = () => {
+    const clearTokenInputs = useCallback(() => {
         setTokenAInputQty('');
         setTokenBInputQty('');
         setPrimaryQuantity('');
-    };
+    }, [setPrimaryQuantity]);
+    const clearZapInput = useCallback(() => setZapInputQty(''), []);
     const {
         tokenAllowed: tokenAAllowed,
         rangeButtonErrorMessage: rangeButtonErrorMessageTokenA,
@@ -1560,7 +1604,7 @@ function Range() {
         zapQtyCoveredByWalletBalance,
         amountToReduceNativeTokenQty,
         activeRangeTxHash,
-        () => setZapInputQty(''),
+        clearZapInput,
     );
 
     // Approval for the single-token (zap) input. Only the portion pulled from
@@ -1589,6 +1633,54 @@ function Range() {
         !!zapInputAllowance &&
         zapInputAllowance < zapQtyCoveredByWalletBalance;
 
+    const topUpSurplusWalletBalance = topUpDeficientIsA
+        ? tokenBBalance
+        : tokenABalance;
+    const topUpSurplusDexBalance = topUpDeficientIsA
+        ? tokenBDexBalance
+        : tokenADexBalance;
+    const topUpSurplusAllowance = topUpDeficientIsA
+        ? tokenBAllowance
+        : tokenAAllowance;
+    const topUpSurplusIsEth = topUpDeficientIsA ? isTokenBEth : isTokenAEth;
+    const topUpSurplusWalletWei = fromDisplayQty(
+        topUpSurplusWalletBalance || '0',
+        topUpSurplusToken.decimals,
+    );
+    const topUpSurplusDexWei = fromDisplayQty(
+        topUpSurplusDexBalance || '0',
+        topUpSurplusToken.decimals,
+    );
+    const topUpSurplusWalletRequiredWei =
+        topUpSurplusRequiredWei > topUpSurplusDexWei
+            ? topUpSurplusRequiredWei - topUpSurplusDexWei
+            : 0n;
+    const topUpSurplusApprovalWei =
+        (topUpSurplusWalletRequiredWei * 101n + 99n) / 100n;
+    const isTopUpSurplusWalletBalanceSufficient =
+        !topUpSurplusIsEth ||
+        topUpSurplusWalletRequiredWei +
+            fromDisplayQty(
+                amountToReduceNativeTokenQty.toString(),
+                topUpSurplusToken.decimals,
+            ) <=
+            topUpSurplusWalletWei;
+    const isTopUpSurplusAllowanceSufficient =
+        topUpSurplusAllowance === undefined
+            ? true
+            : topUpSurplusAllowance >= topUpSurplusApprovalWei;
+    const isUsdtResetRequiredTopUpSurplus =
+        topUpSurplusToken.address.toLowerCase() ===
+            MAINNET_TOKENS.USDT.address.toLowerCase() &&
+        !!topUpSurplusAllowance &&
+        topUpSurplusAllowance < topUpSurplusApprovalWei;
+    const topUpSurplusNeedsApproval =
+        isTopUpMode &&
+        isPoolInitialized &&
+        !topUpSurplusIsEth &&
+        topUpSurplusWalletRequiredWei > 0n &&
+        !isTopUpSurplusAllowanceSufficient;
+
     // Approval for the top-up deficient token. In top-up mode the swap (tx1)
     // only buys the shortfall into the exchange balance; the mint (tx2) then
     // pulls the user's EXISTING deficient-token balance too, and its WALLET
@@ -1596,11 +1688,14 @@ function Range() {
     // doesn't surface this because it's gated on wallet-balance sufficiency,
     // which is false here (the entered amount deliberately exceeds the wallet
     // balance — that's the whole reason a top-up is needed). Approval is keyed
-    // on the deficient token's wallet balance, since essentially all of it is
-    // consumed by the mint (native tokens need no approval).
+    // on the deficient token's wallet-funded portion after the existing and
+    // freshly bought exchange balances are applied (native tokens need none).
     const topUpDeficientWalletBalance = topUpDeficientIsA
         ? tokenABalance
         : tokenBBalance;
+    const topUpDeficientDexBalance = topUpDeficientIsA
+        ? tokenADexBalance
+        : tokenBDexBalance;
     const topUpDeficientAllowance = topUpDeficientIsA
         ? tokenAAllowance
         : tokenBAllowance;
@@ -1609,38 +1704,82 @@ function Range() {
         topUpDeficientWalletBalance || '0',
         topUpDeficientToken.decimals,
     );
+    const topUpDeficientDexWei = fromDisplayQty(
+        topUpDeficientDexBalance || '0',
+        topUpDeficientToken.decimals,
+    );
+    const topUpDeficientNeededWei = topUpDeficientIsA
+        ? neededTokenAWei
+        : neededTokenBWei;
+    const topUpDeficientAvailableDexWei =
+        topUpDeficientDexWei + topUpBuyDeficientWei;
+    const topUpDeficientWalletRequiredWei =
+        topUpDeficientNeededWei > topUpDeficientAvailableDexWei
+            ? topUpDeficientNeededWei - topUpDeficientAvailableDexWei
+            : 0n;
+    const topUpDeficientApprovalWei =
+        (topUpDeficientWalletRequiredWei * 101n + 99n) / 100n;
+    const isTopUpDeficientWalletBalanceSufficient =
+        !topUpDeficientIsEth ||
+        topUpDeficientWalletRequiredWei +
+            fromDisplayQty(
+                amountToReduceNativeTokenQty.toString(),
+                topUpDeficientToken.decimals,
+            ) <=
+            topUpDeficientWalletWei;
     const isTopUpDeficientAllowanceSufficient =
         topUpDeficientAllowance === undefined
             ? true
-            : topUpDeficientAllowance >= topUpDeficientWalletWei;
+            : topUpDeficientAllowance >= topUpDeficientWalletRequiredWei;
     const isUsdtResetRequiredTopUpDeficient =
         topUpDeficientToken.address.toLowerCase() ===
             MAINNET_TOKENS.USDT.address.toLowerCase() &&
         !!topUpDeficientAllowance &&
-        topUpDeficientAllowance < topUpDeficientWalletWei;
+        topUpDeficientAllowance < topUpDeficientWalletRequiredWei;
     // shown only after the surplus-token approval (needed for tx1) is satisfied,
-    // since the normal chain surfaces that one first and this is a fallback
+    // since the transaction needs that approval before the deficient-side mint
     const topUpDeficientNeedsApproval =
         isTopUpMode &&
         isPoolInitialized &&
         !topUpDeficientIsEth &&
-        topUpDeficientWalletWei > 0n &&
+        topUpDeficientWalletRequiredWei > 0n &&
         !isTopUpDeficientAllowanceSufficient;
 
     // effective button state, accounting for the active deposit mode. In
     // top-up mode the two-token entry deliberately overflows one side (the swap
     // covers it), so ignore that "exceeds" error and gate on affordability.
+    const tokenAHasExpectedTopUpError =
+        topUpDeficientIsA && rangeButtonErrorMessageTokenA.includes('Exceeds');
+    const tokenBHasExpectedTopUpError =
+        topUpDeficientIsB && rangeButtonErrorMessageTokenB.includes('Exceeds');
+    const topUpBlockingErrorMessage =
+        (!tokenAAllowed && !tokenAHasExpectedTopUpError
+            ? rangeButtonErrorMessageTokenA
+            : '') ||
+        (!tokenBAllowed && !tokenBHasExpectedTopUpError
+            ? rangeButtonErrorMessageTokenB
+            : '');
+    const topUpTokensAllowed =
+        (tokenAAllowed || tokenAHasExpectedTopUpError) &&
+        (tokenBAllowed || tokenBHasExpectedTopUpError) &&
+        isTopUpSurplusWalletBalanceSufficient &&
+        isTopUpDeficientWalletBalanceSufficient;
     const effectiveTokenAllowed = isZapMode
         ? zapTokenAllowed
         : isTopUpMode
-          ? topUpAffordable
+          ? topUpAffordable && topUpTokensAllowed
           : tokenAAllowed && tokenBAllowed;
     const effectiveButtonErrorMessage = isZapMode
         ? zapButtonErrorMessage
         : isTopUpMode
-          ? topUpAffordable
-              ? ''
-              : `${topUpSurplusToken.symbol} Balance Insufficient to Cover Swap`
+          ? topUpBlockingErrorMessage ||
+            (!isTopUpSurplusWalletBalanceSufficient
+                ? `${topUpSurplusToken.symbol} Wallet Balance Insufficient to Cover Gas`
+                : !isTopUpDeficientWalletBalanceSufficient
+                  ? `${topUpDeficientToken.symbol} Wallet Balance Insufficient to Cover Gas`
+                  : topUpAffordable
+                    ? ''
+                    : `${topUpSurplusToken.symbol} Balance Insufficient to Cover Swap`)
           : rangeButtonErrorMessageTokenA || rangeButtonErrorMessageTokenB;
 
     // a balanced two-token entry that overflows one side's combined wallet +
@@ -1695,11 +1834,12 @@ function Range() {
                 tokenBInputQty,
                 primaryQuantity,
                 isTokenAPrimary,
+                canOfferTopUp,
             });
             setZapInputQty(deriveZapQtyFromTwoTokenEntry());
             clearTokenInputs();
         } else {
-            if (mode === 'topup' && twoTokenInputSnapshot) {
+            if (twoTokenInputSnapshot) {
                 setTokenAInputQty(twoTokenInputSnapshot.tokenAInputQty);
                 setTokenBInputQty(twoTokenInputSnapshot.tokenBInputQty);
                 setPrimaryQuantity(twoTokenInputSnapshot.primaryQuantity);
@@ -1827,6 +1967,14 @@ function Range() {
                             aria-label='Deposit method'
                             className={depositModeStyles.container}
                         >
+                            <button
+                                type='button'
+                                aria-pressed={depositMode === 'balanced'}
+                                onClick={() => switchDepositMode('balanced')}
+                                className={`${depositModeStyles.button} ${depositMode === 'balanced' ? depositModeStyles.buttonActive : ''}`}
+                            >
+                                Deposit both tokens
+                            </button>
                             {/* top-up: keep both tokens, swap only the shortfall */}
                             {canSwitchToTopUp && (
                                 <button
@@ -1872,7 +2020,7 @@ function Range() {
                                 setZapInputQty('');
                                 setZapInputSideAOverride(!zapInputIsTokenA);
                             }}
-                            usdValue={zapInputUsdValue}
+                            usdValue={zapInputTokenUsdPrice}
                             amountToReduceNativeTokenQty={
                                 amountToReduceNativeTokenQty
                             }
@@ -2097,7 +2245,36 @@ function Range() {
                             flat={true}
                         />
                     ) : undefined
-                ) : isPoolInitialized &&
+                ) : topUpSurplusNeedsApproval ? (
+                    <Button
+                        idForDOM='approve_token_for_range'
+                        style={{ textTransform: 'none' }}
+                        title={
+                            !isApprovalPending
+                                ? isUsdtResetRequiredTopUpSurplus
+                                    ? 'Reset USDT Approval (Step 1/2)'
+                                    : `Approve ${topUpSurplusToken.symbol}`
+                                : isUsdtResetRequiredTopUpSurplus
+                                  ? 'USDT Approval Reset Pending...'
+                                  : `${topUpSurplusToken.symbol} Approval Pending...`
+                        }
+                        disabled={isApprovalPending}
+                        action={async () => {
+                            await approve(
+                                topUpSurplusToken.address,
+                                topUpSurplusToken.symbol,
+                                undefined,
+                                isUsdtResetRequiredTopUpSurplus
+                                    ? 0n
+                                    : isActiveNetworkPlume
+                                      ? topUpSurplusApprovalWei
+                                      : ethers.MaxUint256,
+                            );
+                        }}
+                        flat={true}
+                    />
+                ) : !isTopUpMode &&
+                  isPoolInitialized &&
                   parseFloat(tokenAInputQty) > 0 &&
                   isTokenAWalletBalanceSufficient &&
                   !isTokenAAllowanceSufficient ? (
@@ -2139,7 +2316,8 @@ function Range() {
                         }}
                         flat={true}
                     />
-                ) : isPoolInitialized &&
+                ) : !isTopUpMode &&
+                  isPoolInitialized &&
                   parseFloat(tokenBInputQty) > 0 &&
                   isTokenBWalletBalanceSufficient &&
                   !isTokenBAllowanceSufficient ? (
@@ -2203,8 +2381,7 @@ function Range() {
                                 isUsdtResetRequiredTopUpDeficient
                                     ? 0n
                                     : isActiveNetworkPlume
-                                      ? // add 1% buffer to avoid rounding errors
-                                        (topUpDeficientWalletWei * 101n) / 100n
+                                      ? topUpDeficientApprovalWei
                                       : ethers.MaxUint256,
                             );
                         }}
