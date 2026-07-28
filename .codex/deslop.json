@@ -1,0 +1,28 @@
+{
+    "allowedUnknownBoundaryPathParts": [
+        "adapter",
+        "boundary",
+        "codec",
+        "contract",
+        "fixture",
+        "fixtures",
+        "ingress",
+        "parse",
+        "parser",
+        "schema",
+        "spec",
+        "test",
+        "validator"
+    ],
+    "canonicalHelperNames": [
+        "clamp",
+        "operationErr",
+        "operationOk",
+        "stableStringify",
+        "unique"
+    ],
+    "candidateScopeOverrides": [],
+    "excludePathParts": [],
+    "ignorePathPrefixes": [],
+    "ignorePathSubstrings": []
+}
