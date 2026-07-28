@@ -1163,12 +1163,8 @@ function Range() {
         topUpSurplusToken,
         topUpBuyDeficientQty,
         topUpSwapDescription,
-        topUpSurplusNeedsApproval,
-        topUpSurplusApprovalWei,
-        isUsdtResetRequiredTopUpSurplus,
-        topUpDeficientNeedsApproval,
-        topUpDeficientApprovalWei,
-        isUsdtResetRequiredTopUpDeficient,
+        topUpSurplus,
+        topUpDeficient,
         zapSteps,
         setZapStep,
         setIsZapComplete,
@@ -1605,16 +1601,16 @@ function Range() {
                             flat={true}
                         />
                     ) : undefined
-                ) : topUpSurplusNeedsApproval ? (
+                ) : topUpSurplus.needsApproval ? (
                     <Button
                         idForDOM='approve_token_for_range'
                         style={{ textTransform: 'none' }}
                         title={
                             !isApprovalPending
-                                ? isUsdtResetRequiredTopUpSurplus
+                                ? topUpSurplus.isUsdtResetRequired
                                     ? 'Reset USDT Approval (Step 1/2)'
                                     : `Approve ${topUpSurplusToken.symbol}`
-                                : isUsdtResetRequiredTopUpSurplus
+                                : topUpSurplus.isUsdtResetRequired
                                   ? 'USDT Approval Reset Pending...'
                                   : `${topUpSurplusToken.symbol} Approval Pending...`
                         }
@@ -1624,10 +1620,10 @@ function Range() {
                                 topUpSurplusToken.address,
                                 topUpSurplusToken.symbol,
                                 undefined,
-                                isUsdtResetRequiredTopUpSurplus
+                                topUpSurplus.isUsdtResetRequired
                                     ? 0n
                                     : isActiveNetworkPlume
-                                      ? topUpSurplusApprovalWei
+                                      ? topUpSurplus.approvalWei
                                       : ethers.MaxUint256,
                             );
                         }}
@@ -1719,16 +1715,16 @@ function Range() {
                         }}
                         flat={true}
                     />
-                ) : topUpDeficientNeedsApproval ? (
+                ) : topUpDeficient.needsApproval ? (
                     <Button
                         idForDOM='approve_token_for_range'
                         style={{ textTransform: 'none' }}
                         title={
                             !isApprovalPending
-                                ? isUsdtResetRequiredTopUpDeficient
+                                ? topUpDeficient.isUsdtResetRequired
                                     ? 'Reset USDT Approval (Step 1/2)'
                                     : `Approve ${topUpDeficientToken.symbol}`
-                                : isUsdtResetRequiredTopUpDeficient
+                                : topUpDeficient.isUsdtResetRequired
                                   ? 'USDT Approval Reset Pending...'
                                   : `${topUpDeficientToken.symbol} Approval Pending...`
                         }
@@ -1738,10 +1734,10 @@ function Range() {
                                 topUpDeficientToken.address,
                                 topUpDeficientToken.symbol,
                                 undefined,
-                                isUsdtResetRequiredTopUpDeficient
+                                topUpDeficient.isUsdtResetRequired
                                     ? 0n
                                     : isActiveNetworkPlume
-                                      ? topUpDeficientApprovalWei
+                                      ? topUpDeficient.approvalWei
                                       : ethers.MaxUint256,
                             );
                         }}

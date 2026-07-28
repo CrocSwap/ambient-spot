@@ -19,6 +19,7 @@ import {
 import { MAINNET_TOKENS } from '../../../../ambient-utils/constants/networks/ethereumMainnet';
 import { getFormattedNumber } from '../../../../ambient-utils/dataLayer';
 import { ZAP_BUFFER_PERCENT } from '../../../../ambient-utils/dataLayer/transactions/zap';
+import { TokenIF } from '../../../../ambient-utils/types';
 import { useHandleRangeButtonMessage } from '../../../../App/hooks/useHandleRangeButtonMessage';
 import {
     ZapStep,
@@ -46,6 +47,73 @@ const toTokenQtyString = (value: number, decimals: number): string => {
     if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '');
     return s;
 };
+
+// The approval cushion carried over a top-up leg's estimated wallet pull. The
+// pull is estimated in display units and converted to wei, so it can drift by a
+// rounding margin from what the contracts actually take.
+const TOP_UP_APPROVAL_BUFFER_PERCENT = 1n;
+
+// Single owner for a top-up leg's wallet requirement and ERC-20 allowance. Both
+// legs answer the same questions, and both must answer them the same way: the
+// amount we approve and the amount we check sufficiency against are one number,
+// so an allowance sitting just under the cushion can't pass the check and then
+// revert the transaction. That matters most on the deficient side, whose
+// allowance gates tx2 after tx1's swap has already executed and moved the
+// user's balances.
+function topUpSideApproval(input: {
+    token: TokenIF;
+    isNative: boolean;
+    allowance: bigint | undefined;
+    walletBalance: string;
+    dexBalance: string;
+    // total this leg pulls for the token, across wallet and exchange balances
+    requiredWei: bigint;
+    // exchange balance the transaction itself creates before this leg pulls
+    extraDexWei?: bigint;
+    nativeGasReserve: number;
+    enabled: boolean;
+}) {
+    const {
+        token,
+        isNative,
+        allowance,
+        requiredWei,
+        nativeGasReserve,
+        enabled,
+    } = input;
+    const availableDexWei =
+        fromDisplayQty(input.dexBalance || '0', token.decimals) +
+        (input.extraDexWei ?? 0n);
+    const walletRequiredWei =
+        requiredWei > availableDexWei ? requiredWei - availableDexWei : 0n;
+    const approvalWei =
+        (walletRequiredWei * (100n + TOP_UP_APPROVAL_BUFFER_PERCENT) + 99n) /
+        100n;
+    const isAllowanceSufficient =
+        allowance === undefined ? true : allowance >= approvalWei;
+    return {
+        walletRequiredWei,
+        approvalWei,
+        isAllowanceSufficient,
+        // a native token needs no allowance, but its wallet balance must still
+        // cover the pull plus the gas held back for the transaction itself
+        isWalletBalanceSufficient:
+            !isNative ||
+            walletRequiredWei +
+                fromDisplayQty(nativeGasReserve.toString(), token.decimals) <=
+                fromDisplayQty(input.walletBalance || '0', token.decimals),
+        isUsdtResetRequired:
+            token.address.toLowerCase() ===
+                MAINNET_TOKENS.USDT.address.toLowerCase() &&
+            !!allowance &&
+            allowance < approvalWei,
+        needsApproval:
+            enabled &&
+            !isNative &&
+            walletRequiredWei > 0n &&
+            !isAllowanceSufficient,
+    };
+}
 
 interface UseZapDepositArgs {
     // shape of the range being minted
@@ -615,117 +683,36 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         !!zapInputAllowance &&
         zapInputAllowance < zapQtyCoveredByWalletBalance;
 
-    const topUpSurplusWalletBalance = topUpDeficientIsA
-        ? tokenBBalance
-        : tokenABalance;
-    const topUpSurplusDexBalance = topUpDeficientIsA
-        ? tokenBDexBalance
-        : tokenADexBalance;
-    const topUpSurplusAllowance = topUpDeficientIsA
-        ? tokenBAllowance
-        : tokenAAllowance;
-    const topUpSurplusIsEth = topUpDeficientIsA ? isTokenBEth : isTokenAEth;
-    const topUpSurplusWalletWei = fromDisplayQty(
-        topUpSurplusWalletBalance || '0',
-        topUpSurplusToken.decimals,
-    );
-    const topUpSurplusDexWei = fromDisplayQty(
-        topUpSurplusDexBalance || '0',
-        topUpSurplusToken.decimals,
-    );
-    const topUpSurplusWalletRequiredWei =
-        topUpSurplusRequiredWei > topUpSurplusDexWei
-            ? topUpSurplusRequiredWei - topUpSurplusDexWei
-            : 0n;
-    const topUpSurplusApprovalWei =
-        (topUpSurplusWalletRequiredWei * 101n + 99n) / 100n;
-    const isTopUpSurplusWalletBalanceSufficient =
-        !topUpSurplusIsEth ||
-        topUpSurplusWalletRequiredWei +
-            fromDisplayQty(
-                amountToReduceNativeTokenQty.toString(),
-                topUpSurplusToken.decimals,
-            ) <=
-            topUpSurplusWalletWei;
-    const isTopUpSurplusAllowanceSufficient =
-        topUpSurplusAllowance === undefined
-            ? true
-            : topUpSurplusAllowance >= topUpSurplusApprovalWei;
-    const isUsdtResetRequiredTopUpSurplus =
-        topUpSurplusToken.address.toLowerCase() ===
-            MAINNET_TOKENS.USDT.address.toLowerCase() &&
-        !!topUpSurplusAllowance &&
-        topUpSurplusAllowance < topUpSurplusApprovalWei;
-    const topUpSurplusNeedsApproval =
-        isTopUpMode &&
-        isPoolInitialized &&
-        !topUpSurplusIsEth &&
-        topUpSurplusWalletRequiredWei > 0n &&
-        !isTopUpSurplusAllowanceSufficient;
-
-    // Approval for the top-up deficient token. In top-up mode the swap (tx1)
-    // only buys the shortfall into the exchange balance; the mint (tx2) then
-    // pulls the user's EXISTING deficient-token balance too, and its WALLET
-    // portion needs an ERC-20 allowance. The normal per-token approve button
-    // doesn't surface this because it's gated on wallet-balance sufficiency,
-    // which is false here (the entered amount deliberately exceeds the wallet
-    // balance — that's the whole reason a top-up is needed). Approval is keyed
-    // on the deficient token's wallet-funded portion after the existing and
-    // freshly bought exchange balances are applied (native tokens need none).
-    const topUpDeficientWalletBalance = topUpDeficientIsA
-        ? tokenABalance
-        : tokenBBalance;
-    const topUpDeficientDexBalance = topUpDeficientIsA
-        ? tokenADexBalance
-        : tokenBDexBalance;
-    const topUpDeficientAllowance = topUpDeficientIsA
-        ? tokenAAllowance
-        : tokenBAllowance;
-    const topUpDeficientIsEth = topUpDeficientIsA ? isTokenAEth : isTokenBEth;
-    const topUpDeficientWalletWei = fromDisplayQty(
-        topUpDeficientWalletBalance || '0',
-        topUpDeficientToken.decimals,
-    );
-    const topUpDeficientDexWei = fromDisplayQty(
-        topUpDeficientDexBalance || '0',
-        topUpDeficientToken.decimals,
-    );
-    const topUpDeficientNeededWei = topUpDeficientIsA
-        ? neededTokenAWei
-        : neededTokenBWei;
-    const topUpDeficientAvailableDexWei =
-        topUpDeficientDexWei + topUpBuyDeficientWei;
-    const topUpDeficientWalletRequiredWei =
-        topUpDeficientNeededWei > topUpDeficientAvailableDexWei
-            ? topUpDeficientNeededWei - topUpDeficientAvailableDexWei
-            : 0n;
-    const topUpDeficientApprovalWei =
-        (topUpDeficientWalletRequiredWei * 101n + 99n) / 100n;
-    const isTopUpDeficientWalletBalanceSufficient =
-        !topUpDeficientIsEth ||
-        topUpDeficientWalletRequiredWei +
-            fromDisplayQty(
-                amountToReduceNativeTokenQty.toString(),
-                topUpDeficientToken.decimals,
-            ) <=
-            topUpDeficientWalletWei;
-    const isTopUpDeficientAllowanceSufficient =
-        topUpDeficientAllowance === undefined
-            ? true
-            : topUpDeficientAllowance >= topUpDeficientWalletRequiredWei;
-    const isUsdtResetRequiredTopUpDeficient =
-        topUpDeficientToken.address.toLowerCase() ===
-            MAINNET_TOKENS.USDT.address.toLowerCase() &&
-        !!topUpDeficientAllowance &&
-        topUpDeficientAllowance < topUpDeficientWalletRequiredWei;
-    // shown only after the surplus-token approval (needed for tx1) is satisfied,
-    // since the transaction needs that approval before the deficient-side mint
-    const topUpDeficientNeedsApproval =
-        isTopUpMode &&
-        isPoolInitialized &&
-        !topUpDeficientIsEth &&
-        topUpDeficientWalletRequiredWei > 0n &&
-        !isTopUpDeficientAllowanceSufficient;
+    // Both top-up legs pull a wallet-funded portion of their token: the swap
+    // (tx1) sells the surplus token, and the mint (tx2) pulls the deficient
+    // token the user already holds. The deficient side is not covered by the
+    // normal per-token approve button, which is gated on wallet-balance
+    // sufficiency — false here, since the entered amount deliberately exceeds
+    // the wallet balance, which is the whole reason a top-up is needed.
+    const topUpApprovalEnabled = isTopUpMode && isPoolInitialized;
+    const topUpSurplus = topUpSideApproval({
+        token: topUpSurplusToken,
+        isNative: topUpDeficientIsA ? isTokenBEth : isTokenAEth,
+        allowance: topUpDeficientIsA ? tokenBAllowance : tokenAAllowance,
+        walletBalance: topUpDeficientIsA ? tokenBBalance : tokenABalance,
+        dexBalance: topUpDeficientIsA ? tokenBDexBalance : tokenADexBalance,
+        requiredWei: topUpSurplusRequiredWei,
+        nativeGasReserve: amountToReduceNativeTokenQty,
+        enabled: topUpApprovalEnabled,
+    });
+    const topUpDeficient = topUpSideApproval({
+        token: topUpDeficientToken,
+        isNative: topUpDeficientIsA ? isTokenAEth : isTokenBEth,
+        allowance: topUpDeficientIsA ? tokenAAllowance : tokenBAllowance,
+        walletBalance: topUpDeficientIsA ? tokenABalance : tokenBBalance,
+        dexBalance: topUpDeficientIsA ? tokenADexBalance : tokenBDexBalance,
+        requiredWei: topUpDeficientIsA ? neededTokenAWei : neededTokenBWei,
+        // tx1 buys the shortfall into the exchange balance, so the mint can
+        // draw on it on top of whatever the user already holds there
+        extraDexWei: topUpBuyDeficientWei,
+        nativeGasReserve: amountToReduceNativeTokenQty,
+        enabled: topUpApprovalEnabled,
+    });
 
     // effective button state, accounting for the active deposit mode. In
     // top-up mode the two-token entry deliberately overflows one side (the swap
@@ -744,8 +731,8 @@ export function useZapDeposit(args: UseZapDepositArgs) {
     const topUpTokensAllowed =
         (tokenAAllowed || tokenAHasExpectedTopUpError) &&
         (tokenBAllowed || tokenBHasExpectedTopUpError) &&
-        isTopUpSurplusWalletBalanceSufficient &&
-        isTopUpDeficientWalletBalanceSufficient;
+        topUpSurplus.isWalletBalanceSufficient &&
+        topUpDeficient.isWalletBalanceSufficient;
     const effectiveTokenAllowed = isZapMode
         ? zapTokenAllowed
         : isTopUpMode
@@ -755,9 +742,9 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         ? zapButtonErrorMessage
         : isTopUpMode
           ? topUpBlockingErrorMessage ||
-            (!isTopUpSurplusWalletBalanceSufficient
+            (!topUpSurplus.isWalletBalanceSufficient
                 ? `${topUpSurplusToken.symbol} Wallet Balance Insufficient to Cover Gas`
-                : !isTopUpDeficientWalletBalanceSufficient
+                : !topUpDeficient.isWalletBalanceSufficient
                   ? `${topUpDeficientToken.symbol} Wallet Balance Insufficient to Cover Gas`
                   : topUpAffordable
                     ? ''
@@ -869,12 +856,8 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         topUpSurplusToken,
         topUpBuyDeficientQty,
         topUpSwapDescription,
-        topUpSurplusNeedsApproval,
-        topUpSurplusApprovalWei,
-        isUsdtResetRequiredTopUpSurplus,
-        topUpDeficientNeedsApproval,
-        topUpDeficientApprovalWei,
-        isUsdtResetRequiredTopUpDeficient,
+        topUpSurplus,
+        topUpDeficient,
         // submission progress
         zapSteps,
         setZapStep,
