@@ -12,7 +12,7 @@
         "@mui/material": "^7.3.11",
         "@plausible-analytics/tracker": "^0.4.5",
         "@reown/appkit": "^1.8.22",
-        "@reown/appkit-adapter-ethers": "^1.8.22",
+        "@reown/appkit-adapter-ethers": "^1.8.23",
         "d3": "^7.9.0",
         "d3fc": "^15.2.13",
         "emoji-picker-react": "^4.19.1",
