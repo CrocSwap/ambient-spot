@@ -17,9 +17,9 @@ import {
     VAULT_TX_L1_DATA_FEE_ESTIMATE,
 } from '../../../../../ambient-utils/constants';
 import {
-    AllVaultsServerIF,
     TokenIF,
     VaultStrategy,
+    VaultWithLiveTvlIF,
 } from '../../../../../ambient-utils/types';
 import Modal from '../../../../../components/Global/Modal/Modal';
 import ModalHeader from '../../../../../components/Global/ModalHeader/ModalHeader';
@@ -36,7 +36,7 @@ import useKeyPress from '../../../../../App/hooks/useKeyPress';
 
 interface propsIF {
     mainAsset: TokenIF;
-    vault: AllVaultsServerIF;
+    vault: VaultWithLiveTvlIF;
     balanceMainAsset: bigint | undefined;
     mainAssetScaledQtyNum: number;
     mainAssetBalanceDisplayString: string;

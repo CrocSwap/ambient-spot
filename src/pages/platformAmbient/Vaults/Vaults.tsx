@@ -3,6 +3,7 @@ import {
     AllVaultsServerIF,
     UserVaultsServerIF,
     VaultIF,
+    VaultWithLiveTvlIF,
 } from '../../../ambient-utils/types';
 import TokenRowSkeleton from '../../../components/Global/Explore/TokenRow/TokenRowSkeleton';
 import { ChainDataContext, UserDataContext } from '../../../contexts';
@@ -10,6 +11,10 @@ import { fallbackVaultsList } from './fallbackVaultsList';
 import { Vault } from './Vault';
 import VaultRow from './VaultRow/VaultRow';
 import styles from './Vaults.module.css';
+
+// Rows come either from the vaults API (via context, with on-chain TVL overlaid)
+// or from the hardcoded fallback list when that fetch yields nothing.
+type VaultRowSource = VaultIF | AllVaultsServerIF | VaultWithLiveTvlIF;
 function Vaults() {
     // !important:  once we have mock data, change the type on this
     // !important:  ... value to `AllVaultsServerIF[]` and then fix linter
@@ -39,6 +44,9 @@ function Vaults() {
         </div>
     );
 
+    const tvlForSort = (vault: VaultRowSource): number =>
+        vault.tvlUsd === undefined ? 0 : parseFloat(vault.tvlUsd);
+
     const tempItems = [1, 2, 3, 4, 5];
 
     const skeletonDisplay = tempItems.map((item, idx) => (
@@ -64,20 +72,21 @@ function Vaults() {
                     (vaultsOnCurrentChain !== undefined &&
                         vaultsOnCurrentChain.length === 0)
                         ? skeletonDisplay
-                        : (vaultsOnCurrentChain && vaultsOnCurrentChain.length
-                              ? vaultsOnCurrentChain
-                              : fallbackVaultsList
-                          )
+                        : [
+                              ...(vaultsOnCurrentChain &&
+                              vaultsOnCurrentChain.length
+                                  ? vaultsOnCurrentChain
+                                  : fallbackVaultsList),
+                          ]
+                              // Vaults whose TVL has not resolved yet compare
+                              // equal, so the list holds the order it arrived in
+                              // until real figures replace the pending ones.
                               .sort(
-                                  (
-                                      a: VaultIF | AllVaultsServerIF,
-                                      b: VaultIF | AllVaultsServerIF,
-                                  ) =>
-                                      parseFloat(b.tvlUsd) -
-                                      parseFloat(a.tvlUsd),
+                                  (a: VaultRowSource, b: VaultRowSource) =>
+                                      tvlForSort(b) - tvlForSort(a),
                               )
 
-                              .map((vault: VaultIF | AllVaultsServerIF) => {
+                              .map((vault: VaultRowSource) => {
                                   const KEY_SLUG = 'vault_row_';
                                   return (
                                       <VaultRow
