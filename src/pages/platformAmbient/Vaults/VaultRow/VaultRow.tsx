@@ -209,7 +209,9 @@ export default function VaultRow(props: propsIF) {
                             <RiExternalLinkLine size={20} />
                         </p>
                         <p className={styles.tvlDisplay}>
-                            {formatDollarAmount(parseFloat(vault.tvlUsd))}
+                            {vault.tvlUsd === undefined
+                                ? '...'
+                                : formatDollarAmount(parseFloat(vault.tvlUsd))}
                         </p>
                         <p
                             className={`${styles.depositContainer} ${!isUserConnected && styles.hideDepositOnMobile}`}
