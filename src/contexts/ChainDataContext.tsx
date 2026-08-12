@@ -16,6 +16,7 @@ import {
     fetchBlastUserXpData,
     fetchBlockNumber,
     fetchUserXpData,
+    fetchVaultTvlUsd,
     RpcNodeStatus,
 } from '../ambient-utils/api';
 import { fetchNFT } from '../ambient-utils/api/fetchNft';
@@ -37,6 +38,7 @@ import {
     PoolIF,
     TokenIF,
     UserVaultsServerIF,
+    VaultWithLiveTvlIF,
 } from '../ambient-utils/types';
 import { usePoolList } from '../App/hooks/usePoolList';
 import { AppStateContext } from './AppStateContext';
@@ -89,7 +91,7 @@ export interface ChainDataContextIF {
     setIsGasPriceFetchManuallyTriggerered: Dispatch<SetStateAction<boolean>>;
     isAnalyticsPoolListDefinedOrUnavailable: boolean;
     activePoolList: PoolIF[] | undefined;
-    vaultsOnCurrentChain: AllVaultsServerIF[] | undefined;
+    vaultsOnCurrentChain: VaultWithLiveTvlIF[] | undefined;
 }
 
 export const ChainDataContext = createContext({} as ChainDataContextIF);
@@ -266,7 +268,7 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         }
     }
 
-    const vaultsOnCurrentChain: AllVaultsServerIF[] | undefined =
+    const serverVaultsOnCurrentChain: AllVaultsServerIF[] | undefined =
         useMemo(() => {
             return allVaultsData !== undefined
                 ? allVaultsData?.filter(
@@ -274,6 +276,74 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                   )
                 : undefined;
         }, [allVaultsData, chainId]);
+
+    // Settled USD value per vault. Keyed by chain as well as address because a
+    // vault contract can share an address across chains, and because keying on
+    // the active chain lets a network switch read as pending rather than
+    // briefly showing the previous chain's figures.
+    const vaultTvlKey = (vault: AllVaultsServerIF): string =>
+        `${vault.chainId}:${vault.address.toLowerCase()}`;
+
+    // Absence from this map means the read has not settled yet, so every vault
+    // gets an entry once its read finishes, including the ones that fall back to
+    // the server figure. See fetchVaultTvlUsd for why the API's own number goes
+    // stale.
+    const [onChainVaultTvl, setOnChainVaultTvl] = useState<Map<string, number>>(
+        new Map(),
+    );
+
+    useEffect(() => {
+        if (!provider || !serverVaultsOnCurrentChain?.length) return;
+        let isStale = false;
+        Promise.all(
+            serverVaultsOnCurrentChain.map(async (vault) => {
+                try {
+                    const tvlUsd = await fetchVaultTvlUsd(
+                        vault,
+                        chainId,
+                        provider,
+                        cachedFetchTokenPrice,
+                    );
+                    // A vault the app cannot price on-chain keeps the server
+                    // figure, so it still lists a number rather than reading as
+                    // permanently pending.
+                    return [
+                        vaultTvlKey(vault),
+                        tvlUsd ?? parseFloat(vault.tvlUsd),
+                    ] as const;
+                } catch (error) {
+                    console.error(
+                        `Error reading on-chain TVL for vault ${vault.vaultSymbol} (${vault.address}):`,
+                        error,
+                    );
+                    return [
+                        vaultTvlKey(vault),
+                        parseFloat(vault.tvlUsd),
+                    ] as const;
+                }
+            }),
+        ).then((entries) => {
+            if (isStale) return;
+            setOnChainVaultTvl(new Map(entries));
+        });
+        return () => {
+            isStale = true;
+        };
+    }, [
+        provider,
+        chainId,
+        serverVaultsOnCurrentChain,
+        poolStatsPollingCacheTime,
+    ]);
+
+    const vaultsOnCurrentChain: VaultWithLiveTvlIF[] | undefined = useMemo(
+        () =>
+            serverVaultsOnCurrentChain?.map((vault) => {
+                const tvlUsd = onChainVaultTvl.get(vaultTvlKey(vault));
+                return { ...vault, tvlUsd: tvlUsd?.toString() };
+            }),
+        [serverVaultsOnCurrentChain, onChainVaultTvl],
+    );
 
     // logic to get user vault data
     async function getUserVaultData(): Promise<void> {

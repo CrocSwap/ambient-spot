@@ -13,6 +13,7 @@ export * from './fetchTimeout';
 export * from './fetchTokenBalances';
 export * from './fetchTokenList';
 export * from './fetchTokenPrice';
+export * from './fetchVaultTvl';
 export * from './fetchUserRecentChanges';
 export * from './fetchWithFallbacks';
 export * from './fetchUserPositions';
