@@ -31,7 +31,6 @@ import { ethereumMainnet } from '../ambient-utils/constants';
 import { blastMainnet } from '../ambient-utils/constants';
 import { plumeMainnet } from '../ambient-utils/constants';
 import { scrollMainnet } from '../ambient-utils/constants';
-import { swellMainnet } from '../ambient-utils/constants';
 import { tokens as AMBIENT_TOKEN_LIST } from '../ambient-utils/constants/ambient-token-list.json';
 import { getChainStats, getFormattedNumber } from '../ambient-utils/dataLayer';
 import {
@@ -120,7 +119,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         mainnetProvider,
         scrollProvider,
         blastProvider,
-        swellProvider,
         plumeProvider,
     } = useContext(CrocEnvContext);
 
@@ -940,12 +938,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         [scrollProvider !== undefined],
     );
 
-    const swellCrocEnv = useMemo(
-        () =>
-            swellProvider ? new CrocEnv(swellProvider, undefined) : undefined,
-        [swellProvider !== undefined],
-    );
-
     const blastCrocEnv = useMemo(
         () =>
             blastProvider ? new CrocEnv(blastProvider, undefined) : undefined,
@@ -1003,36 +995,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
     useEffect(() => {
         if (!showDexStats) return;
 
-        // Track running totals
-        let tvlTotalUsd = 0;
-        let volumeTotalUsd = 0;
-        let feesTotalUsd = 0;
-        let resultsReceived = 0;
-        const numChainsToAggregate = 5;
-
-        const handleChainStats = (
-            dexStats:
-                | {
-                      tvlTotalUsd: number;
-                      volumeTotalUsd: number;
-                      feesTotalUsd: number;
-                  }
-                | undefined,
-        ) => {
-            if (!dexStats) return;
-
-            tvlTotalUsd += dexStats.tvlTotalUsd;
-            volumeTotalUsd += dexStats.volumeTotalUsd;
-            feesTotalUsd += dexStats.feesTotalUsd;
-            resultsReceived += 1;
-
-            // Only update stats when all chains have completed
-            // to ensure we show accurate totals (not partial sums)
-            if (resultsReceived === numChainsToAggregate) {
-                updateStats(tvlTotalUsd, volumeTotalUsd, feesTotalUsd);
-            }
-        };
-
         // Fetch all chains in parallel
         const chainConfigs = [
             {
@@ -1048,12 +1010,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                 tokenCount: 20,
             },
             {
-                chainId: '0x783',
-                env: swellCrocEnv,
-                gcgo: swellMainnet.gcgo,
-                tokenCount: 10,
-            },
-            {
                 chainId: '0x13e31',
                 env: blastCrocEnv,
                 gcgo: blastMainnet.gcgo,
@@ -1065,10 +1021,41 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                 gcgo: plumeMainnet.gcgo,
                 tokenCount: 10,
             },
-        ];
+        ].filter(
+            (config): config is typeof config & { env: CrocEnv } =>
+                config.env !== undefined,
+        );
+
+        // Track running totals
+        let tvlTotalUsd = 0;
+        let volumeTotalUsd = 0;
+        let feesTotalUsd = 0;
+        let resultsReceived = 0;
+
+        const handleChainStats = (
+            dexStats:
+                | {
+                      tvlTotalUsd: number;
+                      volumeTotalUsd: number;
+                      feesTotalUsd: number;
+                  }
+                | undefined,
+        ) => {
+            if (dexStats) {
+                tvlTotalUsd += dexStats.tvlTotalUsd;
+                volumeTotalUsd += dexStats.volumeTotalUsd;
+                feesTotalUsd += dexStats.feesTotalUsd;
+            }
+            resultsReceived += 1;
+
+            // Only update stats when all chains have completed
+            // to ensure we show accurate totals (not partial sums)
+            if (resultsReceived === chainConfigs.length) {
+                updateStats(tvlTotalUsd, volumeTotalUsd, feesTotalUsd);
+            }
+        };
 
         chainConfigs.forEach(({ chainId: cId, env, gcgo, tokenCount }) => {
-            if (!env) return;
             getChainStats(
                 'cumulative',
                 cId,
@@ -1084,7 +1071,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         showDexStats,
         mainnetCrocEnv !== undefined,
         scrollCrocEnv !== undefined,
-        swellCrocEnv !== undefined,
         blastCrocEnv !== undefined,
         plumeCrocEnv !== undefined,
         updateStats,
