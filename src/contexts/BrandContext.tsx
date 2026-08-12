@@ -17,8 +17,6 @@ import {
     monadTestnetBrandAssets,
     plumeBrandAssets,
     scrollBrandAssets,
-    swellBrandAssets,
-    swellSepoliaBrandAssets,
 } from '../assets/branding';
 import { brandIF, fontSets } from '../assets/branding/types';
 import { AppStateContext } from './AppStateContext';
@@ -87,14 +85,10 @@ export const BrandContextProvider = (props: { children: ReactNode }) => {
                 return plumeBrandAssets;
             case 'scroll':
                 return scrollBrandAssets;
-            case 'swell':
-                return swellBrandAssets;
             case 'ambientProduction':
                 return ambientProductionBrandAssets;
             case 'ambientTestnet':
                 return ambientTestnetBrandAssets;
-            case 'swellSepolia':
-                return swellSepoliaBrandAssets;
             case 'monadTestnet':
                 return monadTestnetBrandAssets;
             case 'baseSepolia':

@@ -340,24 +340,9 @@ export const hiddenTokens = [
         chainId: 98864,
     },
     {
-        // Ambient USDCv1 on Swell Testnet
-        address: '0x4d65fb724ced0cfc6abfd03231c9cdc2c36a587b',
-        chainId: 1924,
-    },
-    {
-        // Ambient USDCv2 on Swell Testnet
-        address: '0xCA97CC9c1a1dfA54A252DaAFE9b5Cd1E16C81328',
-        chainId: 1924,
-    },
-    {
         // WTT on Plume Mainnet
         address: '0x3211dFB6c2d3F7f15D7568049a86a38fcF1b00D3',
         chainId: 98865,
-    },
-    {
-        // WTT on Swell Mainnet
-        address: '0x83CA2E0018cBa6CD1149F2BB059d2Fc6D0fDf456',
-        chainId: 1923,
     },
     {
         // pETH on Mainnet

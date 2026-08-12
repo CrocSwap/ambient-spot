@@ -38,13 +38,6 @@ export function lookupChainId(
         case '0x82750':
             chainIdHex = '0x82750';
             break;
-        case 'swell':
-        case 'swellchain':
-        case '0xswell':
-        case '1923':
-        case '0x783':
-            chainIdHex = '0x783';
-            break;
         case 'plume':
         case '98866':
         case '0x18232':
@@ -64,11 +57,6 @@ export function lookupChainId(
         case '11155111':
         case '0xaa36a7':
             chainIdHex = '0xaa36a7';
-            break;
-        case 'swellsepolia':
-        case '1924':
-        case '0x784':
-            chainIdHex = '0x784';
             break;
         case 'blastsepolia':
         case '168587773':

@@ -23,8 +23,6 @@ import monadLogo from '../../../../assets/images/networks/monad_logo_small.svg';
 import plumeLogo from '../../../../assets/images/networks/plume_mainnet_logo.webp';
 import scrollLogo from '../../../../assets/images/networks/scroll_logo_no_margin.webp';
 import scrollSepoliaLogo from '../../../../assets/images/networks/scroll_sepolia_no_margin.webp';
-import swellLogo from '../../../../assets/images/networks/swell_logo_no_margin.webp';
-import swellSepoliaLogo from '../../../../assets/images/networks/swell_sepolia_no_margin.webp';
 import DropdownMenu2 from '../../../../components/Global/DropdownMenu2/DropdownMenu2';
 import { CrocEnvContext } from '../../../../contexts';
 import { AppStateContext } from '../../../../contexts/AppStateContext';
@@ -231,17 +229,6 @@ export default function NetworkSelector(props: propsIF) {
             condition: chainMap.has('0x82750'),
         },
         {
-            id: 'swell_network_selector',
-            chainId: '0x783',
-            name: 'Swell',
-            logo: swellLogo,
-            custom: 0,
-            isExternal: false,
-            testnet: false,
-            link: '',
-            condition: chainMap.has('0x783'),
-        },
-        {
             id: 'plume_network_selector',
             chainId: '0x18232',
             name: 'Plume',
@@ -317,17 +304,6 @@ export default function NetworkSelector(props: propsIF) {
             testnet: true,
             link: '',
             condition: chainMap.has('0x8274f'),
-        },
-        {
-            id: 'swell_sepolia_network_selector',
-            chainId: '0x784',
-            name: 'Swell',
-            logo: swellSepoliaLogo,
-            custom: 2,
-            isExternal: false,
-            testnet: true,
-            link: '',
-            condition: chainMap.has('0x784'),
         },
         {
             id: 'blast_sepolia_network_selector',

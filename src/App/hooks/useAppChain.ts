@@ -12,8 +12,6 @@ import {
     scrollMainnet,
     scrollSepolia,
     supportedNetworks,
-    swellMainnet,
-    swellSepolia,
 } from '../../ambient-utils/constants';
 import {
     chainNumToString,
@@ -210,10 +208,6 @@ export const useAppChain = (): {
                                 ) {
                                     nextNetwork = plumeLegacy;
                                 } else if (
-                                    incomingChainFromWallet === '0x783'
-                                ) {
-                                    nextNetwork = swellMainnet;
-                                } else if (
                                     incomingChainFromWallet === '0xaa36a7'
                                 ) {
                                     nextNetwork = ethereumSepolia;
@@ -229,10 +223,6 @@ export const useAppChain = (): {
                                     incomingChainFromWallet === '0x8274f'
                                 ) {
                                     nextNetwork = scrollSepolia;
-                                } else if (
-                                    incomingChainFromWallet === '0x784'
-                                ) {
-                                    nextNetwork = swellSepolia;
                                 } else if (
                                     incomingChainFromWallet === '0x279f'
                                 ) {

@@ -32,8 +32,6 @@ import monadLogo from './assets/images/networks/monad_logo_small_with_margin.png
 import plumeLogo from './assets/images/networks/plume_mainnet_logo_small.webp';
 import scrollLogo from './assets/images/networks/scroll_logo.webp';
 import scrollSepoliaLogo from './assets/images/networks/scroll_sepolia.webp';
-import swellLogo from './assets/images/networks/swell_logo.webp';
-import swellSepoliaLogo from './assets/images/networks/swell_sepolia.webp';
 import ErrorBoundary from './components/Error/ErrorBoundary';
 import GlobalErrorFallback from './components/Error/GlobalErrorFallback';
 import { GlobalContexts } from './contexts/GlobalContexts';
@@ -46,13 +44,11 @@ if (SHOULD_LOG_ANALYTICS) {
               ? 'testnet.ambient.finance'
               : brand === 'scroll'
                 ? 'scroll.ambient.finance'
-                : brand === 'swell'
-                  ? 'swell.ambient.finance'
-                  : brand === 'blast'
-                    ? 'blast.ambient.finance'
-                    : brand === 'plume'
-                      ? 'plume.ambient.finance'
-                      : 'ambient.finance';
+                : brand === 'blast'
+                  ? 'blast.ambient.finance'
+                  : brand === 'plume'
+                    ? 'plume.ambient.finance'
+                    : 'ambient.finance';
     initPlausible({
         domain: plausibleDomain,
         endpoint: 'https://pls.embindexer.net/ev',
@@ -117,8 +113,6 @@ createAppKit({
         11155111: sepoliaLogo,
         98865: plumeLogo,
         98866: plumeLogo,
-        1923: swellLogo,
-        1924: swellSepoliaLogo,
         84532: baseSepoliaLogo,
         10143: monadLogo,
     },

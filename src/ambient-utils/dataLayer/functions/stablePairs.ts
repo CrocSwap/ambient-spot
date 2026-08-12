@@ -15,8 +15,6 @@ import { PLUME_LEGACY_TOKENS } from '../../constants/networks/plumeLegacy';
 import { PLUME_TOKENS } from '../../constants/networks/plumeMainnet';
 import { SCROLL_TOKENS } from '../../constants/networks/scrollMainnet';
 import { SCROLL_SEPOLIA_TOKENS } from '../../constants/networks/scrollSepolia';
-import { SWELL_TOKENS } from '../../constants/networks/swellMainnet';
-import { SWELL_SEPOLIA_TOKENS } from '../../constants/networks/swellSepolia';
 import { TokenIF } from '../../types';
 
 export function isUsdcToken(addr: string): boolean {
@@ -131,7 +129,6 @@ export const USDC_TOKENS = [
     BLAST_SEPOLIA_TOKENS.USDB,
     SCROLL_SEPOLIA_TOKENS.USDC,
     SCROLL_TOKENS.USDC,
-    SWELL_SEPOLIA_TOKENS.USDC,
     BASE_SEPOLIA_TOKENS.USDC,
     MONAD_TESTNET_TOKENS.USDC,
 ].map((x) => x.address.toLowerCase());
@@ -150,11 +147,6 @@ export const STABLE_USD_TOKENS = [
     SCROLL_TOKENS.axlUSDC,
     SCROLL_TOKENS.USDE,
     SCROLL_TOKENS.SUSDe,
-    SWELL_SEPOLIA_TOKENS.USDT,
-    SWELL_TOKENS.USDe,
-    SWELL_TOKENS.USDT0,
-    SWELL_TOKENS.USDK,
-    SWELL_TOKENS.SUSDe,
     PLUME_TOKENS.pUSD,
     PLUME_TOKENS['USDC.e'],
     PLUME_TOKENS.USDT,
@@ -186,9 +178,7 @@ export const ETH_TOKENS = [
     BLAST_TOKENS.ETH,
     PLUME_LEGACY_TOKENS.ETH,
     MONAD_TESTNET_TOKENS.ETH,
-    SWELL_TOKENS.ETH,
     SEPOLIA_TOKENS.ETH,
-    SWELL_SEPOLIA_TOKENS.ETH,
     SCROLL_SEPOLIA_TOKENS.ETH,
     BLAST_SEPOLIA_TOKENS.ETH,
     BASE_SEPOLIA_TOKENS.ETH,
@@ -217,13 +207,6 @@ export const STAKED_ETH_TOKENS = [
     BLAST_TOKENS.ezETH,
     BLAST_TOKENS.weETH,
     PLUME_LEGACY_TOKENS.pETH,
-    SWELL_TOKENS.wstETH,
-    SWELL_TOKENS.pzETH,
-    SWELL_TOKENS.ezETH,
-    SWELL_TOKENS.weETH,
-    SWELL_TOKENS.rsETH,
-    SWELL_TOKENS.swETH,
-    SWELL_TOKENS.rswETH,
     PLUME_TOKENS.pETH,
     MONAD_TESTNET_TOKENS.gigaETH,
 ].map((x) => x.address.toLowerCase());
@@ -235,17 +218,13 @@ export const PRIORITY_ETH_EQUIVALENT_TOKENS = [
     PLUME_TOKENS.pETH,
 ].map((x) => x.address.toLowerCase());
 
-export const USD_EXCLUDED_TOKENS = [
-    MAINNET_TOKENS.SWELL.address,
-    SWELL_TOKENS.SWELL.address,
-].map((x) => x.toLowerCase());
+export const USD_EXCLUDED_TOKENS = [MAINNET_TOKENS.SWELL.address].map((x) =>
+    x.toLowerCase(),
+);
 
 export const STAKED_BTC_TOKENS = [
     SCROLL_TOKENS.SolvBTC,
     MAINNET_TOKENS.tBTC,
-    SWELL_TOKENS.uBTC,
-    SWELL_TOKENS.swBTC,
-    SWELL_TOKENS.stBTC,
 ].map((x) => x.address.toLowerCase());
 
 export const WRAPPED_NATIVE_TOKENS = [
