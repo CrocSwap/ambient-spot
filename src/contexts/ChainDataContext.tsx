@@ -31,7 +31,6 @@ import { ethereumMainnet } from '../ambient-utils/constants';
 import { blastMainnet } from '../ambient-utils/constants';
 import { plumeMainnet } from '../ambient-utils/constants';
 import { scrollMainnet } from '../ambient-utils/constants';
-import { swellMainnet } from '../ambient-utils/constants';
 import { tokens as AMBIENT_TOKEN_LIST } from '../ambient-utils/constants/ambient-token-list.json';
 import { getChainStats, getFormattedNumber } from '../ambient-utils/dataLayer';
 import {
@@ -70,7 +69,6 @@ export interface ChainDataContextIF {
     connectedUserBlastXp: BlastUserXpDataIF;
     isActiveNetworkBlast: boolean;
     isActiveNetworkPlume: boolean;
-    isActiveNetworkSwell: boolean;
     isActiveNetworkBase: boolean;
     isActiveNetworkMonad: boolean;
     isActiveNetworkScroll: boolean;
@@ -120,7 +118,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         mainnetProvider,
         scrollProvider,
         blastProvider,
-        swellProvider,
         plumeProvider,
     } = useContext(CrocEnvContext);
 
@@ -171,7 +168,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
     const isActiveNetworkScroll = ['0x82750', '0x8274f'].includes(chainId);
     const isActiveNetworkMainnet = ['0x1'].includes(chainId);
     const isActiveNetworkPlume = ['0x18231', '0x18232'].includes(chainId);
-    const isActiveNetworkSwell = ['0x783', '0x784'].includes(chainId);
     const isActiveNetworkBase = ['0x14a34'].includes(chainId);
     const isActiveNetworkMonad = ['0x279f'].includes(chainId);
 
@@ -940,12 +936,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         [scrollProvider !== undefined],
     );
 
-    const swellCrocEnv = useMemo(
-        () =>
-            swellProvider ? new CrocEnv(swellProvider, undefined) : undefined,
-        [swellProvider !== undefined],
-    );
-
     const blastCrocEnv = useMemo(
         () =>
             blastProvider ? new CrocEnv(blastProvider, undefined) : undefined,
@@ -1008,7 +998,7 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         let volumeTotalUsd = 0;
         let feesTotalUsd = 0;
         let resultsReceived = 0;
-        const numChainsToAggregate = 5;
+        const numChainsToAggregate = 4;
 
         const handleChainStats = (
             dexStats:
@@ -1048,12 +1038,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                 tokenCount: 20,
             },
             {
-                chainId: '0x783',
-                env: swellCrocEnv,
-                gcgo: swellMainnet.gcgo,
-                tokenCount: 10,
-            },
-            {
                 chainId: '0x13e31',
                 env: blastCrocEnv,
                 gcgo: blastMainnet.gcgo,
@@ -1084,7 +1068,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         showDexStats,
         mainnetCrocEnv !== undefined,
         scrollCrocEnv !== undefined,
-        swellCrocEnv !== undefined,
         blastCrocEnv !== undefined,
         plumeCrocEnv !== undefined,
         updateStats,
@@ -1100,7 +1083,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         setGasPriceinGwei,
         isActiveNetworkBlast,
         isActiveNetworkPlume,
-        isActiveNetworkSwell,
         isActiveNetworkBase,
         isActiveNetworkMonad,
         isActiveNetworkScroll,
