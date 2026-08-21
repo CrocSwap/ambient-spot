@@ -55,7 +55,7 @@ if (SHOULD_LOG_ANALYTICS) {
                       : 'ambient.finance';
     initPlausible({
         domain: plausibleDomain,
-        endpoint: 'https://pls.embindexer.net/ev',
+        endpoint: 'https://pls.ambindexer.net/ev',
         captureOnLocalhost: false,
         outboundLinks: true,
         customProperties: {
