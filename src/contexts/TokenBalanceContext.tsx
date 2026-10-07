@@ -114,8 +114,8 @@ export const TokenBalanceContextProvider = (props: {
     };
 
     return (
-        <TokenBalanceContext.Provider value={tokenBalanceContext}>
+        <TokenBalanceContext value={tokenBalanceContext}>
             {props.children}
-        </TokenBalanceContext.Provider>
+        </TokenBalanceContext>
     );
 };

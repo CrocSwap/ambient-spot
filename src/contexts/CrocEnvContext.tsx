@@ -261,8 +261,6 @@ export const CrocEnvContextProvider = (props: { children: ReactNode }) => {
     };
 
     return (
-        <CrocEnvContext.Provider value={crocEnvContext}>
-            {props.children}
-        </CrocEnvContext.Provider>
+        <CrocEnvContext value={crocEnvContext}>{props.children}</CrocEnvContext>
     );
 };

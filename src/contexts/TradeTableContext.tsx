@@ -221,8 +221,8 @@ export const TradeTableContextProvider = (props: {
         }
     }, [isCandleDataNull, isPoolInitialized]);
     return (
-        <TradeTableContext.Provider value={tradeTableContext}>
+        <TradeTableContext value={tradeTableContext}>
             {props.children}
-        </TradeTableContext.Provider>
+        </TradeTableContext>
     );
 };

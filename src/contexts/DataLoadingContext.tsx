@@ -147,8 +147,8 @@ export const DataLoadingContextProvider = (props: {
         resetConnectedUserDataLoadingStatus,
     };
     return (
-        <DataLoadingContext.Provider value={dataLoadingContext}>
+        <DataLoadingContext value={dataLoadingContext}>
             {props.children}
-        </DataLoadingContext.Provider>
+        </DataLoadingContext>
     );
 };

@@ -817,8 +817,8 @@ export const GraphDataContextProvider = (props: { children: ReactNode }) => {
     };
 
     return (
-        <GraphDataContext.Provider value={graphDataContext}>
+        <GraphDataContext value={graphDataContext}>
             {props.children}
-        </GraphDataContext.Provider>
+        </GraphDataContext>
     );
 };

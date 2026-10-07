@@ -58,9 +58,5 @@ export const TokenContextProvider = (props: { children: React.ReactNode }) => {
         addTokenInfo,
     };
 
-    return (
-        <TokenContext.Provider value={tokenContext}>
-            {props.children}
-        </TokenContext.Provider>
-    );
+    return <TokenContext value={tokenContext}>{props.children}</TokenContext>;
 };
