@@ -1,12 +1,5 @@
 import * as d3 from 'd3';
-import {
-    MouseEvent,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
     diffHashSig,
     diffHashSigScaleData,
@@ -43,11 +36,10 @@ interface liquidityPropsIF {
     liquidityScale: d3.ScaleLinear<number, number> | undefined;
     liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
     ranges: lineValue[];
-    chartMousemoveEvent: MouseEvent<HTMLDivElement> | undefined;
+    chartMousemoveEvent: MouseEvent | TouchEvent | undefined;
     liqTooltip:
-        | d3.Selection<HTMLDivElement, unknown, null, undefined>
-        | undefined;
-    mouseLeaveEvent: MouseEvent<HTMLDivElement> | undefined;
+        d3.Selection<HTMLDivElement, unknown, null, undefined> | undefined;
+    mouseLeaveEvent: MouseEvent | TouchEvent | undefined;
     isActiveDragOrZoom: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mainCanvasBoundingClientRect: any;
@@ -598,7 +590,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         }
     };
 
-    const liqDataHover = (event: MouseEvent<HTMLDivElement>) => {
+    const liqDataHover = (event: MouseEvent | TouchEvent) => {
         if (
             scaleData !== undefined &&
             liquidityDepthScale !== undefined &&
@@ -999,7 +991,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         liquidityData?.liqBidData,
     ]);
 
-    const bidAreaFunc = (event: MouseEvent<HTMLDivElement>) => {
+    const bidAreaFunc = (event: MouseEvent | TouchEvent) => {
         if (scaleData) {
             const canvas = d3
                 .select(d3CanvasLiq.current)
@@ -1066,7 +1058,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         }
     };
 
-    const askAreaFunc = (event: MouseEvent<HTMLDivElement>) => {
+    const askAreaFunc = (event: MouseEvent | TouchEvent) => {
         if (scaleData) {
             const canvas = d3
                 .select(d3CanvasLiq.current)
