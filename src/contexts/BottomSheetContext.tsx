@@ -52,9 +52,5 @@ export const BottomSheetContextProvider: React.FC<{
         [isBottomSheetOpen, openBottomSheet, closeBottomSheet],
     );
 
-    return (
-        <BottomSheetContext.Provider value={value}>
-            {children}
-        </BottomSheetContext.Provider>
-    );
+    return <BottomSheetContext value={value}>{children}</BottomSheetContext>;
 };

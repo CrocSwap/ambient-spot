@@ -161,9 +161,5 @@ export const PoolContextProvider = (props: { children: ReactNode }) => {
         quotePrice,
     };
 
-    return (
-        <PoolContext.Provider value={poolContext}>
-            {props.children}
-        </PoolContext.Provider>
-    );
+    return <PoolContext value={poolContext}>{props.children}</PoolContext>;
 };

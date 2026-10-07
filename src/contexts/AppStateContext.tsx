@@ -341,8 +341,8 @@ export const AppStateContextProvider = (props: {
     );
 
     return (
-        <AppStateContext.Provider value={appStateContext}>
+        <AppStateContext value={appStateContext}>
             {props.children}
-        </AppStateContext.Provider>
+        </AppStateContext>
     );
 };

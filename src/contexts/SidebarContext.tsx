@@ -156,8 +156,6 @@ export const SidebarContextProvider = (props: { children: ReactNode }) => {
     };
 
     return (
-        <SidebarContext.Provider value={sidebarState}>
-            {props.children}
-        </SidebarContext.Provider>
+        <SidebarContext value={sidebarState}>{props.children}</SidebarContext>
     );
 };

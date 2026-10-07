@@ -596,8 +596,6 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     }, [numDurationsNeeded]);
 
     return (
-        <CandleContext.Provider value={candleContext}>
-            {props.children}
-        </CandleContext.Provider>
+        <CandleContext value={candleContext}>{props.children}</CandleContext>
     );
 };
