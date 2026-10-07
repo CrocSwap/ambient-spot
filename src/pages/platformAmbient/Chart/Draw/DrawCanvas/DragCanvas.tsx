@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { MouseEvent, useContext, useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { diffHashSigScaleData } from '../../../../../ambient-utils/dataLayer';
 import { CandleDataIF } from '../../../../../ambient-utils/types';
 import { ChartContext } from '../../../../../contexts/ChartContext';
@@ -424,7 +424,7 @@ export default function DragCanvas(props: DragCanvasProps) {
         d3.select(d3DragCanvas.current).on(
             'mousemove',
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            function (event: MouseEvent<HTMLDivElement>) {
+            function (event: MouseEvent) {
                 mousemove(event);
             },
         );

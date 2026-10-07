@@ -332,7 +332,7 @@ function DrawCanvas(props: DrawCanvasProps) {
 
         d3.select(d3DrawCanvas.current).on(
             'mousemove',
-            (event: PointerEvent) => {
+            (event: MouseEvent) => {
                 draw(event.clientX, event.clientY);
             },
             { passive: true },
@@ -340,7 +340,7 @@ function DrawCanvas(props: DrawCanvasProps) {
 
         d3.select(d3DrawCanvas.current).on(
             'mousedown',
-            (event: PointerEvent) => {
+            (event: MouseEvent) => {
                 document.addEventListener('keydown', cancelDrawEvent);
 
                 startDrawing(event.clientX, event.clientY);

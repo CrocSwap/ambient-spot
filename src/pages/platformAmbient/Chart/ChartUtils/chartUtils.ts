@@ -1,11 +1,6 @@
 // eslint-disable-next-line quotes
 import * as d3 from 'd3';
-import {
-    DetailedHTMLProps,
-    HTMLAttributes,
-    MouseEvent,
-    MutableRefObject,
-} from 'react';
+import { DetailedHTMLProps, HTMLAttributes, MutableRefObject } from 'react';
 import {
     CandleDataIF,
     LiquidityRangeIF,
@@ -407,18 +402,15 @@ export function calculateFibRetracementBandAreas(
 }
 
 export function getXandYLocationForChart(
-    event: MouseEvent<HTMLDivElement>,
+    event: MouseEvent | TouchEvent,
     rect: DOMRect,
 ) {
-    let offsetY = event.clientY - rect?.top;
-    let offsetX = event.clientX - rect?.left;
+    const point = 'targetTouches' in event ? event.targetTouches[0] : event;
 
-    if (typeof TouchEvent !== 'undefined' && event instanceof TouchEvent) {
-        offsetY = event.targetTouches[0].clientY - rect?.top;
-        offsetX = event.targetTouches[0].clientX - rect?.left;
-    }
-
-    return { offsetX: offsetX, offsetY: offsetY };
+    return {
+        offsetX: point.clientX - rect?.left,
+        offsetY: point.clientY - rect?.top,
+    };
 }
 
 export function getXandYLocationForChartDrag(
