@@ -1,7 +1,6 @@
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import {
-    MouseEvent,
     useCallback,
     useContext,
     useEffect,
@@ -315,10 +314,11 @@ export default function Chart(props: propsIF) {
     // const [activeDrawingType, setActiveDrawingType] = useState('Cross');
 
     const [chartMousemoveEvent, setChartMousemoveEvent] = useState<
-        MouseEvent<HTMLDivElement> | undefined
+        MouseEvent | TouchEvent | undefined
     >(undefined);
-    const [mouseLeaveEvent, setMouseLeaveEvent] =
-        useState<MouseEvent<HTMLDivElement>>();
+    const [mouseLeaveEvent, setMouseLeaveEvent] = useState<
+        MouseEvent | TouchEvent
+    >();
     const [chartZoomEvent, setChartZoomEvent] = useState('');
     const [timeGaps, setTimeGaps] = useState<timeGapsValue[]>([]);
 
@@ -1293,8 +1293,10 @@ export default function Chart(props: propsIF) {
             !(!advancedMode && simpleRangeWidth === 100) &&
             scaleData
         ) {
-            const offsetY =
-                chartMousemoveEvent.clientY - mainCanvasBoundingClientRect?.top;
+            const { offsetY } = getXandYLocationForChart(
+                chartMousemoveEvent,
+                mainCanvasBoundingClientRect,
+            );
             const mousePlacement = scaleData?.yScale.invert(offsetY);
             const lineBuffer =
                 (scaleData?.yScale.domain()[1] -
@@ -1339,8 +1341,10 @@ export default function Chart(props: propsIF) {
                     scaleData?.yScale.domain()[0]) /
                 30;
 
-            const offsetY =
-                chartMousemoveEvent.clientY - mainCanvasBoundingClientRect?.top;
+            const { offsetY } = getXandYLocationForChart(
+                chartMousemoveEvent,
+                mainCanvasBoundingClientRect,
+            );
 
             const mousePlacement = scaleData?.yScale.invert(offsetY);
             const limitLineValue = limit;
@@ -2137,14 +2141,12 @@ export default function Chart(props: propsIF) {
     ]);
 
     useEffect(() => {
-        if (
-            !(
-                advancedMode &&
-                scaleData &&
-                liquidityData &&
-                denomInBase === boundaries
-            )
-        ) {
+        if (!(
+            advancedMode &&
+            scaleData &&
+            liquidityData &&
+            denomInBase === boundaries
+        )) {
             setBoundaries(denomInBase);
         }
     }, [
@@ -5002,7 +5004,7 @@ export default function Chart(props: propsIF) {
         if (!isChartZoom) {
             d3.select(d3CanvasMain.current).on(
                 'mousemove',
-                function (event: MouseEvent<HTMLDivElement>) {
+                function (event: MouseEvent) {
                     mousemove(event);
                 },
                 { passive: true },
@@ -5010,7 +5012,7 @@ export default function Chart(props: propsIF) {
 
             d3.select(d3CanvasMain.current).on(
                 'touchmove',
-                function (event: MouseEvent<HTMLDivElement>) {
+                function (event: TouchEvent) {
                     mousemove(event);
                 },
                 { passive: true },
@@ -5067,7 +5069,7 @@ export default function Chart(props: propsIF) {
     useEffect(() => {
         d3.select(d3CanvasMain.current).on(
             'mouseleave',
-            (event: MouseEvent<HTMLDivElement>) => {
+            (event: MouseEvent) => {
                 if (!isChartZoom) {
                     mouseLeaveCanvas();
                     setChartMousemoveEvent(undefined);
@@ -5076,16 +5078,13 @@ export default function Chart(props: propsIF) {
             },
         );
 
-        d3.select(d3CanvasMain.current).on(
-            'touchend',
-            (event: MouseEvent<HTMLDivElement>) => {
-                if (!isChartZoom) {
-                    mouseLeaveCanvas();
-                    setChartMousemoveEvent(undefined);
-                    setMouseLeaveEvent(event);
-                }
-            },
-        );
+        d3.select(d3CanvasMain.current).on('touchend', (event: TouchEvent) => {
+            if (!isChartZoom) {
+                mouseLeaveCanvas();
+                setChartMousemoveEvent(undefined);
+                setMouseLeaveEvent(event);
+            }
+        });
     }, [isChartZoom]);
 
     // mouseenter
@@ -5170,12 +5169,10 @@ export default function Chart(props: propsIF) {
 
                         const { noGoZoneMin, noGoZoneMax } = getNoZoneData();
 
-                        if (
-                            !(
-                                newLimitValue > noGoZoneMin &&
-                                newLimitValue < noGoZoneMax
-                            )
-                        ) {
+                        if (!(
+                            newLimitValue > noGoZoneMin &&
+                            newLimitValue < noGoZoneMax
+                        )) {
                             onBlurLimitRate(limit, newLimitValue);
                         }
                     }
@@ -5223,7 +5220,7 @@ export default function Chart(props: propsIF) {
 
             d3.select(d3Container.current).on(
                 'mouseleave',
-                (event: MouseEvent<HTMLDivElement>) => {
+                (event: MouseEvent) => {
                     if (!isChartZoom) {
                         setCrosshairActive('none');
                         setMouseLeaveEvent(event);
@@ -6219,7 +6216,7 @@ export default function Chart(props: propsIF) {
         }
     };
 
-    const mousemove = (event: MouseEvent<HTMLDivElement>) => {
+    const mousemove = (event: MouseEvent | TouchEvent) => {
         if (scaleData && mainCanvasBoundingClientRect) {
             const { offsetX, offsetY } = getXandYLocationForChart(
                 event,

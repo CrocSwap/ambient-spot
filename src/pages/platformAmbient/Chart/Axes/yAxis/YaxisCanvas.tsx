@@ -1,13 +1,6 @@
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
-import {
-    MouseEvent,
-    memo,
-    useContext,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
+import { memo, useContext, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
     diffHashSig,
@@ -873,12 +866,9 @@ function YAxisCanvas(props: yAxisIF) {
     }
 
     useEffect(() => {
-        d3.select(d3Yaxis.current).on(
-            'mousemove',
-            (event: MouseEvent<HTMLDivElement>) => {
-                d3.select(event.currentTarget).style('cursor', 'row-resize');
-            },
-        );
+        d3.select(d3Yaxis.current).on('mousemove', () => {
+            d3.select(d3Yaxis.current).style('cursor', 'row-resize');
+        });
         d3.select(d3Yaxis.current).on('mouseover', () => {
             setCrosshairActive('none');
         });
