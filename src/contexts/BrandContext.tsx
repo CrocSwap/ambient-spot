@@ -160,9 +160,5 @@ export const BrandContextProvider = (props: { children: ReactNode }) => {
             brandAssets.networks[chainId as chainHexIds]?.cobrandingLogo,
     };
 
-    return (
-        <BrandContext.Provider value={brandData}>
-            {props.children}
-        </BrandContext.Provider>
-    );
+    return <BrandContext value={brandData}>{props.children}</BrandContext>;
 };

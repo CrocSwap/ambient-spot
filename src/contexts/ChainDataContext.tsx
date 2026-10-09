@@ -1109,8 +1109,8 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
     };
 
     return (
-        <ChainDataContext.Provider value={chainDataContext}>
+        <ChainDataContext value={chainDataContext}>
             {props.children}
-        </ChainDataContext.Provider>
+        </ChainDataContext>
     );
 };

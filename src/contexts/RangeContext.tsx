@@ -84,9 +84,5 @@ export const RangeContextProvider = (props: { children: ReactNode }) => {
         setIsLinesSwitched,
     };
 
-    return (
-        <RangeContext.Provider value={rangeContext}>
-            {props.children}
-        </RangeContext.Provider>
-    );
+    return <RangeContext value={rangeContext}>{props.children}</RangeContext>;
 };

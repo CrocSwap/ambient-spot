@@ -53,32 +53,28 @@ export interface UserDataContextIF {
         React.SetStateAction<UserVaultsServerIF[] | undefined>
     >;
     totalLiquidityValue:
-        | { value: number; chainId: string; address: string }
-        | undefined;
+        { value: number; chainId: string; address: string } | undefined;
     setTotalLiquidityValue: React.Dispatch<
         React.SetStateAction<
             { value: number; chainId: string; address: string } | undefined
         >
     >;
     totalExchangeBalanceValue:
-        | { value: number; chainId: string; address: string }
-        | undefined;
+        { value: number; chainId: string; address: string } | undefined;
     setTotalExchangeBalanceValue: React.Dispatch<
         React.SetStateAction<
             { value: number; chainId: string; address: string } | undefined
         >
     >;
     totalWalletBalanceValue:
-        | { value: number; chainId: string; address: string }
-        | undefined;
+        { value: number; chainId: string; address: string } | undefined;
     setTotalWalletBalanceValue: React.Dispatch<
         React.SetStateAction<
             { value: number; chainId: string; address: string } | undefined
         >
     >;
     totalVaultsValue:
-        | { value: number; chainId: string; address: string }
-        | undefined;
+        { value: number; chainId: string; address: string } | undefined;
     setTotalVaultsValue: React.Dispatch<
         React.SetStateAction<
             { value: number; chainId: string; address: string } | undefined
@@ -249,8 +245,8 @@ export const UserDataContextProvider = (props: {
     };
 
     return (
-        <UserDataContext.Provider value={userDataContext}>
+        <UserDataContext value={userDataContext}>
             {props.children}
-        </UserDataContext.Provider>
+        </UserDataContext>
     );
 };
