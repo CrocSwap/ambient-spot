@@ -220,7 +220,15 @@ function RangeTokenInput(props: propsIF) {
                 usdValue={usdValueTokenA}
             />
             <FlexContainer justifyContent='center' alignItems='center'>
-                {!hidePlus && <FaPlus size={26} color='var(--accent1)' />}
+                {!hidePlus && (
+                    // the plus is a non-interactive divider; override the
+                    // pointer cursor SVGs pick up so it doesn't read as clickable
+                    <FaPlus
+                        size={26}
+                        color='var(--accent1)'
+                        style={{ cursor: 'default' }}
+                    />
+                )}
             </FlexContainer>
 
             <TokenInputWithWalletBalance

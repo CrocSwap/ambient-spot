@@ -1,3 +1,46 @@
 {
-    "classifications": {}
+    "classifications": {
+        "59cac4c7f116": {
+            "classification": "promote-to-real-abstraction",
+            "note": "Branch treatment applied: the swap-assisted ('single'/'topup') deposit concept this branch added was promoted to its own owner, useZapDeposit.ts, taking Range.tsx from 2397 to 1756 lines. The residual size is pre-existing structure — Range.tsx was already 1403 lines and over the 1000-line threshold on origin/main — so decomposing the remainder is out of this branch's scope and tracked as standing debt.",
+            "file": "src/pages/platformAmbient/Trade/Range/Range.tsx",
+            "startLine": 1,
+            "name": "Range.tsx",
+            "fingerprint": "59cac4c7f116",
+            "id": "59cac4c7f116",
+            "keyKind": "fingerprint",
+            "detectors": ["large-file-pressure"],
+            "detectorContract": {
+                "large-file-pressure": 1
+            },
+            "categories": [
+                "branch-pressure",
+                "large-file",
+                "large-file-pressure"
+            ],
+            "decisionId": "0dbe5ee9-ac79-4766-b0c7-ec997b12ffc5",
+            "decisionHistory": [],
+            "source": "manual",
+            "decisionSource": "manual",
+            "updatedAt": "2026-07-28T19:23:19.389Z",
+            "updatedBy": "benwolski"
+        }
+    },
+    "schemaVersion": 1,
+    "meta": {
+        "auditSha256": "72e24b81892de4c75abf66333140b78bae1f7160b73e78eb5b0c9579b976ad6d",
+        "auditSource": "external/audit2.json",
+        "candidateCount": 1,
+        "classificationSource": ".codex/deslop-classifications.json",
+        "classificationCounts": {
+            "promote-to-real-abstraction": 1
+        },
+        "generatedAt": "2026-07-28T19:23:19.390Z",
+        "generatedBy": "deslop-classify",
+        "keyKindCounts": {
+            "fingerprint": 1
+        },
+        "lastUpdatedAt": "2026-07-28T19:23:19.390Z",
+        "lastUpdatedBy": "benwolski"
+    }
 }
