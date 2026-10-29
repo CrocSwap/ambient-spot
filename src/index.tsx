@@ -23,6 +23,7 @@ import { EthersAdapter } from '@reown/appkit-adapter-ethers';
 
 import { AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/react';
+import oathWalletLogo from './assets/images/icons/oath-wallet.svg';
 import baseSepoliaLogo from './assets/images/networks/base_sepolia.webp';
 import blastLogo from './assets/images/networks/blast_logo.png';
 import blastSepoliaLogo from './assets/images/networks/blast_sepolia.webp';
@@ -107,6 +108,19 @@ createAppKit({
         onramp: false,
         connectMethodsOrder: ['wallet'],
     },
+    // Oath is iOS-only; do not offer an unsupported Android app handoff.
+    customWallets: /Android/i.test(navigator.userAgent)
+        ? []
+        : [
+              {
+                  id: 'oath-wallet',
+                  name: 'Oath Wallet',
+                  homepage: 'https://oathwallet.org',
+                  image_url: oathWalletLogo,
+                  mobile_link: 'oathwallet://',
+                  app_store: 'https://apps.apple.com/app/id6780187283',
+              },
+          ],
     enableWalletGuide: false,
     chainImages: {
         1: ethLogo,
