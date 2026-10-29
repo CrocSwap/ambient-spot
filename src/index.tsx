@@ -108,16 +108,19 @@ createAppKit({
         onramp: false,
         connectMethodsOrder: ['wallet'],
     },
-    customWallets: [
-        {
-            id: 'oath-wallet',
-            name: 'Oath Wallet',
-            homepage: 'https://oathwallet.org',
-            image_url: oathWalletLogo,
-            mobile_link: 'oathwallet://',
-            app_store: 'https://apps.apple.com/app/id6780187283',
-        },
-    ],
+    // Oath is iOS-only; do not offer an unsupported Android app handoff.
+    customWallets: /Android/i.test(navigator.userAgent)
+        ? []
+        : [
+              {
+                  id: 'oath-wallet',
+                  name: 'Oath Wallet',
+                  homepage: 'https://oathwallet.org',
+                  image_url: oathWalletLogo,
+                  mobile_link: 'oathwallet://',
+                  app_store: 'https://apps.apple.com/app/id6780187283',
+              },
+          ],
     enableWalletGuide: false,
     chainImages: {
         1: ethLogo,
