@@ -46,7 +46,10 @@ function SnackbarComponent() {
         },
     } = useContext(AppStateContext);
 
-    const handleClose = (event?: SyntheticEvent | Event, reason?: string) => {
+    const handleClose = (
+        event?: SyntheticEvent | Event | null,
+        reason?: string,
+    ) => {
         if (reason === 'clickaway') {
             return;
         }
