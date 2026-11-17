@@ -15,7 +15,7 @@
         "@reown/appkit-adapter-ethers": "^1.8.24",
         "d3": "^7.9.2",
         "d3fc": "^15.2.13",
-        "emoji-picker-react": "^4.22.3",
+        "emoji-picker-react": "^5.1.4",
         "ethers": "^6.17.0",
         "framer-motion": "^12.43.0",
         "modern-screenshot": "^4.7.0",
