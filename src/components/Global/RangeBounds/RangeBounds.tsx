@@ -151,7 +151,11 @@ export default function RangeBounds(props: RangeBoundsProps) {
         </>
     );
     return (
-        <section className={isRangeBoundsDisabled && styles.advanced_disabled}>
+        <section
+            className={
+                isRangeBoundsDisabled ? styles.advanced_disabled : undefined
+            }
+        >
             {!customSwitch && (
                 <div className={styles.denomination_switch_container}>
                     <AdvancedModeToggle />
