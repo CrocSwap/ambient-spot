@@ -13,7 +13,6 @@ import {
 } from 'react';
 import {
     expandTokenBalances,
-    fetchBlastUserXpData,
     fetchBlockNumber,
     fetchUserXpData,
     fetchVaultTvlUsd,
@@ -28,7 +27,6 @@ import {
     ZERO_ADDRESS,
 } from '../ambient-utils/constants';
 import { ethereumMainnet } from '../ambient-utils/constants';
-import { blastMainnet } from '../ambient-utils/constants';
 import { plumeMainnet } from '../ambient-utils/constants';
 import { scrollMainnet } from '../ambient-utils/constants';
 import { tokens as AMBIENT_TOKEN_LIST } from '../ambient-utils/constants/ambient-token-list.json';
@@ -52,11 +50,7 @@ import {
     TokenBalanceContext,
 } from './TokenBalanceContext';
 import { TokenContext } from './TokenContext';
-import {
-    BlastUserXpDataIF,
-    UserDataContext,
-    UserXpDataIF,
-} from './UserDataContext';
+import { UserDataContext, UserXpDataIF } from './UserDataContext';
 import { fallbackVaultsList } from '../pages/platformAmbient/Vaults/fallbackVaultsList';
 
 export interface ChainDataContextIF {
@@ -66,8 +60,6 @@ export interface ChainDataContextIF {
     setLastBlockNumber: Dispatch<SetStateAction<number>>;
     rpcNodeStatus: RpcNodeStatus;
     connectedUserXp: UserXpDataIF;
-    connectedUserBlastXp: BlastUserXpDataIF;
-    isActiveNetworkBlast: boolean;
     isActiveNetworkPlume: boolean;
     isActiveNetworkSwell: boolean;
     isActiveNetworkBase: boolean;
@@ -118,7 +110,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         provider,
         mainnetProvider,
         scrollProvider,
-        blastProvider,
         plumeProvider,
     } = useContext(CrocEnvContext);
 
@@ -165,7 +156,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
 
     const [gasPriceInGwei, setGasPriceinGwei] = useState<number | undefined>();
 
-    const isActiveNetworkBlast = ['0x13e31', '0xa0c71fd'].includes(chainId);
     const isActiveNetworkScroll = ['0x82750', '0x8274f'].includes(chainId);
     const isActiveNetworkMainnet = ['0x1'].includes(chainId);
     const isActiveNetworkPlume = ['0x18231', '0x18232'].includes(chainId);
@@ -865,12 +855,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         data: undefined,
     });
 
-    const [connectedUserBlastXp, setConnectedUserBlastXp] =
-        useState<BlastUserXpDataIF>({
-            dataReceived: false,
-            data: undefined,
-        });
-
     useEffect(() => {
         if (isUserOnline) {
             if (userAddress) {
@@ -891,38 +875,14 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                             data: undefined,
                         });
                     });
-
-                if (isActiveNetworkBlast) {
-                    fetchBlastUserXpData({
-                        user: userAddress,
-                        chainId: chainId,
-                    })
-                        .then((data) => {
-                            setConnectedUserBlastXp({
-                                dataReceived: true,
-                                data: data,
-                            });
-                        })
-                        .catch((error) => {
-                            console.error(error);
-                            setConnectedUserBlastXp({
-                                dataReceived: false,
-                                data: undefined,
-                            });
-                        });
-                }
             } else {
                 setConnectedUserXp({
                     dataReceived: false,
                     data: undefined,
                 });
-                setConnectedUserBlastXp({
-                    dataReceived: false,
-                    data: undefined,
-                });
             }
         }
-    }, [isUserOnline, userAddress, isActiveNetworkBlast]);
+    }, [isUserOnline, userAddress]);
 
     const mainnetCrocEnv = useMemo(
         () =>
@@ -936,12 +896,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         () =>
             scrollProvider ? new CrocEnv(scrollProvider, undefined) : undefined,
         [scrollProvider !== undefined],
-    );
-
-    const blastCrocEnv = useMemo(
-        () =>
-            blastProvider ? new CrocEnv(blastProvider, undefined) : undefined,
-        [blastProvider !== undefined],
     );
 
     const plumeCrocEnv = useMemo(
@@ -1010,12 +964,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                 tokenCount: 20,
             },
             {
-                chainId: '0x13e31',
-                env: blastCrocEnv,
-                gcgo: blastMainnet.gcgo,
-                tokenCount: 10,
-            },
-            {
                 chainId: '0x18232',
                 env: plumeCrocEnv,
                 gcgo: plumeMainnet.gcgo,
@@ -1071,7 +1019,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         showDexStats,
         mainnetCrocEnv !== undefined,
         scrollCrocEnv !== undefined,
-        blastCrocEnv !== undefined,
         plumeCrocEnv !== undefined,
         updateStats,
     ]);
@@ -1082,9 +1029,7 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         rpcNodeStatus,
         gasPriceInGwei,
         connectedUserXp,
-        connectedUserBlastXp,
         setGasPriceinGwei,
-        isActiveNetworkBlast,
         isActiveNetworkPlume,
         isActiveNetworkSwell,
         isActiveNetworkBase,

@@ -130,12 +130,7 @@ export default function DropdownMenu2(props: propsIF) {
                                 <img
                                     src={logo}
                                     alt={title}
-                                    width={
-                                        title.includes('Scroll') ||
-                                        title.includes('Blast')
-                                            ? '20px'
-                                            : '20px'
-                                    }
+                                    width='20px'
                                     height='20px'
                                     style={{
                                         borderRadius: '50%',

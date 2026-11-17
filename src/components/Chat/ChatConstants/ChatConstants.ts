@@ -5,7 +5,6 @@ export const CROCODILE_LABS_LINKS = [
     'https://x.com/',
     'https://us.ambient.finance/',
     'https://scrollscan.com/',
-    'https://blastscan.io/',
     'https://etherscan.io/',
     'https://discord.gg/ambient-finance/',
 ];

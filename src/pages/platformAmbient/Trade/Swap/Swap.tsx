@@ -303,7 +303,7 @@ function Swap(props: propsIF) {
         useState<number>(0.0003);
 
     const amountToReduceNativeTokenQty =
-        chainId === '0x82750' || chainId === '0x8274f' || chainId === '0x13e31'
+        chainId === '0x82750' || chainId === '0x8274f'
             ? amountToReduceNativeTokenQtyL2
             : amountToReduceNativeTokenQtyMainnet;
 

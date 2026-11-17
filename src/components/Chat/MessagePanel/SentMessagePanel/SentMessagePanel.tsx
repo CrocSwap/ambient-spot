@@ -19,7 +19,6 @@ import PositionBox from '../PositionBox/PositionBox';
 
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 import { IoReturnUpForwardSharp } from 'react-icons/io5';
-import blastLogo from '../../../../assets/images/networks/blast_logo.png';
 import ethLogo from '../../../../assets/images/networks/ethereum_logo.svg';
 import scrollLogo from '../../../../assets/images/networks/scroll_logo_no_margin.webp';
 import {
@@ -806,23 +805,14 @@ function SentMessagePanel(props: SentMessageProps) {
                                                     className={`${styles.chain_logo} ${isChainNameTestnet(lookupChain(props.message.chainId).displayName) ? styles.testnet : ' '} `}
                                                     src={
                                                         [
-                                                            '0x13e31',
-                                                            '0xa0c71fd',
+                                                            '0x82750',
+                                                            '0x8274f',
                                                         ].includes(
                                                             props.message
                                                                 .chainId,
                                                         )
-                                                            ? blastLogo
-                                                            : [
-                                                                    '0x82750',
-                                                                    '0x8274f',
-                                                                ].includes(
-                                                                    props
-                                                                        .message
-                                                                        .chainId,
-                                                                )
-                                                              ? scrollLogo
-                                                              : ethLogo
+                                                            ? scrollLogo
+                                                            : ethLogo
                                                     }
                                                 ></img>
                                             )}
@@ -919,7 +909,9 @@ function SentMessagePanel(props: SentMessageProps) {
                                                                     props.verifyWallet(
                                                                         ChatVerificationTypes.VerifyMessages,
                                                                         new Date(
-                                                                            props.message.createdAt,
+                                                                            props
+                                                                                .message
+                                                                                .createdAt,
                                                                         ),
                                                                     );
                                                                 } else {
@@ -928,7 +920,9 @@ function SentMessagePanel(props: SentMessageProps) {
                                                                     );
                                                                     props.setVerifyOldMessagesStartDate(
                                                                         new Date(
-                                                                            props.message.createdAt,
+                                                                            props
+                                                                                .message
+                                                                                .createdAt,
                                                                         ),
                                                                     );
                                                                 }

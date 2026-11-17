@@ -2,7 +2,6 @@ import {
     ambientProductionBrandAssets,
     ambientTestnetBrandAssets,
     baseSepoliaBrandAssets,
-    blastBrandAssets,
     defaultBrandAssets,
     monadTestnetBrandAssets,
     plumeBrandAssets,
@@ -12,8 +11,6 @@ import {
 } from '../../../assets/branding';
 import { NetworkIF, TokenIF, chainHexIds } from '../../types';
 import { baseSepolia } from './baseSepolia';
-import { blastMainnet } from './blastMainnet';
-import { blastSepolia } from './blastSepolia';
 import { ethereumMainnet } from './ethereumMainnet';
 import { ethereumSepolia } from './ethereumSepolia';
 import { monadTestnet } from './monadTestnet';
@@ -30,12 +27,10 @@ export const brand: string | undefined =
 const networkDefinitions: NetworkIF[] = [
     ethereumMainnet,
     scrollMainnet,
-    blastMainnet,
     plumeMainnet,
     plumeLegacy,
     swellMainnet,
     ethereumSepolia,
-    blastSepolia,
     swellSepolia,
     scrollSepolia,
     baseSepolia,
@@ -71,21 +66,17 @@ export const supportedNetworks: { [x: string]: NetworkIF } =
             ? getNetworks(Object.keys(scrollBrandAssets.networks))
             : brand === 'swell'
               ? getNetworks(Object.keys(swellBrandAssets.networks))
-              : brand === 'blast'
-                ? getNetworks(Object.keys(blastBrandAssets.networks))
-                : brand === 'plume'
-                  ? getNetworks(Object.keys(plumeBrandAssets.networks))
-                  : brand === 'swellSepolia'
-                    ? getNetworks(Object.keys(swellSepoliaBrandAssets.networks))
-                    : brand === 'monadTestnet'
+              : brand === 'plume'
+                ? getNetworks(Object.keys(plumeBrandAssets.networks))
+                : brand === 'swellSepolia'
+                  ? getNetworks(Object.keys(swellSepoliaBrandAssets.networks))
+                  : brand === 'monadTestnet'
+                    ? getNetworks(Object.keys(monadTestnetBrandAssets.networks))
+                    : brand === 'baseSepolia'
                       ? getNetworks(
-                            Object.keys(monadTestnetBrandAssets.networks),
+                            Object.keys(baseSepoliaBrandAssets.networks),
                         )
-                      : brand === 'baseSepolia'
-                        ? getNetworks(
-                              Object.keys(baseSepoliaBrandAssets.networks),
-                          )
-                        : getNetworks(Object.keys(defaultBrandAssets.networks));
+                      : getNetworks(Object.keys(defaultBrandAssets.networks));
 
 const vaultNetworks = networkDefinitions.filter((n: NetworkIF) =>
     n.vaultsEnabled ? n : null,
@@ -105,8 +96,6 @@ export function getDefaultPairForChain(chainId: string): [TokenIF, TokenIF] {
 
 export {
     baseSepolia,
-    blastMainnet,
-    blastSepolia,
     ethereumMainnet,
     ethereumSepolia,
     monadTestnet,
