@@ -24,12 +24,7 @@ import { sortedDexTokensIF, useSortedDexTokens } from '../useSortedDexTokens';
 import styles from './DexTokens.module.css';
 
 export type columnSlugs =
-    | 'token'
-    | 'name'
-    | 'tvl'
-    | 'fees'
-    | 'volume'
-    | 'tradeBtn';
+    'token' | 'name' | 'tvl' | 'fees' | 'volume' | 'tradeBtn';
 
 export interface HeaderItem {
     label: string;
@@ -38,7 +33,7 @@ export interface HeaderItem {
     pxValue?: number;
     onClick?: () => void;
     tooltipText?: string | React.ReactNode;
-    classname?: boolean;
+    classname?: string;
 }
 
 interface propsIF {

@@ -93,7 +93,13 @@ export default function PointsBanner(props: propsIF) {
                         </FlexContainer>
 
                         {isSmallScreen && (
-                            <p className={isSmallScreen && styles.small_text}>
+                            <p
+                                className={
+                                    isSmallScreen
+                                        ? styles.small_text
+                                        : undefined
+                                }
+                            >
                                 {promptText}
                             </p>
                         )}
@@ -149,7 +155,13 @@ export default function PointsBanner(props: propsIF) {
                     </p>
                     <div className={styles.right_side}>
                         <div className={styles.right_side_content}>
-                            <p className={isSmallScreen && styles.small_text}>
+                            <p
+                                className={
+                                    isSmallScreen
+                                        ? styles.small_text
+                                        : undefined
+                                }
+                            >
                                 {promptText}
                             </p>
                             <div className={styles.right_side_buttons}>
