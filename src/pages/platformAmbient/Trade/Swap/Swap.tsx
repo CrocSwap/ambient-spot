@@ -26,6 +26,12 @@ import { TradeModuleSkeleton } from '../../../../components/Trade/TradeModules/T
 
 import { ChainDataContext } from '../../../../contexts/ChainDataContext';
 import { CrocEnvContext } from '../../../../contexts/CrocEnvContext';
+import {
+    trackSwap,
+    TxOutcome,
+    txOutcomeFromError,
+    txOutcomeFromReceipt,
+} from '../../../../utils/analytics';
 import { PoolContext } from '../../../../contexts/PoolContext';
 import { TokenContext } from '../../../../contexts/TokenContext';
 import { TradeTokenContext } from '../../../../contexts/TradeTokenContext';
@@ -69,7 +75,7 @@ function Swap(props: propsIF) {
     const { isOnTradeRoute } = props;
     const { crocEnv, provider } = useContext(CrocEnvContext);
     const {
-        activeNetwork: { chainId, poolIndex },
+        activeNetwork: { chainId, poolIndex, displayName: chainDisplayName },
         isUserOnline,
     } = useContext(AppStateContext);
     const { userAddress } = useContext(UserDataContext);
@@ -620,14 +626,26 @@ function Swap(props: propsIF) {
             : buyQtyNoExponentString;
 
         const isQtySell = isTokenAPrimary;
+        const isFastLane = !!(
+            fastLaneProtection.isEnabled && fastLaneProtection?.isChainAccepted
+        );
+        // captured at submission so the event describes what the user sent
+        const trackSwapOutcome = (outcome: TxOutcome) =>
+            trackSwap({
+                outcome,
+                source: 'swap-form',
+                fastLane: isFastLane,
+                fromExchangeBalance: isWithdrawFromDexChecked,
+                toExchangeBalance: isSaveAsDexSurplusChecked,
+                chain: chainDisplayName,
+            });
 
         let tx;
         try {
             const sellTokenAddress = tokenA.address;
             const buyTokenAddress = tokenB.address;
-            const acceptedChainId = fastLaneProtection?.isChainAccepted;
 
-            tx = await (fastLaneProtection.isEnabled && acceptedChainId
+            tx = await (isFastLane
                 ? performFastLaneSwap({
                       crocEnv,
                       isQtySell,
@@ -677,6 +695,7 @@ function Swap(props: propsIF) {
         } catch (error) {
             console.log({ error });
             setTxError(error);
+            trackSwapOutcome(txOutcomeFromError(error));
         }
 
         if (tx) {
@@ -698,6 +717,7 @@ function Swap(props: propsIF) {
                 addReceipt(receipt);
                 removePendingTx(receipt.hash);
             }
+            trackSwapOutcome(receipt ? txOutcomeFromReceipt(receipt) : 'error');
         }
     }
 
