@@ -32,7 +32,6 @@ import { DataLoadingContext } from '../../../contexts/DataLoadingContext';
 import { GraphDataContext } from '../../../contexts/GraphDataContext';
 import { TokenContext } from '../../../contexts/TokenContext';
 import {
-    BlastUserXpDataIF,
     UserDataContext,
     UserXpDataIF,
 } from '../../../contexts/UserDataContext';
@@ -53,7 +52,6 @@ interface propsIF {
     connectedAccountActive: boolean;
     fullLayoutActive: boolean;
     resolvedUserXp: UserXpDataIF;
-    resolvedUserBlastXp: BlastUserXpDataIF;
 }
 
 // React functional component
@@ -64,7 +62,6 @@ export default function PortfolioTabs(props: propsIF) {
         connectedAccountActive,
         fullLayoutActive,
         resolvedUserXp,
-        resolvedUserBlastXp,
     } = props;
 
     const { cachedQuerySpotPrice, cachedFetchTokenPrice, cachedTokenDetails } =
@@ -470,7 +467,6 @@ export default function PortfolioTabs(props: propsIF) {
     // props for <Points/> React Element
     const pointsProps = {
         resolvedUserXp: resolvedUserXp,
-        resolvedUserBlastXp: resolvedUserBlastXp,
         connectedAccountActive: connectedAccountActive,
     };
 

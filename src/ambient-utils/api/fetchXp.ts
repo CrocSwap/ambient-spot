@@ -1,11 +1,4 @@
-import {
-    BlastUserGoldServerIF,
-    BlastUserXpIF,
-    BlastUserXpServerIF,
-    UserXpIF,
-    UserXpServerIF,
-    XpSnapshotServerIF,
-} from '../types';
+import { UserXpIF, UserXpServerIF, XpSnapshotServerIF } from '../types';
 
 interface argsIF {
     user: string;
@@ -62,21 +55,6 @@ function mapUserXpResponseToUserXp(userXp: UserXpServerIF): UserXpIF {
     };
 }
 
-function mapBlastUserXpResponseToBlastUserXp(
-    blastUserXp: BlastUserXpServerIF,
-    blastUserGold: BlastUserGoldServerIF,
-): BlastUserXpIF {
-    const points = Math.floor(blastUserXp.points || 0).toLocaleString();
-    const gold = (blastUserGold.points || 0).toLocaleString('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-    });
-    return {
-        points,
-        gold,
-    };
-}
-
 export const fetchUserXpData = async (args: argsIF) => {
     const { user, chainId } = args;
 
@@ -95,33 +73,6 @@ export const fetchUserXpData = async (args: argsIF) => {
         );
 
     return userXpFetchData;
-};
-
-export const fetchBlastUserXpData = async (args: argsIF) => {
-    const { user } = args;
-
-    const blastUserXpEndpoint =
-        'https://ambindexer.net/blastPoints/v1/byUser/bridge/' + user + '/';
-
-    const blastUserGoldEndpoint =
-        'https://ambindexer.net/blastPoints/v1/byUser/gold/' + user + '/';
-
-    const blastUserXpFetchData = fetch(blastUserXpEndpoint).then((response) => {
-        return response?.json();
-    });
-
-    const blastUserGoldFetchData = fetch(blastUserGoldEndpoint).then(
-        (response) => {
-            return response?.json();
-        },
-    );
-
-    const blastUserData = mapBlastUserXpResponseToBlastUserXp(
-        await blastUserXpFetchData,
-        await blastUserGoldFetchData,
-    );
-
-    return blastUserData;
 };
 
 export const fetchXpLeadersData = async (

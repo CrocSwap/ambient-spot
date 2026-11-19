@@ -9,7 +9,6 @@ import ProfileSettings from '../../../components/Portfolio/ProfileSettings/Profi
 import { Navigate, useParams } from 'react-router-dom';
 import {
     expandTokenBalances,
-    fetchBlastUserXpData,
     fetchEnsAddress,
     fetchUserXpData,
     IDexTokenBalances,
@@ -23,12 +22,10 @@ import NFTBannerAccount from '../../../components/Portfolio/PortfolioBanner/Port
 import { TokenBalanceContext } from '../../../contexts';
 import { AppStateContext } from '../../../contexts/AppStateContext';
 import { CachedDataContext } from '../../../contexts/CachedDataContext';
-import { ChainDataContext } from '../../../contexts/ChainDataContext';
 import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
 import { TokenContext } from '../../../contexts/TokenContext';
 import { TradeTableContext } from '../../../contexts/TradeTableContext';
 import {
-    BlastUserXpDataIF,
     UserDataContext,
     UserXpDataIF,
 } from '../../../contexts/UserDataContext';
@@ -68,7 +65,6 @@ function Portfolio(props: propsIF) {
         cachedTokenDetails,
     } = useContext(CachedDataContext);
     const { crocEnv, mainnetProvider } = useContext(CrocEnvContext);
-    const { isActiveNetworkBlast } = useContext(ChainDataContext);
     const { tokens } = useContext(TokenContext);
     const { setOutsideControl, setSelectedOutsideTab } =
         useContext(TradeTableContext);
@@ -157,12 +153,6 @@ function Portfolio(props: propsIF) {
         data: undefined,
     });
 
-    const [resolvedUserBlastXp, setResolvedUserBlastXp] =
-        useState<BlastUserXpDataIF>({
-            dataReceived: false,
-            data: undefined,
-        });
-
     // fetch xp data for resolved address if not connected user account
     useEffect(() => {
         if (!connectedAccountActive && resolvedAddress) {
@@ -180,27 +170,8 @@ function Portfolio(props: propsIF) {
                         data: undefined,
                     });
                 });
-            if (isActiveNetworkBlast) {
-                fetchBlastUserXpData({
-                    user: resolvedAddress,
-                    chainId: chainId,
-                })
-                    .then((resolvedUserBlastXp) => {
-                        setResolvedUserBlastXp({
-                            dataReceived: true,
-                            data: resolvedUserBlastXp,
-                        });
-                    })
-                    .catch((error) => {
-                        console.error({ error });
-                        setResolvedUserBlastXp({
-                            dataReceived: false,
-                            data: undefined,
-                        });
-                    });
-            }
         }
-    }, [connectedAccountActive, resolvedAddress, isActiveNetworkBlast]);
+    }, [connectedAccountActive, resolvedAddress]);
 
     const [fullLayoutActive, setFullLayoutActive] = useState<boolean>(false);
     const [isAutoLayout, setIsAutoLayout] = useState<boolean>(true); // Tracks if the layout is being set automatically
@@ -418,7 +389,6 @@ function Portfolio(props: propsIF) {
         connectedAccountActive: connectedAccountActive,
         fullLayoutActive: fullLayoutActive,
         resolvedUserXp: resolvedUserXp,
-        resolvedUserBlastXp: resolvedUserBlastXp,
     };
 
     const [nftTestWalletInput, setNftTestWalletInput] = useState<string>('');

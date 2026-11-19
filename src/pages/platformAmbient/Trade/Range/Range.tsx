@@ -928,7 +928,7 @@ function Range() {
     const [extraL1GasFeePool] = useState(isActiveNetworkL2 ? 0.01 : 0);
 
     const amountToReduceNativeTokenQty =
-        chainId === '0x82750' || chainId === '0x8274f' || chainId === '0x13e31'
+        chainId === '0x82750' || chainId === '0x8274f'
             ? amountToReduceNativeTokenQtyL2
             : amountToReduceNativeTokenQtyMainnet;
 

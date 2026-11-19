@@ -3,12 +3,8 @@ import { memo, useContext } from 'react';
 import { FiCopy } from 'react-icons/fi';
 import { RiExternalLinkLine } from 'react-icons/ri';
 import { ZERO_ADDRESS } from '../../../../../ambient-utils/constants';
-import {
-    BlastRewardsDataIF,
-    PositionIF,
-} from '../../../../../ambient-utils/types';
+import { PositionIF } from '../../../../../ambient-utils/types';
 import { AppStateContext } from '../../../../../contexts/AppStateContext';
-import { ChainDataContext } from '../../../../../contexts/ChainDataContext';
 import { UserDataContext } from '../../../../../contexts/UserDataContext';
 import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
 import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
@@ -23,7 +19,6 @@ interface propsIF {
     quoteFeesDisplay: string | undefined;
     isAccountView: boolean;
     updatedPositionApy: number | undefined;
-    blastRewardsData: BlastRewardsDataIF;
 }
 
 function RangeDetailsSimplify(props: propsIF) {
@@ -35,7 +30,6 @@ function RangeDetailsSimplify(props: propsIF) {
         quoteFeesDisplay,
         isAccountView,
         updatedPositionApy,
-        blastRewardsData,
         timeFirstMintMemo,
     } = props;
     const {
@@ -44,7 +38,6 @@ function RangeDetailsSimplify(props: propsIF) {
         },
     } = useContext(AppStateContext);
     const { userAddress } = useContext(UserDataContext);
-    const { isActiveNetworkBlast } = useContext(ChainDataContext);
 
     const {
         ensName,
@@ -332,40 +325,13 @@ function RangeDetailsSimplify(props: propsIF) {
         );
     }
 
-    if (isActiveNetworkBlast) {
-        infoContent.splice(
-            isAmbient ? 10 : 12,
-            0,
-            {
-                title: 'BLAST points ',
-                content: blastRewardsData.points,
-                explanation: 'BLAST points earned by the position',
-            },
-            {
-                title: 'BLAST gold ',
-                content: blastRewardsData.gold,
-                explanation: 'BLAST gold earned by the position',
-            },
-        );
-    }
-
     if (firstMintTime !== updateTime) {
-        infoContent.splice(
-            isAmbient
-                ? isActiveNetworkBlast
-                    ? 13
-                    : 11
-                : isActiveNetworkBlast
-                  ? 15
-                  : 13,
-            0,
-            {
-                title: 'Time Last Updated ',
-                content: updateTime,
-                explanation:
-                    'Time the owner last updated the position at these prices',
-            },
-        );
+        infoContent.splice(isAmbient ? 11 : 13, 0, {
+            title: 'Time Last Updated ',
+            content: updateTime,
+            explanation:
+                'Time the owner last updated the position at these prices',
+        });
     }
     if (showMobileVersion)
         return (
@@ -389,16 +355,7 @@ function RangeDetailsSimplify(props: propsIF) {
             <div className={styles.main_container}>
                 <section>
                     {infoContent
-                        .slice(
-                            0,
-                            isAmbient
-                                ? isActiveNetworkBlast
-                                    ? 12
-                                    : 10
-                                : isActiveNetworkBlast
-                                  ? 14
-                                  : 12,
-                        )
+                        .slice(0, isAmbient ? 10 : 12)
                         .map((info, idx) => (
                             <InfoRow
                                 key={info.title + idx}
@@ -411,16 +368,7 @@ function RangeDetailsSimplify(props: propsIF) {
 
                 <section>
                     {infoContent
-                        .slice(
-                            isAmbient
-                                ? isActiveNetworkBlast
-                                    ? 12
-                                    : 10
-                                : isActiveNetworkBlast
-                                  ? 14
-                                  : 12,
-                            infoContent.length,
-                        )
+                        .slice(isAmbient ? 10 : 12, infoContent.length)
                         .map((info, idx) => (
                             <InfoRow
                                 key={info.title + idx}

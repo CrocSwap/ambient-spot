@@ -1,7 +1,6 @@
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { tokenListURIs, ZERO_ADDRESS } from '../../ambient-utils/constants';
 import {
-    isBlastRewardToken,
     isETHorStakedEthToken,
     isPriorityEthEquivalent,
     isPriorityUsdEquivalent,
@@ -148,24 +147,17 @@ export const useTokenSearch = (
                                 tokenListURIs.scrollCoingecko,
                             ),
                         )
-                      : chainId === '0x13e31' // blast mainnet
+                      : chainId === '0x18232' // plume mainnet
                         ? patchLists(
                               tokens.getTokensFromList(tokenListURIs.ambient),
                               tokens.getTokensFromList(
-                                  tokenListURIs.blastCoingecko,
+                                  tokenListURIs.plumeNetwork,
                               ),
                           )
-                        : chainId === '0x18232' // plume mainnet
-                          ? patchLists(
-                                tokens.getTokensFromList(tokenListURIs.ambient),
-                                tokens.getTokensFromList(
-                                    tokenListURIs.plumeNetwork,
-                                ),
-                            )
-                          : patchLists(
-                                tokens.getTokensFromList(tokenListURIs.ambient),
-                                tokens.getTokensFromList(tokenListURIs.testnet),
-                            );
+                        : patchLists(
+                              tokens.getTokensFromList(tokenListURIs.ambient),
+                              tokens.getTokensFromList(tokenListURIs.testnet),
+                          );
 
             // ERC-20 tokens from connected wallet subject to universe verification
             const verifiedWalletTokens: TokenIF[] = walletTokens.filter(
@@ -250,8 +242,6 @@ export const useTokenSearch = (
                         priority = 89;
                     } else if (isETHorStakedEthToken(tknAddress, chainId)) {
                         priority = 89;
-                    } else if (isBlastRewardToken(tknAddress)) {
-                        priority = 85;
                     } else if (isUSDQtoken(tknAddress)) {
                         priority = 83;
                     } else if (

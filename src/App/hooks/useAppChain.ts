@@ -2,8 +2,6 @@ import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     baseSepolia,
-    blastMainnet,
-    blastSepolia,
     ethereumMainnet,
     ethereumSepolia,
     monadTestnet,
@@ -198,10 +196,6 @@ export const useAppChain = (): {
                                 if (incomingChainFromWallet === '0x1') {
                                     nextNetwork = ethereumMainnet;
                                 } else if (
-                                    incomingChainFromWallet === '0x13e31'
-                                ) {
-                                    nextNetwork = blastMainnet;
-                                } else if (
                                     incomingChainFromWallet === '0x18232'
                                 ) {
                                     nextNetwork = plumeMainnet;
@@ -217,10 +211,6 @@ export const useAppChain = (): {
                                     incomingChainFromWallet === '0xaa36a7'
                                 ) {
                                     nextNetwork = ethereumSepolia;
-                                } else if (
-                                    incomingChainFromWallet === '0xa0c71fd'
-                                ) {
-                                    nextNetwork = blastSepolia;
                                 } else if (
                                     incomingChainFromWallet === '0x82750'
                                 ) {

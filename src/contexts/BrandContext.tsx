@@ -12,7 +12,6 @@ import {
     ambientProductionBrandAssets,
     ambientTestnetBrandAssets,
     baseSepoliaBrandAssets,
-    blastBrandAssets,
     defaultBrandAssets,
     monadTestnetBrandAssets,
     plumeBrandAssets,
@@ -81,8 +80,6 @@ export const BrandContextProvider = (props: { children: ReactNode }) => {
     const brandAssets = useMemo<brandIF>(() => {
         // make the linter happy for sample file
         switch (brand) {
-            case 'blast':
-                return blastBrandAssets;
             case 'plume':
                 return plumeBrandAssets;
             case 'scroll':
