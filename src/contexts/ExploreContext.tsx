@@ -274,8 +274,6 @@ export const ExploreContextProvider = (props: { children: ReactNode }) => {
     };
 
     return (
-        <ExploreContext.Provider value={exploreContext}>
-            {props.children}
-        </ExploreContext.Provider>
+        <ExploreContext value={exploreContext}>{props.children}</ExploreContext>
     );
 };

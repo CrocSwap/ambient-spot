@@ -241,6 +241,7 @@ export const BGImage = styled.img<{ height: number; top: number }>`
     width: 100%;
     height: ${({ height }) => height}px;
     top: ${({ top }) => top}px;
+    pointer-events: none;
 
     @media only screen and (max-width: 600px) {
         display: none;

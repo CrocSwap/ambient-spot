@@ -5,7 +5,6 @@ export const tokenListURIs = {
     ambient: '/ambient-token-list.json',
     testnet: '/testnet-token-list.json',
     ethereumCoingecko: 'https://tokens.coingecko.com/ethereum/all.json',
-    blastCoingecko: 'https://tokens.coingecko.com/blast/all.json',
     // broken: '/broken-list.json',
     scrollCoingecko: 'https://tokens.coingecko.com/scroll/all.json',
     scrollTech:

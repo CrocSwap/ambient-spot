@@ -83,8 +83,8 @@ export const XpLeadersContextProvider = (props: {
     };
 
     return (
-        <XpLeadersContext.Provider value={xpLeadersContext}>
+        <XpLeadersContext value={xpLeadersContext}>
             {props.children}
-        </XpLeadersContext.Provider>
+        </XpLeadersContext>
     );
 };

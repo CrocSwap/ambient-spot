@@ -24,8 +24,6 @@ import { EthersAdapter } from '@reown/appkit-adapter-ethers';
 import { AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/react';
 import baseSepoliaLogo from './assets/images/networks/base_sepolia.webp';
-import blastLogo from './assets/images/networks/blast_logo.png';
-import blastSepoliaLogo from './assets/images/networks/blast_sepolia.webp';
 import ethLogo from './assets/images/networks/ethereum_logo.svg';
 import sepoliaLogo from './assets/images/networks/ethereum_sepolia.webp';
 import monadLogo from './assets/images/networks/monad_logo_small_with_margin.png';
@@ -48,14 +46,12 @@ if (SHOULD_LOG_ANALYTICS) {
                 ? 'scroll.ambient.finance'
                 : brand === 'swell'
                   ? 'swell.ambient.finance'
-                  : brand === 'blast'
-                    ? 'blast.ambient.finance'
-                    : brand === 'plume'
-                      ? 'plume.ambient.finance'
-                      : 'ambient.finance';
+                  : brand === 'plume'
+                    ? 'plume.ambient.finance'
+                    : 'ambient.finance';
     initPlausible({
         domain: plausibleDomain,
-        endpoint: 'https://pls.embindexer.net/ev',
+        endpoint: 'https://pls.ambindexer.net/ev',
         captureOnLocalhost: false,
         outboundLinks: true,
         customProperties: {
@@ -110,8 +106,6 @@ createAppKit({
     enableWalletGuide: false,
     chainImages: {
         1: ethLogo,
-        81457: blastLogo,
-        168587773: blastSepoliaLogo,
         534351: scrollSepoliaLogo,
         534352: scrollLogo,
         11155111: sepoliaLogo,

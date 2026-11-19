@@ -128,8 +128,8 @@ export const UserPreferenceContextProvider = (props: {
     );
 
     return (
-        <UserPreferenceContext.Provider value={userPreferences}>
+        <UserPreferenceContext value={userPreferences}>
             {props.children}
-        </UserPreferenceContext.Provider>
+        </UserPreferenceContext>
     );
 };

@@ -6,8 +6,6 @@
 import { getMoneynessRank } from '.';
 import { ZERO_ADDRESS } from '../../constants';
 import { BASE_SEPOLIA_TOKENS } from '../../constants/networks/baseSepolia';
-import { BLAST_TOKENS } from '../../constants/networks/blastMainnet';
-import { BLAST_SEPOLIA_TOKENS } from '../../constants/networks/blastSepolia';
 import { MAINNET_TOKENS } from '../../constants/networks/ethereumMainnet';
 import { SEPOLIA_TOKENS } from '../../constants/networks/ethereumSepolia';
 import { MONAD_TESTNET_TOKENS } from '../../constants/networks/monadTestnet';
@@ -25,10 +23,6 @@ export function isUsdcToken(addr: string): boolean {
 
 export function isPriorityUsdEquivalent(addr: string): boolean {
     return PRIORITY_USD_EQUIVALENT_TOKENS.includes(addr.toLowerCase());
-}
-
-export function isBlastRewardToken(addr: string): boolean {
-    return BLAST_REWARD_TOKENS.includes(addr.toLowerCase());
 }
 
 export function isUSDQtoken(addr: string): boolean {
@@ -125,10 +119,8 @@ export function remapTokenIfWrappedNative(addr: string): string {
 
 export const USDC_TOKENS = [
     MAINNET_TOKENS.USDC,
-    BLAST_TOKENS.USDB,
     PLUME_LEGACY_TOKENS.USDC,
     SEPOLIA_TOKENS.USDC,
-    BLAST_SEPOLIA_TOKENS.USDB,
     SCROLL_SEPOLIA_TOKENS.USDC,
     SCROLL_TOKENS.USDC,
     SWELL_SEPOLIA_TOKENS.USDC,
@@ -143,7 +135,6 @@ export const PRIORITY_USD_EQUIVALENT_TOKENS = [PLUME_TOKENS.pUSD].map((x) =>
 export const STABLE_USD_TOKENS = [
     MAINNET_TOKENS.DAI,
     MAINNET_TOKENS.USDT,
-    BLAST_TOKENS.USDPLUS,
     SCROLL_TOKENS.USDT,
     SCROLL_TOKENS.USDQ,
     SCROLL_TOKENS.DAI,
@@ -169,10 +160,6 @@ export const STABLE_USD_TOKENS = [
     .map((x) => x?.address.toLowerCase())
     .concat(USDC_TOKENS);
 
-export const BLAST_REWARD_TOKENS = [BLAST_TOKENS.BLAST.address].map((x) =>
-    x.toLowerCase(),
-);
-
 export const WBTC_TOKENS = [
     MAINNET_TOKENS.WBTC,
     SCROLL_TOKENS.WBTC,
@@ -183,14 +170,12 @@ export const WBTC_TOKENS = [
 export const ETH_TOKENS = [
     MAINNET_TOKENS.ETH,
     SCROLL_TOKENS.ETH,
-    BLAST_TOKENS.ETH,
     PLUME_LEGACY_TOKENS.ETH,
     MONAD_TESTNET_TOKENS.ETH,
     SWELL_TOKENS.ETH,
     SEPOLIA_TOKENS.ETH,
     SWELL_SEPOLIA_TOKENS.ETH,
     SCROLL_SEPOLIA_TOKENS.ETH,
-    BLAST_SEPOLIA_TOKENS.ETH,
     BASE_SEPOLIA_TOKENS.ETH,
     MONAD_TESTNET_TOKENS.ETH,
     MONAD_TESTNET_TOKENS.WETH,
@@ -213,9 +198,6 @@ export const STAKED_ETH_TOKENS = [
     SCROLL_TOKENS.pxETH,
     SCROLL_TOKENS.pufETH,
     SCROLL_TOKENS.rETH,
-    BLAST_TOKENS.wrsETH,
-    BLAST_TOKENS.ezETH,
-    BLAST_TOKENS.weETH,
     PLUME_LEGACY_TOKENS.pETH,
     SWELL_TOKENS.wstETH,
     SWELL_TOKENS.pzETH,
@@ -251,9 +233,7 @@ export const STAKED_BTC_TOKENS = [
 export const WRAPPED_NATIVE_TOKENS = [
     '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // Mainnet
     '0x5300000000000000000000000000000000000004', // Scroll (test and main)
-    '0x4300000000000000000000000000000000000004', // Blast
     '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14', // Sepolia
-    '0x4200000000000000000000000000000000000023', // Blast Sepolia
     '0xaA6210015fbf0855F0D9fDA3C415c1B12776Ae74', // Plume Sepolia
     '0x863d7abb9c62d8bc69ea9ebc3e3583057d533e6f', // Scroll Sepolia
     '0xEa237441c92CAe6FC17Caaf9a7acB3f953be4bd1', // Plume Mainnet

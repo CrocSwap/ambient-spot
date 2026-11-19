@@ -3,6 +3,7 @@ import {
     UserVaultsServerIF,
     VaultIF,
     VaultStrategy,
+    VaultWithLiveTvlIF,
 } from '../../../ambient-utils/types';
 
 export class Vault implements VaultIF {
@@ -43,13 +44,14 @@ export class Vault implements VaultIF {
     aprToken1: string;
     aprUnitTokenPriceUsd: string;
     aprRebaseUnitToken: string;
-    tvlUsd: string;
+    // undefined while the on-chain TVL read is still in flight
+    tvlUsd: string | undefined;
     apr: string;
     balance: string | undefined;
     balanceAmount: string | undefined;
     balanceUsd: string | undefined;
     constructor(
-        v: VaultIF | AllVaultsServerIF,
+        v: VaultIF | AllVaultsServerIF | VaultWithLiveTvlIF,
         userVault: UserVaultsServerIF | null | undefined,
     ) {
         this.id = v.id;

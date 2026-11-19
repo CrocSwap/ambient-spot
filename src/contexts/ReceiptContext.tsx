@@ -27,13 +27,7 @@ export interface TransactionByType {
     userAddress: string;
     txHash: string;
     txAction?:
-        | 'Sell'
-        | 'Buy'
-        | 'Add'
-        | 'Remove'
-        | 'Harvest'
-        | 'Claim'
-        | 'Reposition';
+        'Sell' | 'Buy' | 'Add' | 'Remove' | 'Harvest' | 'Claim' | 'Reposition';
     txType:
         | 'Market'
         | 'Limit'
@@ -209,8 +203,6 @@ export const ReceiptContextProvider = (props: {
     };
 
     return (
-        <ReceiptContext.Provider value={receiptContext}>
-            {props.children}
-        </ReceiptContext.Provider>
+        <ReceiptContext value={receiptContext}>{props.children}</ReceiptContext>
     );
 };

@@ -61,7 +61,7 @@ export default function MobileLandingSections() {
                             gap={4}
                         >
                             <p
-                                className={styles.ambient_blast_logo}
+                                className={styles.ambient_logo}
                                 style={{ fontSize: '30px' }}
                             >
                                 ambient
@@ -97,7 +97,7 @@ export default function MobileLandingSections() {
                             gap={4}
                         >
                             <p
-                                className={styles.ambient_blast_logo}
+                                className={styles.ambient_logo}
                                 style={{ fontSize: '50px' }}
                             >
                                 ambient

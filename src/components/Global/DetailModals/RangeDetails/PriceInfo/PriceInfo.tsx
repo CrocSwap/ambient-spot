@@ -2,12 +2,7 @@ import styles from './PriceInfo.module.css';
 
 import { useContext } from 'react';
 import { useLocation } from 'react-router-dom';
-import {
-    BlastRewardsDataIF,
-    PositionIF,
-    TokenIF,
-} from '../../../../../ambient-utils/types';
-import { ChainDataContext } from '../../../../../contexts/ChainDataContext';
+import { PositionIF, TokenIF } from '../../../../../ambient-utils/types';
 import { TokenContext } from '../../../../../contexts/TokenContext';
 import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
 import Apy from '../../../Tabs/Apy/Apy';
@@ -33,7 +28,6 @@ interface propsIF {
     maxRangeDenomByMoneyness: string;
     baseTokenAddress: string;
     quoteTokenAddress: string;
-    blastRewardsData: BlastRewardsDataIF;
     isBaseTokenMoneynessGreaterOrEqual: boolean;
     isAccountView: boolean;
     baseTokenCharacter: string;
@@ -62,7 +56,6 @@ export default function PriceInfo(props: propsIF) {
         maxRangeDenomByMoneyness,
         baseTokenAddress,
         quoteTokenAddress,
-        blastRewardsData,
         isBaseTokenMoneynessGreaterOrEqual,
         isAccountView,
         baseTokenCharacter,
@@ -70,11 +63,9 @@ export default function PriceInfo(props: propsIF) {
     } = props;
 
     const { pathname } = useLocation();
-    // const { lastBlockNumber } = useContext(ChainDataContext);
 
     const isOnTradeRoute = pathname.includes('trade');
     const { tokens } = useContext(TokenContext);
-    const { isActiveNetworkBlast } = useContext(ChainDataContext);
 
     const isDenomBaseLocal = isAccountView
         ? !isBaseTokenMoneynessGreaterOrEqual
@@ -212,51 +203,6 @@ export default function PriceInfo(props: propsIF) {
         </div>
     );
 
-    const showEarnedRewards = isActiveNetworkBlast;
-
-    const rewardsContent = (
-        <section>
-            <span className={styles.divider} />
-            <div>Rewards:</div>
-            <BlastRewardRow
-                key={'BLAST points'}
-                rewardType={'BLAST points'}
-                reward={blastRewardsData.points}
-                logo={blastLogo}
-            />
-            <BlastRewardRow
-                key={'BLAST gold'}
-                rewardType={'BLAST gold'}
-                reward={blastRewardsData.gold}
-                logo={blastLogo}
-            />
-            {/* {Object.entries(blastPointsData).map(([rewardType, reward]) => {
-                const logo =
-                    rewardType === 'BLAST points' ||
-                    rewardType === 'BLAST' ||
-                    rewardType === 'BLAST gold'
-                        ? blastLogo
-                        : rewardType === 'AMBI points' || rewardType === 'AMBI'
-                        ? ambiLogo
-                        : rewardType === '__BASE__'
-                        ? baseTokenLogoDisplay
-                        : rewardType === '__QUOTE__'
-                        ? quoteTokenLogoDisplay
-                        : rewardType === 'TOKEN yield'
-                        ? unknownTokenLogoDisplay
-                        : ambiLogo;
-                return (
-                    <BlastRewardRow
-                        key={rewardType}
-                        rewardType={rewardType}
-                        reward={reward}
-                        logo={logo}
-                    />
-                );
-            })} */}
-        </section>
-    );
-
     return (
         <div className={styles.main_container}>
             <div className={styles.price_info_container}>
@@ -287,8 +233,6 @@ export default function PriceInfo(props: propsIF) {
                     <span className={styles.divider} />
 
                     {earnedContent}
-
-                    {showEarnedRewards && rewardsContent}
                 </div>
 
                 {priceStatusContent}
@@ -311,39 +255,3 @@ export default function PriceInfo(props: propsIF) {
         </div>
     );
 }
-
-const BlastRewardRow = (props: {
-    rewardType: string;
-    reward: string;
-    logo: React.ReactNode | undefined;
-}) => {
-    const { rewardType, reward, logo } = props;
-    return (
-        <div>
-            <p>{rewardType}</p>
-            <p>
-                {reward}
-                {logo}
-            </p>
-        </div>
-    );
-};
-
-const blastLogo = (
-    <svg
-        xmlns='http://www.w3.org/2000/svg'
-        width='15'
-        height='15'
-        viewBox='0 0 20 14'
-        fill='none'
-    >
-        <path
-            d='M15.7589 6.99084L18.9128 5.41927L20 2.08235L17.8256 0.5H3.34769L0 2.98654H17.0183L16.1141 5.78525H9.28956L8.63294 7.83045H15.4575L13.5414 13.7185L16.7384 12.1362L17.8794 8.60548L15.7374 7.0339L15.7589 6.99084Z'
-            fill='#FCFC03'
-        />
-        <path
-            d='M4.81162 11.1889L6.78148 5.05331L4.59633 3.41714L1.31323 13.7185H13.5414L14.3595 11.1889H4.81162Z'
-            fill='#FCFC03'
-        />
-    </svg>
-);

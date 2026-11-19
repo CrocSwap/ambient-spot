@@ -47,30 +47,6 @@
             "address": "0x0000000000000000000000000000000000000000",
             "symbol": "ETH",
             "decimals": 18,
-            "chainId": 168587773,
-            "logoURI": "https://ethereum-optimism.github.io/data/ETH/logo.svg"
-        },
-        {
-            "name": "USDB",
-            "address": "0x4200000000000000000000000000000000000022",
-            "symbol": "USDB",
-            "decimals": 18,
-            "chainId": 168587773,
-            "logoURI": "https://assets-global.website-files.com/65a6baa1a3f8ed336f415cb4/65c67f0ebf2f6a1bd0feb13c_usdb-icon-yellow.png"
-        },
-        {
-            "name": "ZirCat",
-            "address": "0x3211dFB6c2d3F7f15D7568049a86a38fcF1b00D3",
-            "symbol": "ZCAT",
-            "decimals": 18,
-            "chainId": 168587773,
-            "logoURI": "https://ambient.finance/zcat_32.png"
-        },
-        {
-            "name": "Native Ether",
-            "address": "0x0000000000000000000000000000000000000000",
-            "symbol": "ETH",
-            "decimals": 18,
             "chainId": 534351,
             "logoURI": "https://ethereum-optimism.github.io/data/ETH/logo.svg"
         },

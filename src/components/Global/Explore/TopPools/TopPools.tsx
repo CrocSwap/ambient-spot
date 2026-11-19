@@ -28,7 +28,7 @@ export type HeaderItem = {
     pxValue?: number;
     onClick?: () => void;
     tooltipText?: string | React.ReactNode;
-    classname?: boolean;
+    classname?: string;
 };
 
 interface propsIF {

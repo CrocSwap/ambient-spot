@@ -13,9 +13,9 @@ import {
 } from 'react';
 import {
     expandTokenBalances,
-    fetchBlastUserXpData,
     fetchBlockNumber,
     fetchUserXpData,
+    fetchVaultTvlUsd,
     RpcNodeStatus,
 } from '../ambient-utils/api';
 import { fetchNFT } from '../ambient-utils/api/fetchNft';
@@ -27,10 +27,8 @@ import {
     ZERO_ADDRESS,
 } from '../ambient-utils/constants';
 import { ethereumMainnet } from '../ambient-utils/constants';
-import { blastMainnet } from '../ambient-utils/constants';
 import { plumeMainnet } from '../ambient-utils/constants';
 import { scrollMainnet } from '../ambient-utils/constants';
-import { swellMainnet } from '../ambient-utils/constants';
 import { tokens as AMBIENT_TOKEN_LIST } from '../ambient-utils/constants/ambient-token-list.json';
 import { getChainStats, getFormattedNumber } from '../ambient-utils/dataLayer';
 import {
@@ -38,6 +36,7 @@ import {
     PoolIF,
     TokenIF,
     UserVaultsServerIF,
+    VaultWithLiveTvlIF,
 } from '../ambient-utils/types';
 import { usePoolList } from '../App/hooks/usePoolList';
 import { AppStateContext } from './AppStateContext';
@@ -51,11 +50,7 @@ import {
     TokenBalanceContext,
 } from './TokenBalanceContext';
 import { TokenContext } from './TokenContext';
-import {
-    BlastUserXpDataIF,
-    UserDataContext,
-    UserXpDataIF,
-} from './UserDataContext';
+import { UserDataContext, UserXpDataIF } from './UserDataContext';
 import { fallbackVaultsList } from '../pages/platformAmbient/Vaults/fallbackVaultsList';
 
 export interface ChainDataContextIF {
@@ -65,8 +60,6 @@ export interface ChainDataContextIF {
     setLastBlockNumber: Dispatch<SetStateAction<number>>;
     rpcNodeStatus: RpcNodeStatus;
     connectedUserXp: UserXpDataIF;
-    connectedUserBlastXp: BlastUserXpDataIF;
-    isActiveNetworkBlast: boolean;
     isActiveNetworkPlume: boolean;
     isActiveNetworkSwell: boolean;
     isActiveNetworkBase: boolean;
@@ -91,7 +84,7 @@ export interface ChainDataContextIF {
     setIsGasPriceFetchManuallyTriggerered: Dispatch<SetStateAction<boolean>>;
     isAnalyticsPoolListDefinedOrUnavailable: boolean;
     activePoolList: PoolIF[] | undefined;
-    vaultsOnCurrentChain: AllVaultsServerIF[] | undefined;
+    vaultsOnCurrentChain: VaultWithLiveTvlIF[] | undefined;
 }
 
 export const ChainDataContext = createContext({} as ChainDataContextIF);
@@ -117,8 +110,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         provider,
         mainnetProvider,
         scrollProvider,
-        blastProvider,
-        swellProvider,
         plumeProvider,
     } = useContext(CrocEnvContext);
 
@@ -165,7 +156,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
 
     const [gasPriceInGwei, setGasPriceinGwei] = useState<number | undefined>();
 
-    const isActiveNetworkBlast = ['0x13e31', '0xa0c71fd'].includes(chainId);
     const isActiveNetworkScroll = ['0x82750', '0x8274f'].includes(chainId);
     const isActiveNetworkMainnet = ['0x1'].includes(chainId);
     const isActiveNetworkPlume = ['0x18231', '0x18232'].includes(chainId);
@@ -270,7 +260,7 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         }
     }
 
-    const vaultsOnCurrentChain: AllVaultsServerIF[] | undefined =
+    const serverVaultsOnCurrentChain: AllVaultsServerIF[] | undefined =
         useMemo(() => {
             return allVaultsData !== undefined
                 ? allVaultsData?.filter(
@@ -278,6 +268,74 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                   )
                 : undefined;
         }, [allVaultsData, chainId]);
+
+    // Settled USD value per vault. Keyed by chain as well as address because a
+    // vault contract can share an address across chains, and because keying on
+    // the active chain lets a network switch read as pending rather than
+    // briefly showing the previous chain's figures.
+    const vaultTvlKey = (vault: AllVaultsServerIF): string =>
+        `${vault.chainId}:${vault.address.toLowerCase()}`;
+
+    // Absence from this map means the read has not settled yet, so every vault
+    // gets an entry once its read finishes, including the ones that fall back to
+    // the server figure. See fetchVaultTvlUsd for why the API's own number goes
+    // stale.
+    const [onChainVaultTvl, setOnChainVaultTvl] = useState<Map<string, number>>(
+        new Map(),
+    );
+
+    useEffect(() => {
+        if (!provider || !serverVaultsOnCurrentChain?.length) return;
+        let isStale = false;
+        Promise.all(
+            serverVaultsOnCurrentChain.map(async (vault) => {
+                try {
+                    const tvlUsd = await fetchVaultTvlUsd(
+                        vault,
+                        chainId,
+                        provider,
+                        cachedFetchTokenPrice,
+                    );
+                    // A vault the app cannot price on-chain keeps the server
+                    // figure, so it still lists a number rather than reading as
+                    // permanently pending.
+                    return [
+                        vaultTvlKey(vault),
+                        tvlUsd ?? parseFloat(vault.tvlUsd),
+                    ] as const;
+                } catch (error) {
+                    console.error(
+                        `Error reading on-chain TVL for vault ${vault.vaultSymbol} (${vault.address}):`,
+                        error,
+                    );
+                    return [
+                        vaultTvlKey(vault),
+                        parseFloat(vault.tvlUsd),
+                    ] as const;
+                }
+            }),
+        ).then((entries) => {
+            if (isStale) return;
+            setOnChainVaultTvl(new Map(entries));
+        });
+        return () => {
+            isStale = true;
+        };
+    }, [
+        provider,
+        chainId,
+        serverVaultsOnCurrentChain,
+        poolStatsPollingCacheTime,
+    ]);
+
+    const vaultsOnCurrentChain: VaultWithLiveTvlIF[] | undefined = useMemo(
+        () =>
+            serverVaultsOnCurrentChain?.map((vault) => {
+                const tvlUsd = onChainVaultTvl.get(vaultTvlKey(vault));
+                return { ...vault, tvlUsd: tvlUsd?.toString() };
+            }),
+        [serverVaultsOnCurrentChain, onChainVaultTvl],
+    );
 
     // logic to get user vault data
     async function getUserVaultData(): Promise<void> {
@@ -797,12 +855,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         data: undefined,
     });
 
-    const [connectedUserBlastXp, setConnectedUserBlastXp] =
-        useState<BlastUserXpDataIF>({
-            dataReceived: false,
-            data: undefined,
-        });
-
     useEffect(() => {
         if (isUserOnline) {
             if (userAddress) {
@@ -823,38 +875,14 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                             data: undefined,
                         });
                     });
-
-                if (isActiveNetworkBlast) {
-                    fetchBlastUserXpData({
-                        user: userAddress,
-                        chainId: chainId,
-                    })
-                        .then((data) => {
-                            setConnectedUserBlastXp({
-                                dataReceived: true,
-                                data: data,
-                            });
-                        })
-                        .catch((error) => {
-                            console.error(error);
-                            setConnectedUserBlastXp({
-                                dataReceived: false,
-                                data: undefined,
-                            });
-                        });
-                }
             } else {
                 setConnectedUserXp({
                     dataReceived: false,
                     data: undefined,
                 });
-                setConnectedUserBlastXp({
-                    dataReceived: false,
-                    data: undefined,
-                });
             }
         }
-    }, [isUserOnline, userAddress, isActiveNetworkBlast]);
+    }, [isUserOnline, userAddress]);
 
     const mainnetCrocEnv = useMemo(
         () =>
@@ -868,18 +896,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         () =>
             scrollProvider ? new CrocEnv(scrollProvider, undefined) : undefined,
         [scrollProvider !== undefined],
-    );
-
-    const swellCrocEnv = useMemo(
-        () =>
-            swellProvider ? new CrocEnv(swellProvider, undefined) : undefined,
-        [swellProvider !== undefined],
-    );
-
-    const blastCrocEnv = useMemo(
-        () =>
-            blastProvider ? new CrocEnv(blastProvider, undefined) : undefined,
-        [blastProvider !== undefined],
     );
 
     const plumeCrocEnv = useMemo(
@@ -933,36 +949,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
     useEffect(() => {
         if (!showDexStats) return;
 
-        // Track running totals
-        let tvlTotalUsd = 0;
-        let volumeTotalUsd = 0;
-        let feesTotalUsd = 0;
-        let resultsReceived = 0;
-        const numChainsToAggregate = 5;
-
-        const handleChainStats = (
-            dexStats:
-                | {
-                      tvlTotalUsd: number;
-                      volumeTotalUsd: number;
-                      feesTotalUsd: number;
-                  }
-                | undefined,
-        ) => {
-            if (!dexStats) return;
-
-            tvlTotalUsd += dexStats.tvlTotalUsd;
-            volumeTotalUsd += dexStats.volumeTotalUsd;
-            feesTotalUsd += dexStats.feesTotalUsd;
-            resultsReceived += 1;
-
-            // Only update stats when all chains have completed
-            // to ensure we show accurate totals (not partial sums)
-            if (resultsReceived === numChainsToAggregate) {
-                updateStats(tvlTotalUsd, volumeTotalUsd, feesTotalUsd);
-            }
-        };
-
         // Fetch all chains in parallel
         const chainConfigs = [
             {
@@ -978,27 +964,46 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                 tokenCount: 20,
             },
             {
-                chainId: '0x783',
-                env: swellCrocEnv,
-                gcgo: swellMainnet.gcgo,
-                tokenCount: 10,
-            },
-            {
-                chainId: '0x13e31',
-                env: blastCrocEnv,
-                gcgo: blastMainnet.gcgo,
-                tokenCount: 10,
-            },
-            {
                 chainId: '0x18232',
                 env: plumeCrocEnv,
                 gcgo: plumeMainnet.gcgo,
                 tokenCount: 10,
             },
-        ];
+        ].filter(
+            (config): config is typeof config & { env: CrocEnv } =>
+                config.env !== undefined,
+        );
+
+        // Track running totals
+        let tvlTotalUsd = 0;
+        let volumeTotalUsd = 0;
+        let feesTotalUsd = 0;
+        let resultsReceived = 0;
+
+        const handleChainStats = (
+            dexStats:
+                | {
+                      tvlTotalUsd: number;
+                      volumeTotalUsd: number;
+                      feesTotalUsd: number;
+                  }
+                | undefined,
+        ) => {
+            if (dexStats) {
+                tvlTotalUsd += dexStats.tvlTotalUsd;
+                volumeTotalUsd += dexStats.volumeTotalUsd;
+                feesTotalUsd += dexStats.feesTotalUsd;
+            }
+            resultsReceived += 1;
+
+            // Only update stats when all chains have completed
+            // to ensure we show accurate totals (not partial sums)
+            if (resultsReceived === chainConfigs.length) {
+                updateStats(tvlTotalUsd, volumeTotalUsd, feesTotalUsd);
+            }
+        };
 
         chainConfigs.forEach(({ chainId: cId, env, gcgo, tokenCount }) => {
-            if (!env) return;
             getChainStats(
                 'cumulative',
                 cId,
@@ -1014,8 +1019,6 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         showDexStats,
         mainnetCrocEnv !== undefined,
         scrollCrocEnv !== undefined,
-        swellCrocEnv !== undefined,
-        blastCrocEnv !== undefined,
         plumeCrocEnv !== undefined,
         updateStats,
     ]);
@@ -1026,9 +1029,7 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         rpcNodeStatus,
         gasPriceInGwei,
         connectedUserXp,
-        connectedUserBlastXp,
         setGasPriceinGwei,
-        isActiveNetworkBlast,
         isActiveNetworkPlume,
         isActiveNetworkSwell,
         isActiveNetworkBase,
@@ -1053,8 +1054,8 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
     };
 
     return (
-        <ChainDataContext.Provider value={chainDataContext}>
+        <ChainDataContext value={chainDataContext}>
             {props.children}
-        </ChainDataContext.Provider>
+        </ChainDataContext>
     );
 };

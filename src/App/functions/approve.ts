@@ -3,9 +3,9 @@ import { CrocEnvContext } from '../../contexts/CrocEnvContext';
 
 import { waitForTransaction } from '../../ambient-utils/dataLayer';
 import {
-    AllVaultsServerIF,
     TokenIF,
     VaultStrategy,
+    VaultWithLiveTvlIF,
 } from '../../ambient-utils/types';
 import { AppStateContext } from '../../contexts';
 import { ReceiptContext } from '../../contexts/ReceiptContext';
@@ -90,7 +90,7 @@ export function useApprove() {
     };
 
     const approveVault = async (
-        vault: AllVaultsServerIF,
+        vault: VaultWithLiveTvlIF,
         mainAsset: TokenIF,
         secondaryAsset: TokenIF,
         strategy: VaultStrategy,

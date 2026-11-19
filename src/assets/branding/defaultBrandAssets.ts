@@ -1,9 +1,6 @@
 import baseLogo from '../../assets/images/logos/Base_Wordmark_White.svg';
-import blastLogo from '../../assets/images/logos/blast_logo.svg';
-import monadLogo from '../../assets/images/logos/monad_full_logo.svg';
 import plumeLogo from '../../assets/images/logos/plume_brand_logo.svg';
 import scrollLogo from '../../assets/images/logos/scroll_brand_logo.svg';
-import swellLogo from '../../assets/images/logos/swell_dark_theme_logo.svg';
 import large from '../images/logos/ambient_logo_large.svg';
 import { brandIF } from './types';
 
@@ -21,12 +18,6 @@ export const defaultBrandAssets: brandIF = {
             premiumColor: [],
             cobrandingLogo: scrollLogo,
         },
-        // swell mainnet
-        '0x783': {
-            color: ['purple_dark', 'purple_light'],
-            premiumColor: [],
-            cobrandingLogo: swellLogo,
-        },
         // plume mainnet
         '0x18232': {
             color: ['purple_dark', 'purple_light'],
@@ -39,46 +30,16 @@ export const defaultBrandAssets: brandIF = {
             premiumColor: [],
             cobrandingLogo: plumeLogo,
         },
-        // blast mainnet
-        '0x13e31': {
-            color: ['purple_dark', 'purple_light'],
-            premiumColor: [],
-            cobrandingLogo: blastLogo,
-        },
         // ethereum sepolia
         '0xaa36a7': {
             color: ['purple_dark', 'purple_light'],
             premiumColor: [],
-        },
-        // '0x279f': {
-        //     // monad testnet
-        //     color: ['purple_dark', 'purple_light'],
-        //     premiumColor: [],
-        //     cobrandingLogo: monadLogo,
-        // },
-        // scroll sepolia
-        '0x8274f': {
-            color: ['purple_dark', 'purple_light'],
-            premiumColor: [],
-            cobrandingLogo: scrollLogo,
-        },
-        // swell sepolia
-        '0x784': {
-            color: ['purple_dark', 'purple_light'],
-            premiumColor: [],
-            cobrandingLogo: swellLogo,
         },
         // base sepolia
         '0x14a34': {
             color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: baseLogo,
-        },
-        // blast sepolia
-        '0xa0c71fd': {
-            color: ['purple_dark', 'purple_light'],
-            premiumColor: [],
-            cobrandingLogo: blastLogo,
         },
     },
     platformName: 'ambient',

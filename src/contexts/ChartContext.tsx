@@ -543,9 +543,5 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         }
     }, [defaultChartSettings]);
 
-    return (
-        <ChartContext.Provider value={chartContext}>
-            {props.children}
-        </ChartContext.Provider>
-    );
+    return <ChartContext value={chartContext}>{props.children}</ChartContext>;
 };

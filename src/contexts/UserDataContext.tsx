@@ -14,11 +14,7 @@ import React, {
 } from 'react';
 import { fetchEnsAddress } from '../ambient-utils/api';
 import { checkBlacklist } from '../ambient-utils/constants';
-import {
-    BlastUserXpIF,
-    UserVaultsServerIF,
-    UserXpIF,
-} from '../ambient-utils/types';
+import { UserVaultsServerIF, UserXpIF } from '../ambient-utils/types';
 import { UserAvatarDataIF } from '../components/Chat/ChatIFs';
 import { getAvatarRest } from '../components/Chat/ChatUtilsHelper';
 import { AppStateContext } from './AppStateContext';
@@ -53,32 +49,28 @@ export interface UserDataContextIF {
         React.SetStateAction<UserVaultsServerIF[] | undefined>
     >;
     totalLiquidityValue:
-        | { value: number; chainId: string; address: string }
-        | undefined;
+        { value: number; chainId: string; address: string } | undefined;
     setTotalLiquidityValue: React.Dispatch<
         React.SetStateAction<
             { value: number; chainId: string; address: string } | undefined
         >
     >;
     totalExchangeBalanceValue:
-        | { value: number; chainId: string; address: string }
-        | undefined;
+        { value: number; chainId: string; address: string } | undefined;
     setTotalExchangeBalanceValue: React.Dispatch<
         React.SetStateAction<
             { value: number; chainId: string; address: string } | undefined
         >
     >;
     totalWalletBalanceValue:
-        | { value: number; chainId: string; address: string }
-        | undefined;
+        { value: number; chainId: string; address: string } | undefined;
     setTotalWalletBalanceValue: React.Dispatch<
         React.SetStateAction<
             { value: number; chainId: string; address: string } | undefined
         >
     >;
     totalVaultsValue:
-        | { value: number; chainId: string; address: string }
-        | undefined;
+        { value: number; chainId: string; address: string } | undefined;
     setTotalVaultsValue: React.Dispatch<
         React.SetStateAction<
             { value: number; chainId: string; address: string } | undefined
@@ -93,11 +85,6 @@ export interface UserXpDataIF {
 export interface UserNftIF {
     userID: string;
     avatarImage: string | undefined;
-}
-
-export interface BlastUserXpDataIF {
-    dataReceived: boolean;
-    data: BlastUserXpIF | undefined;
 }
 
 export const UserDataContext = createContext({} as UserDataContextIF);
@@ -249,8 +236,8 @@ export const UserDataContextProvider = (props: {
     };
 
     return (
-        <UserDataContext.Provider value={userDataContext}>
+        <UserDataContext value={userDataContext}>
             {props.children}
-        </UserDataContext.Provider>
+        </UserDataContext>
     );
 };

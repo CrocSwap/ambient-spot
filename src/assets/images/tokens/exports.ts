@@ -4,7 +4,6 @@ import BAG from './BAG.png';
 import BAJA from './BAJA.png';
 import BAL from './BAL.png';
 import BIG from './BIG.jpg';
-import BLAST from './BLAST.png';
 import BLUR from './BLUR.png';
 import DAI from './DAI.svg';
 import ENA from './ENA.svg';
@@ -63,7 +62,6 @@ import UBTC from './UBTC.svg';
 import UNI from './UNI.webp';
 import UNIETH from './UNIETH.png';
 import USDPLUS from './USD+.png';
-import USDB from './USDB.png';
 import USDC from './USDC.svg';
 import USDE from './USDe-Black.svg';
 import USDK from './USDK.png';
@@ -91,7 +89,6 @@ export {
     BAJA,
     BAL,
     BIG,
-    BLAST,
     BLUR,
     DAI,
     ENA,
@@ -148,7 +145,6 @@ export {
     UBTC,
     UNI,
     UNIETH,
-    USDB,
     USDC,
     USDE,
     USDK,

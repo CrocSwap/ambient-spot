@@ -350,8 +350,8 @@ export const TradeDataContextProvider = (props: { children: ReactNode }) => {
     };
 
     return (
-        <TradeDataContext.Provider value={tradeDataContext}>
+        <TradeDataContext value={tradeDataContext}>
             {props.children}
-        </TradeDataContext.Provider>
+        </TradeDataContext>
     );
 };

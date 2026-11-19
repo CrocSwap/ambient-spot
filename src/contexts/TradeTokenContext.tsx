@@ -276,8 +276,8 @@ export const TradeTokenContextProvider = (props: { children: ReactNode }) => {
     ]);
 
     return (
-        <TradeTokenContext.Provider value={tradeTokenContext}>
+        <TradeTokenContext value={tradeTokenContext}>
             {props.children}
-        </TradeTokenContext.Provider>
+        </TradeTokenContext>
     );
 };

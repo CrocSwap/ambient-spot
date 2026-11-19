@@ -77,8 +77,8 @@ export const CachedDataContextProvider = (props: {
     };
 
     return (
-        <CachedDataContext.Provider value={cachedDataState}>
+        <CachedDataContext value={cachedDataState}>
             {props.children}
-        </CachedDataContext.Provider>
+        </CachedDataContext>
     );
 };
