@@ -1389,6 +1389,7 @@ function Range() {
                     {isZapMode ? (
                         <RangeZapTokenInput
                             token={zapInputToken}
+                            tokenAorB={zapInputIsTokenA ? 'A' : 'B'}
                             counterpartToken={zapCounterpartToken}
                             tokenBalance={zapInputBalance}
                             tokenDexBalance={zapInputDexBalance}

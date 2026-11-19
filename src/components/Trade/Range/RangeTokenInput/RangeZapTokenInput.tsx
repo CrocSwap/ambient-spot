@@ -9,6 +9,9 @@ import TokenInputWithWalletBalance from '../../../Form/TokenInputWithWalletBalan
 interface propsIF {
     // the single token the user deposits
     token: TokenIF;
+    // which pool side `token` is; the token selector needs it to recognise a
+    // pick of the counterpart token as a side switch rather than a new pair
+    tokenAorB: 'A' | 'B';
     // the other pool token the deposit will be partially swapped into
     counterpartToken: TokenIF;
     tokenBalance: string;
@@ -31,6 +34,7 @@ interface propsIF {
 function RangeZapTokenInput(props: propsIF) {
     const {
         token,
+        tokenAorB,
         counterpartToken,
         tokenBalance,
         tokenDexBalance,
@@ -58,7 +62,7 @@ function RangeZapTokenInput(props: propsIF) {
         <FlexContainer flexDirection='column' gap={8}>
             <TokenInputWithWalletBalance
                 fieldId='range_zap'
-                tokenAorB='A'
+                tokenAorB={tokenAorB}
                 token={token}
                 tokenInput={qty.value}
                 tokenBalance={tokenBalance}
