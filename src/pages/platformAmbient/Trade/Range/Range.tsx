@@ -1021,10 +1021,9 @@ function Range() {
                 isAdd,
                 setNewRangeTransactionHash,
                 setTxError,
-                resetConfirmation,
                 activeRangeTxHash,
                 setZapStep,
-                setIsTxCompletedRange: setIsZapComplete,
+                setZapOutcome,
             });
             return;
         }
@@ -1037,20 +1036,20 @@ function Range() {
                 buyTokenAddress: topUpDeficientToken.address,
                 buyTokenQty: topUpBuyDeficientQty,
                 sellTokenAddress: topUpSurplusToken.address,
-                // mint the entered two-token position from the topped-up balances
-                deficientTokenQty: topUpDeficientIsA
-                    ? tokenAInputQtyNoExponentString
-                    : tokenBInputQtyNoExponentString,
-                deficientIsTokenA: topUpDeficientIsA,
+                // mint the entered surplus-side amount as the fixed side; the
+                // pool derives the deficient side from the topped-up balances
+                surplusTokenQty: topUpDeficientIsA
+                    ? tokenBInputQtyNoExponentString
+                    : tokenAInputQtyNoExponentString,
+                surplusIsTokenA: !topUpDeficientIsA,
                 defaultLowTick,
                 defaultHighTick,
                 isAdd,
                 setNewRangeTransactionHash,
                 setTxError,
-                resetConfirmation,
                 activeRangeTxHash,
                 setZapStep,
-                setIsTxCompletedRange: setIsZapComplete,
+                setZapOutcome,
             });
             return;
         }
@@ -1151,6 +1150,7 @@ function Range() {
         isWithdrawZapFromDexChecked,
         zapInputTokenUsdPrice,
         zapQtyCoveredByWalletBalance,
+        swapAssistedNativeGasReserve,
         zapSplit,
         zapPositionTokenAQty,
         zapPositionTokenBQty,
@@ -1167,7 +1167,7 @@ function Range() {
         topUpDeficient,
         zapSteps,
         setZapStep,
-        setIsZapComplete,
+        setZapOutcome,
         resetZapProgress,
         effectiveTokenAllowed,
         effectiveButtonErrorMessage,
@@ -1378,7 +1378,7 @@ function Range() {
                             }}
                             usdValue={zapInputTokenUsdPrice}
                             amountToReduceNativeTokenQty={
-                                amountToReduceNativeTokenQty
+                                swapAssistedNativeGasReserve
                             }
                             estimatedCounterpartQty={
                                 zapSplit?.counterpartAmount ?? null

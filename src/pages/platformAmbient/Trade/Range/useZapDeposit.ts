@@ -20,6 +20,7 @@ import { MAINNET_TOKENS } from '../../../../ambient-utils/constants/networks/eth
 import { getFormattedNumber } from '../../../../ambient-utils/dataLayer';
 import { ZAP_BUFFER_PERCENT } from '../../../../ambient-utils/dataLayer/transactions/zap';
 import { TokenIF } from '../../../../ambient-utils/types';
+import { ZapOutcome } from '../../../../App/hooks/useCreateZapPosition';
 import { useHandleRangeButtonMessage } from '../../../../App/hooks/useHandleRangeButtonMessage';
 import {
     ZapStep,
@@ -213,11 +214,14 @@ export function useZapDeposit(args: UseZapDepositArgs) {
     const [zapInputQty, setZapInputQty] = useState('');
     // two-step ("zap") submission progress for the stepper UI
     const [zapStep, setZapStep] = useState<'swap' | 'mint' | null>(null);
-    const [isZapComplete, setIsZapComplete] = useState(false);
+    const [zapOutcome, setZapOutcome] = useState<ZapOutcome | null>(null);
     // which pool token is being deposited (null = default to the held token)
     const [zapInputSideAOverride, setZapInputSideAOverride] = useState<
         boolean | null
     >(null);
+    // swap-assisted deposits send two transactions (swap, then mint), so a
+    // native-token deposit must hold back gas for both
+    const swapAssistedNativeGasReserve = amountToReduceNativeTokenQty * 2;
     const [twoTokenInputSnapshot, setTwoTokenInputSnapshot] = useState<{
         tokenAInputQty: string;
         tokenBInputQty: string;
@@ -578,15 +582,15 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         const swapStatus: ZapStepStatus =
             txError && zapStep === 'swap'
                 ? 'error'
-                : zapStep === 'mint' || isZapComplete
+                : zapStep === 'mint' || zapOutcome !== null
                   ? 'complete'
                   : zapStep === 'swap'
                     ? 'active'
                     : 'upcoming';
         const mintStatus: ZapStepStatus =
-            txError && zapStep === 'mint'
+            (txError && zapStep === 'mint') || zapOutcome === 'failed'
                 ? 'error'
-                : isZapComplete
+                : zapOutcome === 'complete'
                   ? 'complete'
                   : zapStep === 'mint'
                     ? 'active'
@@ -611,7 +615,7 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         ];
     }, [
         zapStep,
-        isZapComplete,
+        zapOutcome,
         txError,
         isTopUpMode,
         topUpSurplusToken.symbol,
@@ -652,7 +656,7 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         isWithdrawZapFromDexChecked,
         isPoolInitialized,
         zapQtyCoveredByWalletBalance,
-        amountToReduceNativeTokenQty,
+        swapAssistedNativeGasReserve,
         activeRangeTxHash,
         clearZapInput,
     );
@@ -697,7 +701,7 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         walletBalance: topUpDeficientIsA ? tokenBBalance : tokenABalance,
         dexBalance: topUpDeficientIsA ? tokenBDexBalance : tokenADexBalance,
         requiredWei: topUpSurplusRequiredWei,
-        nativeGasReserve: amountToReduceNativeTokenQty,
+        nativeGasReserve: swapAssistedNativeGasReserve,
         enabled: topUpApprovalEnabled,
     });
     const topUpDeficient = topUpSideApproval({
@@ -710,7 +714,7 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         // tx1 buys the shortfall into the exchange balance, so the mint can
         // draw on it on top of whatever the user already holds there
         extraDexWei: topUpBuyDeficientWei,
-        nativeGasReserve: amountToReduceNativeTokenQty,
+        nativeGasReserve: swapAssistedNativeGasReserve,
         enabled: topUpApprovalEnabled,
     });
 
@@ -819,7 +823,7 @@ export function useZapDeposit(args: UseZapDepositArgs) {
     // reset the two-step progress so a re-submission starts from step 1
     const resetZapProgress = useCallback(() => {
         setZapStep(null);
-        setIsZapComplete(false);
+        setZapOutcome(null);
     }, []);
 
     return {
@@ -843,6 +847,7 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         isWithdrawZapFromDexChecked,
         zapInputTokenUsdPrice,
         zapQtyCoveredByWalletBalance,
+        swapAssistedNativeGasReserve,
         zapSplit,
         zapPositionTokenAQty,
         zapPositionTokenBQty,
@@ -861,7 +866,7 @@ export function useZapDeposit(args: UseZapDepositArgs) {
         // submission progress
         zapSteps,
         setZapStep,
-        setIsZapComplete,
+        setZapOutcome,
         resetZapProgress,
         // mode-aware button state
         effectiveTokenAllowed,
