@@ -29,7 +29,6 @@ export const getMoneynessRank = (tokenSymbol: string): number => {
 
     const moneynessRank = {
         USDC: 100,
-        USDB: 100,
         USDE: 99,
         USDT: 98,
         USDQ: 97,

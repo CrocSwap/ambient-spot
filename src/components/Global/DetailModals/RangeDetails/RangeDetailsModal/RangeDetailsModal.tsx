@@ -6,7 +6,6 @@ import {
     toDisplayPrice,
 } from '@crocswap-libs/sdk';
 import { memo, useContext, useEffect, useRef, useState } from 'react';
-import { fetchPositionRewardsData } from '../../../../../ambient-utils/api/fetchPositionRewards';
 import { CACHE_UPDATE_FREQ_IN_MS } from '../../../../../ambient-utils/constants';
 import {
     getFormattedNumber,
@@ -14,7 +13,6 @@ import {
     printDomToImage,
 } from '../../../../../ambient-utils/dataLayer';
 import {
-    BlastRewardsDataIF,
     PositionIF,
     PositionServerIF,
 } from '../../../../../ambient-utils/types';
@@ -81,10 +79,6 @@ function RangeDetailsModal(props: propsIF) {
         userMatchesConnectedAccount,
     } = useProcessRange(position, userAddress);
 
-    const [serverPositionId, setServerPositionId] = useState<
-        string | undefined
-    >();
-
     const {
         activeNetwork: { gcgo, chainId, poolIndex },
         snackbar: { open: openSnackbar },
@@ -92,8 +86,7 @@ function RangeDetailsModal(props: propsIF) {
     const { cachedQuerySpotPrice, cachedFetchTokenPrice, cachedTokenDetails } =
         useContext(CachedDataContext);
 
-    const { lastBlockNumber, isActiveNetworkBlast, analyticsPoolList } =
-        useContext(ChainDataContext);
+    const { lastBlockNumber, analyticsPoolList } = useContext(ChainDataContext);
 
     const detailsRef = useRef(null);
 
@@ -377,7 +370,6 @@ function RangeDetailsModal(props: propsIF) {
                     if (!crocEnv || !provider || !positionPayload) {
                         return;
                     }
-                    setServerPositionId(positionPayload.positionId);
                     // temporarily skip ENS fetch
                     const forceOnchainLiqUpdate = userMatchesConnectedAccount;
                     const positionStats = await getPositionData(
@@ -404,20 +396,6 @@ function RangeDetailsModal(props: propsIF) {
         chainId,
         userMatchesConnectedAccount,
     ]);
-
-    const [blastRewardsData, setBlastRewardsData] =
-        useState<BlastRewardsDataIF>({
-            points: '...',
-            gold: '...',
-        });
-
-    useEffect(() => {
-        if (isActiveNetworkBlast) {
-            fetchPositionRewardsData({ position }).then((rewards) => {
-                rewards && setBlastRewardsData(rewards);
-            });
-        }
-    }, [serverPositionId, isActiveNetworkBlast]);
 
     const [timeFirstMintMemo, setTimeFirstMintMemo] = useState<number>(
         position.timeFirstMint,
@@ -449,7 +427,6 @@ function RangeDetailsModal(props: propsIF) {
         maxRangeDenomByMoneyness: maxRangeDenomByMoneyness,
         baseTokenAddress: baseTokenAddress,
         quoteTokenAddress: quoteTokenAddress,
-        blastRewardsData: blastRewardsData,
         isBaseTokenMoneynessGreaterOrEqual: isBaseTokenMoneynessGreaterOrEqual,
         isAccountView: isAccountView,
         baseTokenCharacter: baseTokenCharacter,
@@ -480,7 +457,6 @@ function RangeDetailsModal(props: propsIF) {
         quoteFeesDisplay: quoteFeesDisplay,
         isAccountView: isAccountView,
         updatedPositionApy: updatedPositionApy,
-        blastRewardsData: blastRewardsData,
     };
 
     const shareComponent = (

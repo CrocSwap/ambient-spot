@@ -43,10 +43,7 @@ export default function Level(props: propsIF) {
     } = props;
     const { userAddress } = useContext(UserDataContext);
     const { isUserOnline } = useContext(AppStateContext);
-    const {
-        connectedUserXp,
-        // isActiveNetworkBlast
-    } = useContext(ChainDataContext);
+    const { connectedUserXp } = useContext(ChainDataContext);
     const { xpLeaders } = useContext(XpLeadersContext);
 
     const [shownAvatar, setShownAvatar] = useState<ReactElement>(<></>);
@@ -177,8 +174,6 @@ export default function Level(props: propsIF) {
     // LEADERBOARD
     const [selectedXpLeaderboardType, setSelectedXpLeaderboardType] = useState(
         getLeaderboardSelectionFromLocalStorage(),
-        // TODO: uncomment when Blast points available
-        // isActiveNetworkBlast
     );
 
     useEffect(() => {

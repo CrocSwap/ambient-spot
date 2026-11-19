@@ -1,4 +1,3 @@
-import blastLogo from '../../assets/images/logos/blast_logo.svg';
 import plumeLogo from '../../assets/images/logos/plume_brand_logo.svg';
 import scrollLogo from '../../assets/images/logos/scroll_brand_logo.svg';
 import large from '../images/logos/ambient_logo_large.svg';
@@ -24,13 +23,6 @@ export const ambientProductionBrandAssets: brandIF = {
             color: ['purple_dark', 'purple_light'],
             premiumColor: [],
             cobrandingLogo: scrollLogo,
-        },
-        // blast mainnet
-        '0x13e31': {
-            // first value in array is default color scheme
-            color: ['purple_dark', 'purple_light'],
-            premiumColor: [],
-            cobrandingLogo: blastLogo,
         },
     },
     platformName: 'ambient',

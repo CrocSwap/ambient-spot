@@ -55,11 +55,6 @@ export function lookupChainId(
         case '0x18231':
             chainIdHex = '0x18231';
             break;
-        case 'blast':
-        case '81457':
-        case '0x13e31':
-            chainIdHex = '0x13e31';
-            break;
         case 'sepolia':
         case '11155111':
         case '0xaa36a7':
@@ -69,11 +64,6 @@ export function lookupChainId(
         case '1924':
         case '0x784':
             chainIdHex = '0x784';
-            break;
-        case 'blastsepolia':
-        case '168587773':
-        case '0xa0c71fd':
-            chainIdHex = '0xa0c71fd';
             break;
         case 'scrollsepolia':
         case '534351':

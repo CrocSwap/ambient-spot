@@ -2,7 +2,6 @@ import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { ChainDataContext } from '../../../../../contexts/ChainDataContext';
 import {
-    BlastUserXpDataIF,
     UserDataContext,
     UserXpDataIF,
 } from '../../../../../contexts/UserDataContext';
@@ -12,28 +11,8 @@ import PointsRow from './PointsRow';
 
 interface propsIF {
     resolvedUserXp: UserXpDataIF;
-    resolvedUserBlastXp: BlastUserXpDataIF;
     connectedAccountActive: boolean;
 }
-
-const blastLogo = (
-    <svg
-        xmlns='http://www.w3.org/2000/svg'
-        width='15'
-        height='15'
-        viewBox='0 0 20 14'
-        fill='none'
-    >
-        <path
-            d='M15.7589 6.99084L18.9128 5.41927L20 2.08235L17.8256 0.5H3.34769L0 2.98654H17.0183L16.1141 5.78525H9.28956L8.63294 7.83045H15.4575L13.5414 13.7185L16.7384 12.1362L17.8794 8.60548L15.7374 7.0339L15.7589 6.99084Z'
-            fill='#FCFC03'
-        />
-        <path
-            d='M4.81162 11.1889L6.78148 5.05331L4.59633 3.41714L1.31323 13.7185H13.5414L14.3595 11.1889H4.81162Z'
-            fill='#FCFC03'
-        />
-    </svg>
-);
 
 const ambiLogo = (
     <svg
@@ -83,16 +62,13 @@ const ambiLogo = (
 );
 
 export default function Points(props: propsIF) {
-    const { resolvedUserXp, resolvedUserBlastXp, connectedAccountActive } =
-        props;
-    const { isActiveNetworkBlast } = useContext(ChainDataContext);
+    const { resolvedUserXp, connectedAccountActive } = props;
     const { ensName } = useContext(UserDataContext);
 
     // since we're only going to do a set number of finite rows, they can be instantiated
     // ... on an individual basis in the return statement of the function
 
-    const { connectedUserXp, connectedUserBlastXp } =
-        useContext(ChainDataContext);
+    const { connectedUserXp } = useContext(ChainDataContext);
     const { userAddress, resolvedAddressFromContext } =
         useContext(UserDataContext);
 
@@ -131,50 +107,6 @@ export default function Points(props: propsIF) {
                         logo={ambiLogo}
                     />
                 </div>
-                {isActiveNetworkBlast ? (
-                    <div>
-                        <div>
-                            <PointsRow
-                                shortName={'BLAST'}
-                                longName={'Blast Points'}
-                                pointsAccrued={
-                                    connectedAccountActive
-                                        ? connectedUserBlastXp.dataReceived ===
-                                          true
-                                            ? (connectedUserBlastXp.data
-                                                  ?.points ?? '0')
-                                            : '...'
-                                        : resolvedUserBlastXp.dataReceived ===
-                                            true
-                                          ? (resolvedUserBlastXp.data?.points ??
-                                            '0')
-                                          : '...'
-                                }
-                                logo={blastLogo}
-                            />
-                        </div>
-                        <div>
-                            <PointsRow
-                                shortName={'BLAST'}
-                                longName={'Blast Gold'}
-                                pointsAccrued={
-                                    connectedAccountActive
-                                        ? connectedUserBlastXp.dataReceived ===
-                                          true
-                                            ? (connectedUserBlastXp.data
-                                                  ?.gold ?? '0')
-                                            : '...'
-                                        : resolvedUserBlastXp.dataReceived ===
-                                            true
-                                          ? (resolvedUserBlastXp.data?.gold ??
-                                            '0')
-                                          : '...'
-                                }
-                                logo={blastLogo}
-                            />
-                        </div>
-                    </div>
-                ) : undefined}
             </div>
             <FlexContainer
                 fullWidth

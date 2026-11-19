@@ -14,11 +14,7 @@ import React, {
 } from 'react';
 import { fetchEnsAddress } from '../ambient-utils/api';
 import { checkBlacklist } from '../ambient-utils/constants';
-import {
-    BlastUserXpIF,
-    UserVaultsServerIF,
-    UserXpIF,
-} from '../ambient-utils/types';
+import { UserVaultsServerIF, UserXpIF } from '../ambient-utils/types';
 import { UserAvatarDataIF } from '../components/Chat/ChatIFs';
 import { getAvatarRest } from '../components/Chat/ChatUtilsHelper';
 import { AppStateContext } from './AppStateContext';
@@ -89,11 +85,6 @@ export interface UserXpDataIF {
 export interface UserNftIF {
     userID: string;
     avatarImage: string | undefined;
-}
-
-export interface BlastUserXpDataIF {
-    dataReceived: boolean;
-    data: BlastUserXpIF | undefined;
 }
 
 export const UserDataContext = createContext({} as UserDataContextIF);

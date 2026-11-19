@@ -10,7 +10,6 @@ import {
     useState,
 } from 'react';
 import {
-    blastMainnet,
     ethereumMainnet,
     getDefaultPairForChain,
     plumeMainnet,
@@ -49,7 +48,6 @@ export interface CrocEnvContextIF {
     mainnetProvider: BatchedJsonRpcProvider | undefined;
     scrollProvider: BatchedJsonRpcProvider | undefined;
     swellProvider: BatchedJsonRpcProvider | undefined;
-    blastProvider: BatchedJsonRpcProvider | undefined;
     plumeProvider: BatchedJsonRpcProvider | undefined;
 }
 
@@ -71,13 +69,6 @@ const scrollProvider = new BatchedJsonRpcProvider(
 const swellProvider = new BatchedJsonRpcProvider(
     swellMainnet.evmRpcUrls,
     parseInt(swellMainnet.chainId),
-    {
-        staticNetwork: true,
-    },
-);
-const blastProvider = new BatchedJsonRpcProvider(
-    blastMainnet.evmRpcUrls,
-    parseInt(blastMainnet.chainId),
     {
         staticNetwork: true,
     },
@@ -256,7 +247,6 @@ export const CrocEnvContextProvider = (props: { children: ReactNode }) => {
         mainnetProvider,
         scrollProvider,
         swellProvider,
-        blastProvider,
         plumeProvider,
     };
 

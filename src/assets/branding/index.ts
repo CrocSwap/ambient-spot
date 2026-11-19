@@ -1,7 +1,6 @@
 export { ambientProductionBrandAssets } from './ambientProductionBrandAssets';
 export { ambientTestnetBrandAssets } from './ambientTestnetBrandAssets';
 export { baseSepoliaBrandAssets } from './baseSepoliaBrandAssets';
-export { blastBrandAssets } from './blastBrandAssets';
 export { defaultBrandAssets } from './defaultBrandAssets';
 export { monadTestnetBrandAssets } from './monadTestnetBrandAssets';
 export { plumeBrandAssets } from './plumeBrandAssets';

@@ -13,8 +13,6 @@ import { lookupChainId } from '../../../../ambient-utils/dataLayer';
 // import baseLogo from '../../../../assets/images/networks/Base_Network_Logo.svg';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import baseSepoliaLogo from '../../../../assets/images/networks/base_sepolia_no_margin.webp';
-import blastLogo from '../../../../assets/images/networks/blast_logo.png';
-import blastSepoliaLogo from '../../../../assets/images/networks/blast_sepolia_no_margin.webp';
 import cantoLogo from '../../../../assets/images/networks/canto.png';
 import ETH from '../../../../assets/images/networks/ethereum_logo.svg';
 import sepoliaLogo from '../../../../assets/images/networks/ethereum_sepolia_no_margin.webp';
@@ -264,17 +262,6 @@ export default function NetworkSelector(props: propsIF) {
             condition: chainMap.has('0x18231'),
         },
         {
-            id: 'blast_network_selector',
-            chainId: '0x13e31',
-            name: 'Blast',
-            logo: blastLogo,
-            custom: 0,
-            isExternal: false,
-            testnet: false,
-            link: '',
-            condition: chainMap.has('0x13e31'),
-        },
-        {
             id: 'canto_network_selector',
             chainId: '',
             name: 'Canto',
@@ -328,17 +315,6 @@ export default function NetworkSelector(props: propsIF) {
             testnet: true,
             link: '',
             condition: chainMap.has('0x784'),
-        },
-        {
-            id: 'blast_sepolia_network_selector',
-            chainId: '0xa0c71fd',
-            name: 'Blast',
-            logo: blastSepoliaLogo,
-            custom: 2,
-            isExternal: false,
-            testnet: true,
-            link: '',
-            condition: chainMap.has('0xa0c71fd'),
         },
         {
             id: 'base_sepolia_network_selector',
