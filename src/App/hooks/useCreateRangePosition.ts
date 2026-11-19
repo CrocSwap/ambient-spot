@@ -15,6 +15,11 @@ import { TradeDataContext } from '../../contexts/TradeDataContext';
 import { TradeTokenContext } from '../../contexts/TradeTokenContext';
 import { UserDataContext } from '../../contexts/UserDataContext';
 import {
+    TxOutcome,
+    txOutcomeFromError,
+    txOutcomeFromReceipt,
+} from '../../utils/analytics';
+import {
     isTransactionDeniedError,
     isTransactionFailedError,
     isTransactionReplacedError,
@@ -68,7 +73,7 @@ export function useCreateRangePosition() {
         resetConfirmation: () => void;
         setIsTxCompletedRange?: React.Dispatch<React.SetStateAction<boolean>>;
         activeRangeTxHash: MutableRefObject<string>;
-    }) => {
+    }): Promise<TxOutcome | undefined> => {
         const {
             slippageTolerancePercentage,
             isAmbient,
@@ -212,6 +217,7 @@ export function useCreateRangePosition() {
         } catch (error) {
             console.error({ error });
             setTxError(error);
+            return txOutcomeFromError(error);
         }
         if (tx) {
             let receipt;
@@ -256,7 +262,9 @@ export function useCreateRangePosition() {
                 if (setIsTxCompletedRange) {
                     setIsTxCompletedRange(true);
                 }
+                return txOutcomeFromReceipt(receipt);
             }
+            return 'error';
         }
     };
 

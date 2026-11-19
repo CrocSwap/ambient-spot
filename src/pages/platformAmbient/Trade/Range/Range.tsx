@@ -18,7 +18,10 @@ import Button from '../../../../components/Form/Button';
 import { useModal } from '../../../../components/Global/Modal/useModal';
 
 import { useCreateRangePosition } from '../../../../App/hooks/useCreateRangePosition';
-import { useCreateZapPosition } from '../../../../App/hooks/useCreateZapPosition';
+import {
+    SwapThenMintOutcome,
+    useCreateZapPosition,
+} from '../../../../App/hooks/useCreateZapPosition';
 import { useSimulatedIsPoolInitialized } from '../../../../App/hooks/useSimulatedIsPoolInitialized';
 import RangeBounds from '../../../../components/Global/RangeBounds/RangeBounds';
 import ConfirmRangeModal from '../../../../components/Trade/Range/ConfirmRangeModal/ConfirmRangeModal';
@@ -50,7 +53,6 @@ import { TokenContext } from '../../../../contexts/TokenContext';
 import { TradeTokenContext } from '../../../../contexts/TradeTokenContext';
 import { UserPreferenceContext } from '../../../../contexts/UserPreferenceContext';
 
-import { track } from '@plausible-analytics/tracker';
 import { ethers } from 'ethers';
 import {
     estimateBalancedRangeAprFromPoolApr,
@@ -63,7 +65,6 @@ import {
     NUM_GWEI_IN_WEI,
     RANGE_BUFFER_MULTIPLIER_L2,
     RANGE_BUFFER_MULTIPLIER_MAINNET,
-    SHOULD_LOG_ANALYTICS,
 } from '../../../../ambient-utils/constants';
 import { MAINNET_TOKENS } from '../../../../ambient-utils/constants/networks/ethereumMainnet';
 import { useApprove } from '../../../../App/functions/approve';
@@ -72,6 +73,11 @@ import { AppStateContext } from '../../../../contexts';
 import { GraphDataContext } from '../../../../contexts/GraphDataContext';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import { useRangeInputDisable } from './useRangeInputDisable';
+import {
+    MintDepositKind,
+    trackMint,
+    trackSwap,
+} from '../../../../utils/analytics';
 import { useZapDeposit } from './useZapDeposit';
 
 export const DEFAULT_MIN_PRICE_DIFF_PERCENTAGE = -10;
@@ -81,7 +87,7 @@ function Range() {
     const { crocEnv } = useContext(CrocEnvContext);
 
     const {
-        activeNetwork: { chainId, gridSize },
+        activeNetwork: { chainId, gridSize, displayName: chainDisplayName },
     } = useContext(AppStateContext);
 
     const {
@@ -995,22 +1001,43 @@ function Range() {
     const sendTransaction = async () => {
         if (!crocEnv) return;
         setShowConfirmation(true);
-        if (SHOULD_LOG_ANALYTICS) {
-            track('Range Order Submitted', {
-                props: {
-                    oneSided: String(isOutOfRange || isZapMode),
-                    type: isZapMode
-                        ? 'single-token'
-                        : isTopUpMode
-                          ? 'swap-difference'
-                          : 'standard',
-                    positionType: isAmbient ? 'ambient' : 'concentrated',
-                },
+
+        // captured at submission so the events describe what the user sent
+        const deposit: MintDepositKind = isZapMode
+            ? 'one-sided-in-range'
+            : isTopUpMode
+              ? 'swap-difference'
+              : // the range sits off the price, so one input is locked
+                isTokenAInputDisabled || isTokenBInputDisabled
+                ? 'one-sided-out-of-range'
+                : 'two-token';
+        const mintEvent = {
+            deposit,
+            positionType: isAmbient
+                ? ('ambient' as const)
+                : ('concentrated' as const),
+            action: isAdd ? ('add' as const) : ('create' as const),
+            chain: chainDisplayName,
+        };
+        const trackSwapThenMint = (
+            outcome: SwapThenMintOutcome | undefined,
+            fromExchangeBalance: boolean,
+        ) => {
+            if (!outcome) return;
+            trackSwap({
+                outcome: outcome.swap,
+                source: isZapMode ? 'one-sided-in-range' : 'swap-difference',
+                fastLane: false,
+                fromExchangeBalance,
+                toExchangeBalance: true,
+                chain: chainDisplayName,
             });
-        }
+            if (outcome.mint)
+                trackMint({ ...mintEvent, outcome: outcome.mint });
+        };
 
         if (isZapMode) {
-            createZapPosition({
+            const outcome = await createZapPosition({
                 slippageTolerancePercentage,
                 isAmbient,
                 inputTokenAddress: zapInputToken.address,
@@ -1025,11 +1052,12 @@ function Range() {
                 setZapStep,
                 setZapOutcome,
             });
+            trackSwapThenMint(outcome, isWithdrawZapFromDexChecked);
             return;
         }
 
         if (isTopUpMode) {
-            createTopUpPosition({
+            const outcome = await createTopUpPosition({
                 slippageTolerancePercentage,
                 isAmbient,
                 // buy the shortfall of the deficient side by selling the surplus
@@ -1051,10 +1079,12 @@ function Range() {
                 setZapStep,
                 setZapOutcome,
             });
+            // the top-up swap sells from exchange+wallet balances
+            trackSwapThenMint(outcome, true);
             return;
         }
 
-        createRangePosition({
+        const outcome = await createRangePosition({
             slippageTolerancePercentage,
             isAmbient,
             tokenAInputQty: isTokenAInputDisabled
@@ -1073,6 +1103,7 @@ function Range() {
             resetConfirmation,
             activeRangeTxHash,
         });
+        if (outcome) trackMint({ ...mintEvent, outcome });
     };
 
     const handleModalOpen = () => {

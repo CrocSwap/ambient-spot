@@ -24,23 +24,71 @@
             "decisionSource": "manual",
             "updatedAt": "2026-07-28T19:23:19.389Z",
             "updatedBy": "benwolski"
+        },
+        "30b4679ae0f7": {
+            "classification": "tolerate-domain-invariant",
+            "note": "Ingress boundary: the argument is a raw catch-clause value (wallet/ethers/RPC errors are untyped). txOutcomeFromError is the single classifier that maps it to the TxOutcome union via the existing isTransactionDeniedError; nothing downstream sees unknown.",
+            "file": "src/utils/analytics/trackTx.ts",
+            "startLine": 16,
+            "name": "txOutcomeFromError",
+            "fingerprint": "30b4679ae0f7",
+            "id": "229414ae2e73",
+            "relocationKey": "b3c63f1bacbf",
+            "keyKind": "fingerprint",
+            "detectors": ["unknown-boundary"],
+            "detectorContract": {
+                "unknown-boundary": 1
+            },
+            "categories": ["pass-through-call", "unowned-unknown-boundary"],
+            "decisionId": "ae82b1b0-8bc2-424c-a5c3-3631bf1ee4eb",
+            "decisionHistory": [],
+            "source": "manual",
+            "decisionSource": "manual",
+            "updatedAt": "2026-11-19T17:19:32.256Z",
+            "updatedBy": "benwolski"
+        },
+        "5b937e684c88": {
+            "classification": "tolerate-domain-invariant",
+            "note": "Pre-existing size: Swap.tsx was 1049 lines on origin/develop, already over the 1000-line threshold. This branch adds ~20 lines that capture the swap's analytics props at submission and report its outcome; the event definitions live in utils/analytics/trackTx.ts. Decomposing Swap.tsx is out of scope and tracked as standing debt.",
+            "file": "src/pages/platformAmbient/Trade/Swap/Swap.tsx",
+            "startLine": 1,
+            "name": "Swap.tsx",
+            "fingerprint": "5b937e684c88",
+            "id": "5b937e684c88",
+            "keyKind": "fingerprint",
+            "detectors": ["large-file-pressure"],
+            "detectorContract": {
+                "large-file-pressure": 1
+            },
+            "categories": [
+                "branch-pressure",
+                "large-file",
+                "large-file-pressure"
+            ],
+            "decisionId": "e9d5fe2e-35d7-4430-a180-1062402d803f",
+            "decisionHistory": [],
+            "source": "manual",
+            "decisionSource": "manual",
+            "updatedAt": "2026-11-19T17:19:32.370Z",
+            "updatedBy": "benwolski"
         }
     },
     "schemaVersion": 1,
     "meta": {
-        "auditSha256": "72e24b81892de4c75abf66333140b78bae1f7160b73e78eb5b0c9579b976ad6d",
-        "auditSource": "external/audit2.json",
-        "candidateCount": 1,
+        "auditSha256": "fb2c38cf0da4d5e556b793420ca6741575e6d6154da302708643058300682b6a",
+        "auditSource": "external/audit.json",
+        "candidateCount": 3,
         "classificationSource": ".codex/deslop-classifications.json",
         "classificationCounts": {
-            "promote-to-real-abstraction": 1
+            "promote-to-real-abstraction": 1,
+            "tolerate-domain-invariant": 2
         },
-        "generatedAt": "2026-07-28T19:23:19.390Z",
+        "generatedAt": "2026-11-19T17:19:32.371Z",
         "generatedBy": "deslop-classify",
         "keyKindCounts": {
-            "fingerprint": 1
+            "fingerprint": 3
         },
-        "lastUpdatedAt": "2026-07-28T19:23:19.390Z",
+        "lastUpdatedAt": "2026-11-19T17:19:32.371Z",
         "lastUpdatedBy": "benwolski"
     }
 }

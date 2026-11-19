@@ -12,8 +12,19 @@ import { ReceiptContext } from '../../contexts/ReceiptContext';
 import { TradeDataContext } from '../../contexts/TradeDataContext';
 import { TradeTokenContext } from '../../contexts/TradeTokenContext';
 import { UserDataContext } from '../../contexts/UserDataContext';
+import {
+    TxOutcome,
+    txOutcomeFromError,
+    txOutcomeFromReceipt,
+} from '../../utils/analytics';
 
 export type ZapOutcome = 'complete' | 'failed';
+
+// how each leg ended; `mint` is absent when the flow never reached the mint
+export interface SwapThenMintOutcome {
+    swap: TxOutcome;
+    mint?: TxOutcome;
+}
 
 // UI callbacks shared by both swap-assisted deposit flows
 interface SwapThenMintProgress {
@@ -78,7 +89,7 @@ export function useCreateZapPosition() {
     const runSwapThenMint = async (
         progress: SwapThenMintProgress,
         buildPlan: () => Promise<SwapThenMintPlan>,
-    ) => {
+    ): Promise<SwapThenMintOutcome> => {
         const {
             isAmbient,
             defaultLowTick,
@@ -93,6 +104,8 @@ export function useCreateZapPosition() {
 
         // set before planning so a planning failure surfaces on the swap step
         setZapStep('swap');
+        let swapOutcome: TxOutcome | undefined;
+        let mintOutcome: TxOutcome | undefined;
         try {
             const plan = await buildPlan();
 
@@ -137,7 +150,8 @@ export function useCreateZapPosition() {
             if (!swapReceipt) throw new Error('Swap receipt not found');
             addReceipt(swapReceipt);
             removePendingTx(swapReceipt.hash);
-            if (swapReceipt.status !== 1) {
+            swapOutcome = txOutcomeFromReceipt(swapReceipt);
+            if (swapOutcome !== 'confirmed') {
                 throw new Error(
                     'The swap transaction failed, so no position was minted.',
                 );
@@ -145,6 +159,8 @@ export function useCreateZapPosition() {
 
             // ----- Transaction 2: mint -------------------------------------
             setZapStep('mint');
+            // from here on, a thrown error belongs to the mint leg
+            mintOutcome = 'error';
             const posHash = getPositionHash(undefined, {
                 isPositionTypeAmbient: isAmbient,
                 user: userAddress ?? '',
@@ -204,7 +220,8 @@ export function useCreateZapPosition() {
             if (!mintReceipt) throw new Error('Mint receipt not found');
             addReceipt(mintReceipt);
             removePendingTx(mintReceipt.hash);
-            if (mintReceipt.status === 1) {
+            mintOutcome = txOutcomeFromReceipt(mintReceipt);
+            if (mintOutcome === 'confirmed') {
                 setZapOutcome('complete');
             } else {
                 // the footer reports the failed receipt; the stepper marks it
@@ -214,7 +231,11 @@ export function useCreateZapPosition() {
         } catch (error) {
             console.error({ error });
             setTxError(error as Error);
+            if (mintOutcome !== undefined)
+                mintOutcome = txOutcomeFromError(error);
+            else swapOutcome ??= txOutcomeFromError(error);
         }
+        return { swap: swapOutcome ?? 'error', mint: mintOutcome };
     };
 
     // Single-token deposit: swap the computed portion of the input token into
@@ -228,7 +249,7 @@ export function useCreateZapPosition() {
             // where the input token is drawn from (exchange/surplus vs wallet)
             isWithdrawFromDexChecked: boolean;
         },
-    ) => {
+    ): Promise<SwapThenMintOutcome | undefined> => {
         if (!crocEnv) return;
         const {
             slippageTolerancePercentage,
@@ -242,7 +263,7 @@ export function useCreateZapPosition() {
         const inputIsTokenA =
             inputTokenAddress.toLowerCase() === tokenA.address.toLowerCase();
 
-        await runSwapThenMint(params, async () => {
+        return runSwapThenMint(params, async () => {
             const split = await computeZapSplit({
                 crocEnv,
                 tokenA: tokenA.address,
@@ -314,7 +335,7 @@ export function useCreateZapPosition() {
             surplusTokenQty: string;
             surplusIsTokenA: boolean;
         },
-    ) => {
+    ): Promise<SwapThenMintOutcome | undefined> => {
         if (!crocEnv) return;
         const {
             slippageTolerancePercentage,
@@ -341,7 +362,7 @@ export function useCreateZapPosition() {
             isWithdrawFromDexChecked: true,
         };
 
-        await runSwapThenMint(params, async () => ({
+        return runSwapThenMint(params, async () => ({
             sellTokenAddress,
             buyTokenAddress,
             swapLabel: 'Top-Up',
