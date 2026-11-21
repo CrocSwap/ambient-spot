@@ -1,21 +1,38 @@
 import {
     concDepositSkew,
     fromDisplayQty,
+    tickToPrice,
+    toDisplayPrice,
     toDisplayQty,
 } from '@crocswap-libs/sdk';
-import { memo, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    memo,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import Button from '../../../../components/Form/Button';
 import { useModal } from '../../../../components/Global/Modal/useModal';
 
 import { useCreateRangePosition } from '../../../../App/hooks/useCreateRangePosition';
+import {
+    SwapThenMintOutcome,
+    useCreateZapPosition,
+} from '../../../../App/hooks/useCreateZapPosition';
 import { useSimulatedIsPoolInitialized } from '../../../../App/hooks/useSimulatedIsPoolInitialized';
 import RangeBounds from '../../../../components/Global/RangeBounds/RangeBounds';
 import ConfirmRangeModal from '../../../../components/Trade/Range/ConfirmRangeModal/ConfirmRangeModal';
 import RangeExtraInfo from '../../../../components/Trade/Range/RangeExtraInfo/RangeExtraInfo';
 import RangeTokenInput from '../../../../components/Trade/Range/RangeTokenInput/RangeTokenInput';
+import RangeZapTokenInput from '../../../../components/Trade/Range/RangeTokenInput/RangeZapTokenInput';
+import ZapStepper from '../../../../components/Trade/Range/RangeTokenInput/ZapStepper';
 import SubmitTransaction from '../../../../components/Trade/TradeModules/SubmitTransaction/SubmitTransaction';
 import TradeModuleHeader from '../../../../components/Trade/TradeModules/TradeModuleHeader';
 import { TradeModuleSkeleton } from '../../../../components/Trade/TradeModules/TradeModuleSkeleton';
+import depositModeStyles from './DepositModeToggle.module.css';
 
 import {
     getFormattedNumber,
@@ -56,6 +73,12 @@ import { AppStateContext } from '../../../../contexts';
 import { GraphDataContext } from '../../../../contexts/GraphDataContext';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import { useRangeInputDisable } from './useRangeInputDisable';
+import {
+    MintDepositKind,
+    trackMint,
+    trackSwap,
+} from '../../../../utils/analytics';
+import { useZapDeposit } from './useZapDeposit';
 
 export const DEFAULT_MIN_PRICE_DIFF_PERCENTAGE = -10;
 export const DEFAULT_MAX_PRICE_DIFF_PERCENTAGE = 10;
@@ -64,7 +87,7 @@ function Range() {
     const { crocEnv } = useContext(CrocEnvContext);
 
     const {
-        activeNetwork: { chainId, gridSize },
+        activeNetwork: { chainId, gridSize, displayName: chainDisplayName },
     } = useContext(AppStateContext);
 
     const {
@@ -76,7 +99,7 @@ function Range() {
     const {
         poolPriceDisplay,
         dailyVol,
-        poolData: { poolAmbientAprEstimate },
+        poolData: { poolAmbientAprEstimate, basePrice, quotePrice },
     } = useContext(PoolContext);
     const {
         advancedHighTick,
@@ -107,6 +130,8 @@ function Range() {
         tokenADexBalance,
         tokenBDexBalance,
         isTokenABase,
+        isTokenAEth,
+        isTokenBEth,
         baseToken: { decimals: baseTokenDecimals },
         quoteToken: { decimals: quoteTokenDecimals },
     } = useContext(TradeTokenContext);
@@ -140,7 +165,6 @@ function Range() {
     const [tokenBInputQty, setTokenBInputQty] = useState<string>(
         !isTokenAPrimary ? primaryQuantity : '',
     );
-
     const tokenAInputQtyNoExponentString = useMemo(() => {
         try {
             return tokenAInputQty.includes('e')
@@ -364,13 +388,6 @@ function Range() {
             )
           : 0n;
 
-    const isQtyEntered =
-        tokenAInputQtyNoExponentString !== '' &&
-        tokenBInputQtyNoExponentString !== '';
-    const showExtraInfoDropdown =
-        tokenAInputQtyNoExponentString !== '' ||
-        tokenBInputQtyNoExponentString !== '';
-
     const rangeSpanAboveCurrentPrice =
         defaultHighTick - (currentPoolPriceTick || 0);
     const rangeSpanBelowCurrentPrice =
@@ -542,7 +559,7 @@ function Range() {
     useEffect(() => {
         resetConfirmation();
         setPinnedDisplayPrices(undefined);
-    }, [baseToken.address + quoteToken.address]);
+    }, [baseToken.address, quoteToken.address]);
 
     useEffect(() => {
         if (!isAdd) {
@@ -606,7 +623,8 @@ function Range() {
         advancedMode,
         isDenomBase,
         currentPoolPriceTick,
-        baseToken.address + quoteToken.address,
+        baseToken.address,
+        quoteToken.address,
         baseTokenDecimals,
         quoteTokenDecimals,
     ]);
@@ -922,22 +940,14 @@ function Range() {
     const [amountToReduceNativeTokenQtyL2, setAmountToReduceNativeTokenQtyL2] =
         useState<number>(0.0005);
 
-    const [l1GasFeePoolInGwei] = useState<number>(
-        isActiveNetworkL2 ? 10000 : 0,
-    );
-    const [extraL1GasFeePool] = useState(isActiveNetworkL2 ? 0.01 : 0);
+    const l1GasFeePoolInGwei = isActiveNetworkL2 ? 10000 : 0;
+    const extraL1GasFeePool = isActiveNetworkL2 ? 0.01 : 0;
 
-    const amountToReduceNativeTokenQty =
-        chainId === '0x82750' || chainId === '0x8274f'
-            ? amountToReduceNativeTokenQtyL2
-            : amountToReduceNativeTokenQtyMainnet;
+    const amountToReduceNativeTokenQty = isActiveNetworkL2
+        ? amountToReduceNativeTokenQtyL2
+        : amountToReduceNativeTokenQtyMainnet;
 
     const activeRangeTxHash = useRef<string>('');
-
-    // reset activeTxHash when the pair changes or user updates quantity
-    useEffect(() => {
-        activeRangeTxHash.current = '';
-    }, [tokenA.address + tokenB.address, primaryQuantity]);
 
     useEffect(() => {
         if (gasPriceInGwei && nativeTokenUsdPrice) {
@@ -984,13 +994,97 @@ function Range() {
         setShowConfirmation(false);
         setTxError(undefined);
         setNewRangeTransactionHash('');
+        resetZapProgress();
     };
     const { createRangePosition } = useCreateRangePosition();
+    const { createZapPosition, createTopUpPosition } = useCreateZapPosition();
     const sendTransaction = async () => {
         if (!crocEnv) return;
         setShowConfirmation(true);
 
-        createRangePosition({
+        // captured at submission so the events describe what the user sent
+        const deposit: MintDepositKind = isZapMode
+            ? 'one-sided-in-range'
+            : isTopUpMode
+              ? 'swap-difference'
+              : // the range sits off the price, so one input is locked
+                isTokenAInputDisabled || isTokenBInputDisabled
+                ? 'one-sided-out-of-range'
+                : 'two-token';
+        const mintEvent = {
+            deposit,
+            positionType: isAmbient
+                ? ('ambient' as const)
+                : ('concentrated' as const),
+            action: isAdd ? ('add' as const) : ('create' as const),
+            chain: chainDisplayName,
+        };
+        const trackSwapThenMint = (
+            outcome: SwapThenMintOutcome | undefined,
+            fromExchangeBalance: boolean,
+        ) => {
+            if (!outcome) return;
+            trackSwap({
+                outcome: outcome.swap,
+                source: isZapMode ? 'one-sided-in-range' : 'swap-difference',
+                fastLane: false,
+                fromExchangeBalance,
+                toExchangeBalance: true,
+                chain: chainDisplayName,
+            });
+            if (outcome.mint)
+                trackMint({ ...mintEvent, outcome: outcome.mint });
+        };
+
+        if (isZapMode) {
+            const outcome = await createZapPosition({
+                slippageTolerancePercentage,
+                isAmbient,
+                inputTokenAddress: zapInputToken.address,
+                inputTokenQty: zapInputQtyNoExponentString,
+                isWithdrawFromDexChecked: isWithdrawZapFromDexChecked,
+                defaultLowTick,
+                defaultHighTick,
+                isAdd,
+                setNewRangeTransactionHash,
+                setTxError,
+                activeRangeTxHash,
+                setZapStep,
+                setZapOutcome,
+            });
+            trackSwapThenMint(outcome, isWithdrawZapFromDexChecked);
+            return;
+        }
+
+        if (isTopUpMode) {
+            const outcome = await createTopUpPosition({
+                slippageTolerancePercentage,
+                isAmbient,
+                // buy the shortfall of the deficient side by selling the surplus
+                buyTokenAddress: topUpDeficientToken.address,
+                buyTokenQty: topUpBuyDeficientQty,
+                sellTokenAddress: topUpSurplusToken.address,
+                // mint the entered surplus-side amount as the fixed side; the
+                // pool derives the deficient side from the topped-up balances
+                surplusTokenQty: topUpDeficientIsA
+                    ? tokenBInputQtyNoExponentString
+                    : tokenAInputQtyNoExponentString,
+                surplusIsTokenA: !topUpDeficientIsA,
+                defaultLowTick,
+                defaultHighTick,
+                isAdd,
+                setNewRangeTransactionHash,
+                setTxError,
+                activeRangeTxHash,
+                setZapStep,
+                setZapOutcome,
+            });
+            // the top-up swap sells from exchange+wallet balances
+            trackSwapThenMint(outcome, true);
+            return;
+        }
+
+        const outcome = await createRangePosition({
             slippageTolerancePercentage,
             isAmbient,
             tokenAInputQty: isTokenAInputDisabled
@@ -1009,6 +1103,7 @@ function Range() {
             resetConfirmation,
             activeRangeTxHash,
         });
+        if (outcome) trackMint({ ...mintEvent, outcome });
     };
 
     const handleModalOpen = () => {
@@ -1029,11 +1124,11 @@ function Range() {
         }
     };
 
-    const clearTokenInputs = () => {
+    const clearTokenInputs = useCallback(() => {
         setTokenAInputQty('');
         setTokenBInputQty('');
         setPrimaryQuantity('');
-    };
+    }, [setPrimaryQuantity]);
     const {
         tokenAllowed: tokenAAllowed,
         rangeButtonErrorMessage: rangeButtonErrorMessageTokenA,
@@ -1066,6 +1161,95 @@ function Range() {
         activeRangeTxHash,
         clearTokenInputs,
     );
+
+    const {
+        depositMode,
+        isZapMode,
+        isTopUpMode,
+        switchDepositMode,
+        canOfferZap,
+        canSwitchToTopUp,
+        zapInputQty,
+        setZapInputQty,
+        zapInputQtyNoExponentString,
+        zapInputToken,
+        zapCounterpartToken,
+        zapInputBalance,
+        zapInputDexBalance,
+        zapInputIsTokenA,
+        setZapInputSideAOverride,
+        isWithdrawZapFromDexChecked,
+        zapInputTokenUsdPrice,
+        zapQtyCoveredByWalletBalance,
+        swapAssistedNativeGasReserve,
+        zapSplit,
+        zapPositionTokenAQty,
+        zapPositionTokenBQty,
+        zapSwapDescription,
+        isZapInputWalletBalanceSufficient,
+        isZapInputAllowanceSufficient,
+        isUsdtResetRequiredZap,
+        topUpDeficientIsA,
+        topUpDeficientToken,
+        topUpSurplusToken,
+        topUpBuyDeficientQty,
+        topUpSwapDescription,
+        topUpSurplus,
+        topUpDeficient,
+        zapSteps,
+        setZapStep,
+        setZapOutcome,
+        resetZapProgress,
+        effectiveTokenAllowed,
+        effectiveButtonErrorMessage,
+    } = useZapDeposit({
+        isAmbient,
+        isInvalidRange,
+        defaultLowTick,
+        defaultHighTick,
+        isTokenAInputDisabled,
+        isTokenBInputDisabled,
+        isPoolInitialized,
+        slippageTolerancePercentage,
+        tokenAInputQty,
+        tokenBInputQty,
+        tokenAInputQtyNoExponentString,
+        tokenBInputQtyNoExponentString,
+        setTokenAInputQty,
+        setTokenBInputQty,
+        clearTokenInputs,
+        primaryQuantity,
+        setPrimaryQuantity,
+        isTokenAPrimary,
+        setIsTokenAPrimary,
+        isWithdrawTokenAFromDexChecked,
+        isWithdrawTokenBFromDexChecked,
+        tokenAAllowed,
+        tokenBAllowed,
+        rangeButtonErrorMessageTokenA,
+        rangeButtonErrorMessageTokenB,
+        showConfirmation,
+        txError,
+        amountToReduceNativeTokenQty,
+        activeRangeTxHash,
+    });
+
+    // reset activeTxHash when the pair changes or user updates quantity
+    useEffect(() => {
+        activeRangeTxHash.current = '';
+    }, [tokenA.address, tokenB.address, primaryQuantity, zapInputQty]);
+
+    const zapStepperElement =
+        isZapMode || isTopUpMode ? <ZapStepper steps={zapSteps} /> : null;
+
+    const isQtyEntered = isZapMode
+        ? zapInputQtyNoExponentString !== ''
+        : tokenAInputQtyNoExponentString !== '' &&
+          tokenBInputQtyNoExponentString !== '';
+    const showExtraInfoDropdown = isZapMode
+        ? zapInputQtyNoExponentString !== ''
+        : tokenAInputQtyNoExponentString !== '' ||
+          tokenBInputQtyNoExponentString !== '';
 
     const { approve, isApprovalPending } = useApprove();
 
@@ -1163,30 +1347,104 @@ function Range() {
                 />
             }
             input={
-                <RangeTokenInput
-                    isAmbient={isAmbient}
-                    depositSkew={depositSkew}
-                    poolPriceNonDisplay={poolPriceNonDisplay}
-                    isWithdrawFromDexChecked={{
-                        tokenA: isWithdrawTokenAFromDexChecked,
-                        tokenB: isWithdrawTokenBFromDexChecked,
-                    }}
-                    isOutOfRange={isOutOfRange}
-                    tokenAInputQty={{
-                        value: tokenAInputQty,
-                        set: setTokenAInputQty,
-                    }}
-                    tokenBInputQty={{
-                        value: tokenBInputQty,
-                        set: setTokenBInputQty,
-                    }}
-                    toggleDexSelection={toggleDexSelection}
-                    isInputDisabled={{
-                        tokenA: isTokenAInputDisabled,
-                        tokenB: isTokenBInputDisabled,
-                    }}
-                    amountToReduceNativeTokenQty={amountToReduceNativeTokenQty}
-                />
+                <>
+                    {(canOfferZap || canSwitchToTopUp) && (
+                        <div
+                            role='group'
+                            aria-label='Deposit method'
+                            className={depositModeStyles.container}
+                        >
+                            <button
+                                type='button'
+                                aria-pressed={depositMode === 'balanced'}
+                                onClick={() => switchDepositMode('balanced')}
+                                className={`${depositModeStyles.button} ${depositMode === 'balanced' ? depositModeStyles.buttonActive : ''}`}
+                            >
+                                Deposit both tokens
+                            </button>
+                            {/* top-up: keep both tokens, swap only the shortfall */}
+                            {canSwitchToTopUp && (
+                                <button
+                                    type='button'
+                                    aria-pressed={isTopUpMode}
+                                    onClick={() => switchDepositMode('topup')}
+                                    className={`${depositModeStyles.button} ${isTopUpMode ? depositModeStyles.buttonActive : ''}`}
+                                >
+                                    Swap the difference
+                                </button>
+                            )}
+                            {/* single-token deposit */}
+                            {canOfferZap && (
+                                <button
+                                    type='button'
+                                    aria-pressed={isZapMode}
+                                    onClick={() => switchDepositMode('single')}
+                                    className={`${depositModeStyles.button} ${isZapMode ? depositModeStyles.buttonActive : ''}`}
+                                >
+                                    Deposit with one token
+                                </button>
+                            )}
+                        </div>
+                    )}
+                    {isZapMode ? (
+                        <RangeZapTokenInput
+                            token={zapInputToken}
+                            tokenAorB={zapInputIsTokenA ? 'A' : 'B'}
+                            counterpartToken={zapCounterpartToken}
+                            tokenBalance={zapInputBalance}
+                            tokenDexBalance={zapInputDexBalance}
+                            isTokenEth={
+                                zapInputIsTokenA ? isTokenAEth : isTokenBEth
+                            }
+                            isDexSelected={isWithdrawZapFromDexChecked}
+                            toggleDexSelection={() =>
+                                toggleDexSelection(zapInputIsTokenA ? 'A' : 'B')
+                            }
+                            qty={{
+                                value: zapInputQty,
+                                set: setZapInputQty,
+                            }}
+                            reverseTokens={() => {
+                                setZapInputQty('');
+                                setZapInputSideAOverride(!zapInputIsTokenA);
+                            }}
+                            usdValue={zapInputTokenUsdPrice}
+                            amountToReduceNativeTokenQty={
+                                swapAssistedNativeGasReserve
+                            }
+                            estimatedCounterpartQty={
+                                zapSplit?.counterpartAmount ?? null
+                            }
+                        />
+                    ) : (
+                        <RangeTokenInput
+                            isAmbient={isAmbient}
+                            depositSkew={depositSkew}
+                            poolPriceNonDisplay={poolPriceNonDisplay}
+                            isWithdrawFromDexChecked={{
+                                tokenA: isWithdrawTokenAFromDexChecked,
+                                tokenB: isWithdrawTokenBFromDexChecked,
+                            }}
+                            isOutOfRange={isOutOfRange}
+                            tokenAInputQty={{
+                                value: tokenAInputQty,
+                                set: setTokenAInputQty,
+                            }}
+                            tokenBInputQty={{
+                                value: tokenBInputQty,
+                                set: setTokenBInputQty,
+                            }}
+                            toggleDexSelection={toggleDexSelection}
+                            isInputDisabled={{
+                                tokenA: isTokenAInputDisabled,
+                                tokenB: isTokenBInputDisabled,
+                            }}
+                            amountToReduceNativeTokenQty={
+                                amountToReduceNativeTokenQty
+                            }
+                        />
+                    )}
+                </>
             }
             inputOptions={
                 <RangeBounds
@@ -1201,14 +1459,30 @@ function Range() {
                 isOpen ? (
                     <ConfirmRangeModal
                         tokenAQty={
-                            isTokenAInputDisabled
-                                ? ''
-                                : tokenAInputQtyNoExponentString
+                            isZapMode
+                                ? zapPositionTokenAQty
+                                : isTokenAInputDisabled
+                                  ? ''
+                                  : tokenAInputQtyNoExponentString
                         }
                         tokenBQty={
-                            isTokenBInputDisabled
-                                ? ''
-                                : tokenBInputQtyNoExponentString
+                            isZapMode
+                                ? zapPositionTokenBQty
+                                : isTokenBInputDisabled
+                                  ? ''
+                                  : tokenBInputQtyNoExponentString
+                        }
+                        zapDescription={
+                            isZapMode
+                                ? zapSwapDescription
+                                : isTopUpMode
+                                  ? topUpSwapDescription
+                                  : undefined
+                        }
+                        zapStepper={
+                            isZapMode || isTopUpMode
+                                ? zapStepperElement
+                                : undefined
                         }
                         spotPriceDisplay={getFormattedNumber({
                             value: displayPriceWithDenom,
@@ -1249,7 +1523,7 @@ function Range() {
                     style={{ textTransform: 'none' }}
                     title={
                         areBothAckd
-                            ? tokenAAllowed && tokenBAllowed
+                            ? effectiveTokenAllowed
                                 ? bypassConfirmRange.isEnabled
                                     ? isAdd
                                         ? `Add ${
@@ -1259,8 +1533,7 @@ function Range() {
                                               isAmbient ? 'Ambient' : ''
                                           } Liquidity`
                                     : 'Confirm'
-                                : rangeButtonErrorMessageTokenA ||
-                                  rangeButtonErrorMessageTokenB
+                                : effectiveButtonErrorMessage
                             : 'Acknowledge'
                     }
                     action={
@@ -1272,7 +1545,7 @@ function Range() {
                     }
                     disabled={
                         (!isPoolInitialized ||
-                            !(tokenAAllowed && tokenBAllowed) ||
+                            !effectiveTokenAllowed ||
                             isInvalidRange) &&
                         areBothAckd
                     }
@@ -1281,39 +1554,118 @@ function Range() {
             }
             bypassConfirm={
                 showConfirmation && bypassConfirmRange.isEnabled ? (
-                    <SubmitTransaction
-                        type='Range'
-                        newTransactionHash={newRangeTransactionHash}
-                        txError={txError}
-                        resetConfirmation={resetConfirmation}
-                        sendTransaction={sendTransaction}
-                        transactionPendingDisplayString={
-                            isAdd
-                                ? `Adding ${tokenA.symbol} and ${tokenB.symbol}`
-                                : `Minting a Position with ${
-                                      !isTokenAInputDisabled
-                                          ? tokenA.symbol
-                                          : ''
-                                  } ${
-                                      !isTokenAInputDisabled &&
-                                      !isTokenBInputDisabled
-                                          ? 'and'
-                                          : ''
-                                  } ${
-                                      !isTokenBInputDisabled
-                                          ? tokenB.symbol
-                                          : ''
-                                  }
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8,
+                        }}
+                    >
+                        {zapStepperElement}
+                        <SubmitTransaction
+                            type='Range'
+                            newTransactionHash={newRangeTransactionHash}
+                            txError={txError}
+                            resetConfirmation={resetConfirmation}
+                            sendTransaction={sendTransaction}
+                            transactionPendingDisplayString={
+                                isZapMode
+                                    ? `Swapping ${zapInputToken.symbol}, then minting your ${tokenA.symbol} / ${tokenB.symbol} position`
+                                    : isTopUpMode
+                                      ? `Swapping ${topUpSurplusToken.symbol} for ${topUpDeficientToken.symbol}, then minting your ${tokenA.symbol} / ${tokenB.symbol} position`
+                                      : isAdd
+                                        ? `Adding ${tokenA.symbol} and ${tokenB.symbol}`
+                                        : `Minting a Position with ${
+                                              !isTokenAInputDisabled
+                                                  ? tokenA.symbol
+                                                  : ''
+                                          } ${
+                                              !isTokenAInputDisabled &&
+                                              !isTokenBInputDisabled
+                                                  ? 'and'
+                                                  : ''
+                                          } ${
+                                              !isTokenBInputDisabled
+                                                  ? tokenB.symbol
+                                                  : ''
+                                          }
                                      `
-                        }
-                    />
+                            }
+                        />
+                    </div>
                 ) : undefined
             }
             approveButton={
-                isPoolInitialized &&
-                parseFloat(tokenAInputQty) > 0 &&
-                isTokenAWalletBalanceSufficient &&
-                !isTokenAAllowanceSufficient ? (
+                isZapMode ? (
+                    isPoolInitialized &&
+                    parseFloat(zapInputQty) > 0 &&
+                    isZapInputWalletBalanceSufficient &&
+                    !isZapInputAllowanceSufficient ? (
+                        <Button
+                            idForDOM='approve_token_for_range'
+                            style={{ textTransform: 'none' }}
+                            title={
+                                !isApprovalPending
+                                    ? isUsdtResetRequiredZap
+                                        ? 'Reset USDT Approval (Step 1/2)'
+                                        : `Approve ${zapInputToken.symbol}`
+                                    : isUsdtResetRequiredZap
+                                      ? 'USDT Approval Reset Pending...'
+                                      : `${zapInputToken.symbol} Approval Pending...`
+                            }
+                            disabled={isApprovalPending}
+                            action={async () => {
+                                await approve(
+                                    zapInputToken.address,
+                                    zapInputToken.symbol,
+                                    undefined,
+                                    isUsdtResetRequiredZap
+                                        ? 0n
+                                        : isActiveNetworkPlume
+                                          ? // add 1% buffer to avoid rounding
+                                            // errors across the swap + mint legs
+                                            (zapQtyCoveredByWalletBalance *
+                                                101n) /
+                                            100n
+                                          : ethers.MaxUint256,
+                                );
+                            }}
+                            flat={true}
+                        />
+                    ) : undefined
+                ) : topUpSurplus.needsApproval ? (
+                    <Button
+                        idForDOM='approve_token_for_range'
+                        style={{ textTransform: 'none' }}
+                        title={
+                            !isApprovalPending
+                                ? topUpSurplus.isUsdtResetRequired
+                                    ? 'Reset USDT Approval (Step 1/2)'
+                                    : `Approve ${topUpSurplusToken.symbol}`
+                                : topUpSurplus.isUsdtResetRequired
+                                  ? 'USDT Approval Reset Pending...'
+                                  : `${topUpSurplusToken.symbol} Approval Pending...`
+                        }
+                        disabled={isApprovalPending}
+                        action={async () => {
+                            await approve(
+                                topUpSurplusToken.address,
+                                topUpSurplusToken.symbol,
+                                undefined,
+                                topUpSurplus.isUsdtResetRequired
+                                    ? 0n
+                                    : isActiveNetworkPlume
+                                      ? topUpSurplus.approvalWei
+                                      : ethers.MaxUint256,
+                            );
+                        }}
+                        flat={true}
+                    />
+                ) : !isTopUpMode &&
+                  isPoolInitialized &&
+                  parseFloat(tokenAInputQty) > 0 &&
+                  isTokenAWalletBalanceSufficient &&
+                  !isTokenAAllowanceSufficient ? (
                     <Button
                         idForDOM='approve_token_for_range'
                         style={{ textTransform: 'none' }}
@@ -1352,7 +1704,8 @@ function Range() {
                         }}
                         flat={true}
                     />
-                ) : isPoolInitialized &&
+                ) : !isTopUpMode &&
+                  isPoolInitialized &&
                   parseFloat(tokenBInputQty) > 0 &&
                   isTokenBWalletBalanceSufficient &&
                   !isTokenBAllowanceSufficient ? (
@@ -1390,6 +1743,34 @@ function Range() {
                                 //         tokenB.decimals,
                                 //     )
                                 //   : undefined,
+                            );
+                        }}
+                        flat={true}
+                    />
+                ) : topUpDeficient.needsApproval ? (
+                    <Button
+                        idForDOM='approve_token_for_range'
+                        style={{ textTransform: 'none' }}
+                        title={
+                            !isApprovalPending
+                                ? topUpDeficient.isUsdtResetRequired
+                                    ? 'Reset USDT Approval (Step 1/2)'
+                                    : `Approve ${topUpDeficientToken.symbol}`
+                                : topUpDeficient.isUsdtResetRequired
+                                  ? 'USDT Approval Reset Pending...'
+                                  : `${topUpDeficientToken.symbol} Approval Pending...`
+                        }
+                        disabled={isApprovalPending}
+                        action={async () => {
+                            await approve(
+                                topUpDeficientToken.address,
+                                topUpDeficientToken.symbol,
+                                undefined,
+                                topUpDeficient.isUsdtResetRequired
+                                    ? 0n
+                                    : isActiveNetworkPlume
+                                      ? topUpDeficient.approvalWei
+                                      : ethers.MaxUint256,
                             );
                         }}
                         flat={true}

@@ -325,12 +325,14 @@ export const GraphDataContextProvider = (props: { children: ReactNode }) => {
         });
     }, [baseToken.address + quoteToken.address]);
 
-    const txsByUserHashArray = useMemo(
+    const txsByUserHashSet = useMemo(
         () =>
-            transactionsByUser.changes
-                .concat(userTransactionsByPool.changes)
-                .map((change) => change.txHash),
-        [transactionsByUser, userTransactionsByPool],
+            new Set(
+                transactionsByUser.changes
+                    .concat(userTransactionsByPool.changes)
+                    .map((change) => change.txHash.trim().toLowerCase()),
+            ),
+        [transactionsByUser.changes, userTransactionsByPool.changes],
     );
 
     const positionsByUserIndexUpdateArray: PositionUpdateIF[] = useMemo(
@@ -382,12 +384,12 @@ export const GraphDataContextProvider = (props: { children: ReactNode }) => {
     }, [pendingTransactions]);
 
     const unindexedSessionTransactionHashes = sessionTransactionHashes.filter(
-        (tx) => !txsByUserHashArray.includes(tx),
+        (tx) => !txsByUserHashSet.has(tx.trim().toLowerCase()),
     );
 
     const failedSessionTransactionHashes = allReceipts
         .filter((r) => r.status === 0)
-        .map((r) => r.hash);
+        .map((r) => r.hash.trim().toLowerCase());
 
     const unixTimeOffset = 10; // 10s offset needed to account for system clock differences
 
@@ -412,7 +414,10 @@ export const GraphDataContextProvider = (props: { children: ReactNode }) => {
     const unindexedNonFailedSessionTransactionHashes = useMemo(
         () =>
             unindexedSessionTransactionHashes.filter(
-                (tx) => !failedSessionTransactionHashes.includes(tx),
+                (tx) =>
+                    !failedSessionTransactionHashes.includes(
+                        tx.trim().toLowerCase(),
+                    ),
             ),
         [unindexedSessionTransactionHashes, failedSessionTransactionHashes],
     );
@@ -423,7 +428,7 @@ export const GraphDataContextProvider = (props: { children: ReactNode }) => {
                 (positionUpdate) =>
                     positionUpdate.isLimit === false &&
                     !failedSessionTransactionHashes.includes(
-                        positionUpdate.txHash ?? '',
+                        positionUpdate.txHash?.trim().toLowerCase() ?? '',
                     ) &&
                     !removedPositionUpdateTxHashes.includes(
                         positionUpdate.txHash,
@@ -451,7 +456,7 @@ export const GraphDataContextProvider = (props: { children: ReactNode }) => {
                 (positionUpdate) =>
                     positionUpdate.isLimit === true &&
                     !failedSessionTransactionHashes.includes(
-                        positionUpdate.txHash ?? '',
+                        positionUpdate.txHash?.trim().toLowerCase() ?? '',
                     ) &&
                     !removedPositionUpdateTxHashes.includes(
                         positionUpdate.txHash,

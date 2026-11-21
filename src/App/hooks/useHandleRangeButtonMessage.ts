@@ -1,5 +1,5 @@
 import { fromDisplayQty } from '@crocswap-libs/sdk';
-import { MutableRefObject, useContext, useMemo } from 'react';
+import { MutableRefObject, useContext, useEffect, useMemo } from 'react';
 import { ZERO_ADDRESS } from '../../ambient-utils/constants';
 import { TokenIF } from '../../ambient-utils/types';
 import { AppStateContext } from '../../contexts';
@@ -55,13 +55,6 @@ export function useHandleRangeButtonMessage(
                         fromDisplayQty(tokenDexBalance || '0', token.decimals) +
                             fromDisplayQty(tokenBalance || '0', token.decimals)
                 ) {
-                    if (
-                        pendingTransactions.some(
-                            (tx) => tx === activeRangeTxHash.current,
-                        )
-                    ) {
-                        clearTokenInputs();
-                    }
                     rangeButtonErrorMessage = `${token.symbol} Amount Exceeds Combined Wallet and Exchange Balance`;
                 } else if (
                     isNativeToken &&
@@ -83,13 +76,6 @@ export function useHandleRangeButtonMessage(
                     fromDisplayQty(tokenAmount || '0', token.decimals) >
                         fromDisplayQty(tokenBalance || '0', token.decimals)
                 ) {
-                    if (
-                        pendingTransactions.some(
-                            (tx) => tx === activeRangeTxHash.current,
-                        )
-                    ) {
-                        clearTokenInputs();
-                    }
                     rangeButtonErrorMessage = `${token.symbol} Amount Exceeds Wallet Balance`;
                 } else if (
                     isNativeToken &&
@@ -114,6 +100,10 @@ export function useHandleRangeButtonMessage(
     }, [
         isUserOnline,
         isMintLiqEnabled,
+        isInitPage,
+        token.address,
+        token.decimals,
+        token.symbol,
         tokenAmount,
         tokenQtyCoveredByWalletBalance,
         amountToReduceNativeTokenQty,
@@ -122,8 +112,20 @@ export function useHandleRangeButtonMessage(
         isTokenInputDisabled,
         isWithdrawTokenFromDexChecked,
         isPoolInitialized,
+    ]);
+
+    useEffect(() => {
+        if (
+            rangeButtonErrorMessage.includes('Amount Exceeds') &&
+            pendingTransactions.some((tx) => tx === activeRangeTxHash.current)
+        ) {
+            clearTokenInputs();
+        }
+    }, [
+        rangeButtonErrorMessage,
         pendingTransactions,
         activeRangeTxHash,
+        clearTokenInputs,
     ]);
 
     return {
