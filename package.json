@@ -83,7 +83,7 @@
         "eslint-plugin-react-hooks": "^7.1.1",
         "husky": "^9.1.7",
         "lint-staged": "^17.6.0",
-        "playwright": "^1.65.0",
+        "playwright": "^1.65.1",
         "prettier": "^3.9.10",
         "rollup-plugin-visualizer": "^7.1.3",
         "typescript": "^7.0.2",
